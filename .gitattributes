@@ -1,0 +1,10 @@
+# Forge/generated artifacts intentionally permit a final blank line.
+*.sol whitespace=-blank-at-eof
+*.json whitespace=-blank-at-eof
+*.md whitespace=-blank-at-eof
+
+# The frozen specification uses a Markdown hard line break after its version.
+docs/BLOCKCHAIN_SPEC.md whitespace=-blank-at-eof,-blank-at-eol
+
+# Last so this overrides extension rules for vendored releases/CRLF fixtures.
+contracts/lib/** -whitespace
