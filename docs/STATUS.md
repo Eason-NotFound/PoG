@@ -4,8 +4,9 @@ Last updated: 2026-10-02 (Asia/Hong_Kong)
 
 ## Current milestone
 
-M1 — MockHKD and PoGRegistry implementation, awaiting CEO review. Escrow custody,
-human approvals, reservation, and payment remain unauthorized and unimplemented.
+M1 — MockHKD and PoGRegistry implementation has passed technical review and is
+awaiting user acceptance. Escrow custody, human approvals, reservation, and
+payment remain unauthorized and unimplemented.
 
 ## Completed
 
@@ -47,26 +48,36 @@ commit 50af4efe189dc64bad2b75ed6990b835de66c4ae
 Solc 0.8.24
 ```
 
-The execution shell does not include `~/.foundry/bin` in `PATH`, so commands
-prepend that directory. Final required commands are:
+The execution shell does not include `~/.foundry/bin` in `PATH`; the shared
+verification script resolves the local installation. The hand-off command is:
 
 ```text
-forge fmt --check
-forge build
-forge test -vv
-git diff --check
+bash scripts/check-blockchain.sh
 ```
 
 Formatting, compilation, and diff checks pass with no residual compiler/lint
 warnings. The full suite passes 44/44 tests: 36 Registry, 7 MockHKD, and 1 smoke
-test, including three 256-run fuzz tests. Generated ABI JSON syntax validation also
-passes.
+test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
+12 push-guard regression tests, and working/staged diff checks also pass.
+
+## Repository publication
+
+- Author: `Eason-NotFound <23260068@life.hkbu.edu.hk>`.
+- `main` was initialized with empty root commit `03368f7`; it contains no
+  application code.
+- M1 candidate branch: `codex/blockchain-m1-verified`.
+- Draft review: <https://github.com/Eason-NotFound/PoG/pull/1>.
+- Published immutable technical snapshot: `blockchain-v0.1.0-m1-rc.1`.
+- Server-side main review/CI gates and version-tag protection are active.
+- Publication does not imply user acceptance, permission to merge, or M2
+  authorization. GitHub CI results are tracked on the PR.
 
 ## Scope guard
 
 - No `ProcurementEscrow.sol` custody, approval, reservation, or payment implementation.
-- No deployment, PR, commit, push, merge, proxy, NFT, DAO, real stablecoin,
-  cross-chain, Chainlink, or zkML work.
+- No deployment, merge, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink,
+  or zkML work. Commits, candidate publication and a draft PR are separately
+  authorized repository-setup work, not the next blockchain milestone.
 
 ## Next gate
 
