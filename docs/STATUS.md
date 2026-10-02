@@ -8,10 +8,15 @@ The user approved revised M2 on 2026-10-03: invoice-limited stablecoin release t
 Foundation, active-project locking, and proportional refunds after closure and
 human reconciliation. `docs/M2_V2_SPEC.md` freezes the scope. The coder completed
 independent RegistryV2/EscrowV2, V2 tests, exact interface documentation and ABIs.
-CEO source review and independent full verification passed. M2 is a technically
-verified candidate published in draft PR #2, awaiting the user's milestone
-acceptance. Source commit `810a54e` passed both push and PR CI and is archived
-as immutable `blockchain-v0.2.0-m2-rc.1`. M2 is not merged into main.
+CEO source review and independent full verification passed. The user explicitly
+accepted M2 V2 on 2026-10-03: AI assessments are risk evidence, human approvals
+are the final fund decisions, and MockHKD, simulated supplier payment and no live
+AI/API/database deployments are accepted M2 limits. The user authorized merge
+and formal archival, followed by a report and STOP; M3 is not authorized.
+PR #2 is merged as `61aa673653dd31188d2627d76cbba3f97fed6137`. The new annotated
+accepted tag `blockchain-v0.2.0-m2` points to that exact merge; main and tag CI
+passed. Source commit `810a54e` remains the immutable technical snapshot
+`blockchain-v0.2.0-m2-rc.1`; no old tag or verified source was changed.
 
 The obsolete direct-vendor draft was moved without changing bytes into ignored
 `.task-archives/m2-direct-vendor/ProcurementEscrow.direct-vendor.unverified.sol.txt`
@@ -26,7 +31,8 @@ passed. Historical M1 is unchanged. M3 remains unauthorized.
 M1 — MockHKD and PoGRegistry passed technical review, were accepted by the user on
 2026-10-02 with Hank's offline approval, and were merged and formally archived.
 The original M2 was stopped by the user's architecture change. Revised M2 has
-completed technical review; it must finish with a report and stop. M3 is unauthorized.
+completed technical review, user acceptance, merge and formal archival. The
+remaining action is the archival report and stop. M3 is unauthorized.
 
 ## M2 V2 completed
 
@@ -92,6 +98,13 @@ Compiler/profile/limit unchanged; future modifications must recheck sizes.
 The sandbox emits an environment-only Foundry signature-cache write warning;
 it does not affect build/lint/test/check exit results.
 
+Before merging the exact accepted PR head `5ce1a70`, CEO reran the full check
+script: 81/81 tests (default fuzz profile), lint/ABI/size, M1 baseline 15/15,
+push-guard 12/12 and diff checks passed. The M2 RC technical baseline separately
+passed 18/18. Merge `61aa673` has an identical tree to that PR head. Earlier
+2,000-run fuzz results remain applicable to the unchanged source; they are not
+misreported as a new 2,000-run test in this archival step.
+
 Reviewed defects were fixed and retested: pre-receipt Invoice cancellation;
 return after settlement evidence but before confirmation; Closing-only return;
 global insolvency fail-closed; missing-vote sentinel at timestamp zero;
@@ -126,14 +139,14 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 ## Repository publication
 
 - Author: `Eason-NotFound <23260068@life.hkbu.edu.hk>`.
-- `main` was originally initialized with empty root `03368f7`; it now contains
-  accepted M1 at merge commit `45e6bab`.
+- `main` was originally initialized with empty root `03368f7`; accepted M1
+  remains at immutable `45e6bab`, and accepted M2 merged as `61aa673`.
 - Historical M1 candidate branch: `codex/blockchain-m1-verified`.
 - Merged review: <https://github.com/Eason-NotFound/PoG/pull/1>.
 - Published immutable technical snapshot: `blockchain-v0.1.0-m1-rc.1`.
 - Published immutable accepted version: `blockchain-v0.1.0-m1`.
-- Current candidate branch: `codex/blockchain-m2-escrow`.
-- Draft/open review: <https://github.com/Eason-NotFound/PoG/pull/2>.
+- Preserved M2 implementation branch: `codex/blockchain-m2-escrow`.
+- Merged M2 review: <https://github.com/Eason-NotFound/PoG/pull/2>.
 - M2 V2 implementation commit: `810a54ea9d17c5ac80f1974035f690e49941e1e1`.
 - New immutable candidate tag: `blockchain-v0.2.0-m2-rc.1`, dereferenced locally
   and remotely to the exact implementation commit. It is not an accepted version.
@@ -142,29 +155,46 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
   <https://github.com/Eason-NotFound/PoG/actions/runs/37039039417>.
 - Source/tests/ABIs are frozen; later publication-status documentation does not
   move that tag or alter the 18-file candidate technical snapshot.
+- Explicit user acceptance: 2026-10-03 in the CEO chat; it authorizes M2
+  merge/archive only, not M3. Acceptance was recorded in PR #2 before merge.
+- Accepted M2 merge: `61aa673653dd31188d2627d76cbba3f97fed6137`.
+- New annotated formal tag: `blockchain-v0.2.0-m2`; remote tag object
+  `85851d22fac1292112b17ade9b2e140dc17f1089`, dereferenced to that merge.
+- Passing merged-main CI:
+  <https://github.com/Eason-NotFound/PoG/actions/runs/37050711527>.
+- Passing formal-tag CI:
+  <https://github.com/Eason-NotFound/PoG/actions/runs/37050807537>.
+- All three historical M1/M2 candidate or accepted tags retain their original
+  tag objects and target commits. Formal M2 is a new tag, not an RC rename.
+- Archival-status updates use `codex/blockchain-m2-archive-status` and a normal
+  PR/CI merge. They do not change the formal tag or accepted technical artifacts.
+- The frozen M2 spec/runbook/review describe their original candidate gate;
+  the ABI package retains `0.2.0-m2-rc.1` as its artifact ID. This current status
+  and formal Git tag record subsequent explicit acceptance without rewriting
+  the 18-file verified snapshot. M3 still requires a separate authorization.
 - The old Escrow draft is ignored locally, not compiled, committed or published.
 - The user authorized removal of mandatory GitHub human reviews on 2026-10-02;
   main still requires PR/CI and forbids deletion/force push. Version tags remain
   immutable. The existing ruleset was updated in place and read back before merge.
-- M1 merge/version archival completed with passing CI. Revised M2 is authorized;
-  candidate publication uses the existing M2 branch and draft PR #2. No online
-  Hank review is claimed and no unaccepted M2 merge is authorized.
+- M1 and M2 merge/version archival completed with passing CI. No online Hank
+  review is claimed; the user's explicit M2 acceptance authorized its merge.
 
 ## Scope guard
 
 - M2 V2 custody, approvals, Foundation release, mock settlement attestation and
-  refund composition are technically verified. No real supplier payment proof
+  refund composition are technically verified and accepted. No real supplier payment proof
   or actual AI service is claimed; the obsolete draft is not a deliverable.
 - No deployment, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink, or zkML
   work. M1 archival is complete; revised M2 scope is frozen in `M2_V2_SPEC.md`.
-- M2 completes at a technically verified candidate and user report. Do not
-  auto-accept/merge M2 or start M3.
+- The authorized M2 merge/archive is complete. Report and stop; do not deploy
+  Anvil, implement API/model/database/payment services or start M3.
 
 ## Next gate
 
-The verified candidate is published and its implementation CI has passed. Report
-and stop for user acceptance. Do not merge M2, resume direct-vendor implementation
-or start M3 automatically. Any status-only checkpoint gets normal CI too.
+The user has accepted M2 V2 and authorized its merge and formal archival only.
+PR #2 and `blockchain-v0.2.0-m2` complete that gate. Report the archival result
+and stop. M3 may begin only after a NEW explicit user authorization. Do not
+resume direct-vendor implementation. Any status-only checkpoint gets normal CI too.
 
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.

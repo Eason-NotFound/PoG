@@ -6,15 +6,23 @@ https://github.com/Eason-NotFound/PoG.git。
 ## 当前状态
 
 - 远端最初是空仓库；现已创建 main 空根提交 `03368f7`，作为 PR 的目标分支。
-- 本地已接入 origin，当前工作分支为 `codex/blockchain-m2-escrow`。
+- 本地已接入 origin；M2实施分支 `codex/blockchain-m2-escrow` 保留，归档状态文档
+  使用新分支 `codex/blockchain-m2-archive-status`，仍走 PR／CI。
 - M0.1 / M1 已通过技术检查；用户于 2026-10-02 验收 M1，并确认 Hank 线下审批通过。
   用户授权 M1 合并并正式归档后启动 M2；M2 完成须先汇报，不进入 M3。
 - M1 已通过 PR #1 合并，正式标签 `blockchain-v0.1.0-m1` 指向 `45e6bab`。
   用户于 2026-10-03 批准新版 M2（Foundation限额放款＋关闭比例退款）。
   新版使用独立 V2 合约与子目录 ABI 包，原 M1 基线15项不改动。
-- M2源码 `810a54e` 已通过独立81项测试和两项GitHub CI，已上传草稿PR #2；
-  新候选标签 `blockchain-v0.2.0-m2-rc.1` 固定指向该提交。仅候选、未合并，
-  不表示用户验收。发布状态文档的新提交不得移动该标签。
+- M2源码 `810a54e` 已通过独立81项测试和GitHub CI；候选标签
+  `blockchain-v0.2.0-m2-rc.1` 永久固定指向该提交，不移动。
+- 用户于2026-10-03明确验收 M2 V2，接受 AI 为风险证据、人工审批为最终资金
+  决策，以及 MockHKD／模拟供应商付款／无真实AI、API、数据库部署限制。
+  本次授权仅完成 M2合并、正式归档和汇报；不授权 M3。
+- PR #2已通过普通merge合并为 `61aa673653dd31188d2627d76cbba3f97fed6137`。
+  新annotated正式标签 `blockchain-v0.2.0-m2` 指向该merge；main与标签CI均通过。
+  M1正式／候选标签和M2候选标签的对象与指向均未改动。
+- 18项M2技术快照全部保留；ABI包的原 `0.2.0-m2-rc.1` 是冻结工件标识，
+  不为改变验收状态重写包、规格、接口或runbook。正式验收以Git标签和STATUS记录。
 - GitHub 服务端规则已启用并经 API 读取验证：main ruleset `24365180`，
   immutable version tag ruleset `24365182`。两者均 active、无 bypass actor。
 - 用户于 2026-10-02 明确取消 GitHub 强制人工 review；main 仍要求 PR 和
@@ -107,5 +115,5 @@ gh api repos/Eason-NotFound/PoG/rulesets
 | --- | --- | --- | --- |
 | M0.1 规范 | build + smoke test 通过 | 架构作为当前实施规范 | 随 M1 候选发布 |
 | M1 token + Registry | 44/44；3 个 fuzz 用例各 2,000 次；lint/ABI 通过 | 用户于 2026-10-02 验收，确认 Hank 线下通过 | PR #1 已合并；正式标签 blockchain-v0.1.0-m1；旧 rc 永久保留 |
-| M2 V2 | CEO独立81/81，5个fuzz各2000次；lint/ABI/size/基线；源码push/PR CI通过 | 技术通过，等待用户验收 | 草稿PR #2；RC blockchain-v0.2.0-m2-rc.1固定810a54e；无合并／M3授权 |
+| M2 V2 | CEO独立81/81，5个fuzz各2000次；归档前复检、M1基线15/15、M2快照18/18；PR、合并main及正式标签CI通过 | 用户于2026-10-03明确验收，仅授权合并、归档、汇报 | PR #2已合并61aa673；正式blockchain-v0.2.0-m2；RC固定810a54e；M3未授权 |
 | 版本配置 | remote/branch/hook 12/12，CI 配置、服务端规则 API 验证 | 本次用户授权配置 | main 和版本标签保护已 active |

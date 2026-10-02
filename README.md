@@ -3,8 +3,8 @@
 HacKU 2026 FinTech MVP. The team repository is
 [Eason-NotFound/PoG](https://github.com/Eason-NotFound/PoG).
 
-Current blockchain milestone: **M2 V2 technically verified; awaiting user acceptance**.
-The active candidate is unchanged `MockHKD` plus independent `PoGRegistryV2` and
+Current blockchain milestone: **M2 V2 accepted, merged and formally archived; M3 not authorized**.
+The accepted implementation is unchanged `MockHKD` plus independent `PoGRegistryV2` and
 `ProcurementEscrowV2`. MockHKD is a freely mintable, valueless 6-decimal demo token.
 The V2 contracts verify project custody, AI/Recipient/human signatures, exact
 Foundation release, separate mock supplier settlement and closure/refunds.
@@ -27,8 +27,15 @@ consistency, runtime-size limits, M1 baseline 15/15 and push-guard 12/12.
 This does not imply Anvil deployment, actual AI service or real fiat payment.
 
 Verified source snapshot: `blockchain-v0.2.0-m2-rc.1` at `810a54e`.
-[Draft PR #2](https://github.com/Eason-NotFound/PoG/pull/2) holds the candidate;
-main still contains accepted M1. M2 requires user acceptance before merge/M3.
+The user accepted M2 V2 on 2026-10-03, including AI as risk evidence, human
+approval as the final fund decision, and the deliberate mock/no-live-service limits.
+[PR #2](https://github.com/Eason-NotFound/PoG/pull/2) is merged as `61aa673`;
+the new immutable accepted tag is
+[`blockchain-v0.2.0-m2`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.2.0-m2).
+Main and accepted-tag CI passed. M1 and the M2 RC remain unchanged.
+The frozen ABI package retains its original `0.2.0-m2-rc.1` artifact identifier;
+acceptance is recorded by the formal Git tag and [current status](docs/STATUS.md),
+not by rewriting verified artifacts. Stop after archival; M3 needs a separate authorization.
 
 ## Build and verify
 
