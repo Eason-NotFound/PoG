@@ -8,12 +8,16 @@
   Invoice/goods evidence and Recipient receipt confirmation precede approval;
   stablecoins are released to Foundation, converted back to HKD by the platform,
   then used for the final transfer.
-- Stop the old M2 implementation and tests. Preserve any in-progress changes and
-  accepted M1 history; do not delete/rewrite them or publish an obsolete candidate.
-- `docs/FOUNDATION_SETTLEMENT_FLOW.md` captures the confirmed flow and outstanding
-  release-amount decision. The user confirmed simulated conversions, Recipient
-  receipt confirmation, and Foundation's final HKD payment to the vendor. Clarify
-  whether release is invoice-limited or all project funds before revised dispatch.
+- On 2026-10-03 the user approved invoice-limited Foundation release, continued
+  locking while a project is active, and closure/reconciliation followed by
+  proportional stablecoin refunds to original Donors. Revised M2 may proceed.
+- Preserve M1 source, tests, ABIs, frozen specifications and immutable tags. Add
+  independent `PoGRegistryV2` and `ProcurementEscrowV2`, reusing `MockHKD`.
+  The obsolete direct-vendor Escrow draft is archived locally, not published.
+- `docs/M2_V2_SPEC.md` is the current implementation scope; the flow is in
+  `docs/FOUNDATION_SETTLEMENT_FLOW.md`. Version-2 signing domains are mandatory.
+  No release of all project funds, discretionary sweep, or automatic migration
+  of donor money to other projects is authorized.
 - FundsReleased to Foundation is not supplier Paid. New state, signing, evidence
   and settlement boundaries need an explicit versioned interface design. Do not
   silently reuse M1's supplier-payment callback as proof of fiat supplier payment.
@@ -24,8 +28,10 @@
 ## Repository and scope
 
 - The team repository is https://github.com/Eason-NotFound/PoG.
-- Read `docs/STATUS.md`, `docs/MILESTONES.md`, `docs/BLOCKCHAIN_SPEC.md`, and
-  `docs/INTEGRATION_CONTRACT.md` before blockchain work.
+- Read `docs/STATUS.md`, `docs/MILESTONES.md`, `docs/M2_V2_SPEC.md` before V2 work.
+  `docs/BLOCKCHAIN_SPEC.md` and `docs/INTEGRATION_CONTRACT.md` remain historical
+  M0.1/M1 specifications; their direct-vendor and no-refund rules are superseded
+  for V2, not retroactively changed for M1.
 - M0.1 and M1 have passed technical review. The user accepted M1 on 2026-10-02
   and confirmed Hank's offline approval; no GitHub approving review was claimed.
   M1 implements MockHKD and PoGRegistry; ProcurementEscrow remains a test double.

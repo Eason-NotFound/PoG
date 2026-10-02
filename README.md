@@ -3,19 +3,28 @@
 HacKU 2026 FinTech MVP. The team repository is
 [Eason-NotFound/PoG](https://github.com/Eason-NotFound/PoG).
 
-Current blockchain milestone: **M1 accepted and archived; M2 architecture revised**.
-`MockHKD` is a valueless 6-decimal demo ERC-20. `PoGRegistry` records project,
-procurement and evidence state and verifies signed AI assessments. Escrow in the
-tests is a mock: deposits, human approvals and payments are not verified as a
-real system. The old direct-vendor Escrow draft is superseded, untested and
-uncommitted; it is not the current architecture's implementation.
+Current blockchain milestone: **M2 V2 technically verified; awaiting user acceptance**.
+The active candidate is unchanged `MockHKD` plus independent `PoGRegistryV2` and
+`ProcurementEscrowV2`. MockHKD is a freely mintable, valueless 6-decimal demo token.
+The V2 contracts verify project custody, AI/Recipient/human signatures, exact
+Foundation release, separate mock supplier settlement and closure/refunds.
+Accepted M1 source/tests/ABIs and tags remain unchanged; its historical Escrow
+test double and the locally archived obsolete direct-vendor draft are not V2.
 
 The revised [Foundation settlement flow](docs/FOUNDATION_SETTLEMENT_FLOW.md)
 releases approved stablecoins to Foundation after receipt verification, then
 separately tracks platform conversion to HKD and supplier payment. Each Donor first
 converts simulated HKD to MockHKD, then donates directly to a specific project's
-locked Escrow. Recipient confirms receipt. The release-amount rule remains to be
-confirmed before revised implementation dispatch.
+locked Escrow. Recipient signs receipt; release is exactly the approved Invoice
+amount. Active-project remainder stays locked; following termination and human
+reconciliation it is refunded proportionally to original donor wallets.
+
+M2 adds independent `PoGRegistryV2` / `ProcurementEscrowV2` and tests while keeping
+all accepted M1 source/ABIs unchanged. Scope is frozen in
+[M2 V2 specification](docs/M2_V2_SPEC.md). Independent verification passed 81/81
+tests, with all five fuzz cases repeated at 2,000 runs, strict source lint, ABI
+consistency, runtime-size limits, M1 baseline 15/15 and push-guard 12/12.
+This does not imply Anvil deployment, actual AI service or real fiat payment.
 
 ## Build and verify
 
@@ -27,16 +36,21 @@ bash scripts/check-blockchain.sh
 ```
 
 The booth will have Foundation, Recipient and Donor views. The integration
-contract for the frontend, API/database, AI evidence and payment teams is in
-[docs/INTEGRATION_CONTRACT.md](docs/INTEGRATION_CONTRACT.md).
-It is the historical M0.1/M1 interface baseline; revised Foundation-settlement
-interfaces are not yet frozen and must not be inferred from the old payment API.
+plan for frontend, API/database, AI evidence and payment teams is in
+[V2 integration hand-off](docs/M2_V2_INTEGRATION.md). API paths in that file are
+proposed resources, not running endpoints. The
+[exact V2 implementation interface](docs/M2_V2_INTERFACE_IMPLEMENTED.md) includes
+call prototypes, enum ordinals, signing types and hash formulas.
+[Historical M1 integration](docs/INTEGRATION_CONTRACT.md) is preserved for M1;
+do not apply its direct-vendor payment API or version-1 signatures to V2.
 
 ## Project references
 
 - [Blockchain status](docs/STATUS.md)
-- [Contract specification](docs/BLOCKCHAIN_SPEC.md)
+- [Current V2 specification](docs/M2_V2_SPEC.md)
+- [Historical M1 specification](docs/BLOCKCHAIN_SPEC.md)
 - [Build runbook](docs/BLOCKCHAIN_RUNBOOK.md)
+- [V2 verification and acceptance](docs/M2_V2_RUNBOOK.md)
 - [Milestones](docs/MILESTONES.md)
 - [Version control and user acceptance](docs/VERSION_CONTROL.md)
 

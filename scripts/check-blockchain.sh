@@ -17,9 +17,11 @@ fi
 
 "$task_forge" fmt --check
 "$task_forge" build
+"$task_forge" build --sizes
 "$task_forge" test -vv
 "$task_forge" lint contracts/src --report-unused-suppressions --deny warnings
 python3 scripts/check-abis.py "$task_forge"
+python3 scripts/check-m1-baseline.py
 python3 scripts/test-push-guard.py
 git diff --check
 git diff --cached --check

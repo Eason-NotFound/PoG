@@ -26,14 +26,30 @@ runbook, and generated ABIs. Escrow custody/payment is not implemented.
 Exit: formatting/build/full tests/diff checks pass, CEO reports technical review,
 and the user accepts M1. Passing this exit does not automatically authorize M2.
 
-## M2 — escrow and approval gates (authorized after M1 archival)
+## M2 V2 — Foundation release, settlement attestation and refunds (authorized)
 
-Superseded by the later Foundation settlement architecture request. The original
-implementation was stopped and its untested draft preserved. The new flow in
-`FOUNDATION_SETTLEMENT_FLOW.md` requires release-amount clarification and a revised
-versioned interface plan before coding. Donor-first simulated conversion and the
-Recipient/Foundation/vendor roles are confirmed. The original scope below is
-historical context, not authority to keep implementing direct vendor payment.
+User authorization: 2026-10-03, after M1 archival and explicit approval of the
+revised Foundation settlement architecture, invoice-limited release, continued
+locking, and proportional refunds following closure/reconciliation. The frozen
+current scope is `M2_V2_SPEC.md`; flow is `FOUNDATION_SETTLEMENT_FLOW.md`.
+
+Implement independent RegistryV2/EscrowV2 with donor custody, PO-first AI/human
+reservation, Invoice/goods and signed Recipient receipt, final AI/human approval,
+exact invoice stablecoin release to Foundation, and distinct full mock supplier
+payment evidence with human reconciliation. Add Closing restrictions, unsettled
+obligation gates, actual stablecoin returns and bounded proportional refunds.
+Preserve all M1 source, tests, ABIs and frozen specifications.
+
+Exit: V2 custody/lifecycle/signatures/refunds pass unit, integration, adversarial,
+fuzz/invariant and independent CEO checks; M1 regression and baseline hashes
+pass; generated V2 ABIs and exact integration instructions are reviewed. CEO
+publishes the technically verified candidate, reports results and stops.
+No M2 acceptance/merge or M3 authorization is implied by passing tests.
+
+### Historical superseded M2 direct-vendor plan
+
+The original implementation was stopped and its untested draft preserved in a
+local ignored archive. The original scope below is historical context only.
 
 User authorization: 2026-10-02, after explicit M1 acceptance and confirmation of
 Hank's offline review. Begin only after M1 is merged and formally tagged.

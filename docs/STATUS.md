@@ -1,27 +1,49 @@
 # Blockchain Status
 
-Last updated: 2026-10-02 (Asia/Hong_Kong)
+Last updated: 2026-10-03 (Asia/Hong_Kong)
 
 ## Current milestone
 
-Latest user change: the original M2 direct-vendor implementation is superseded.
-The coder has stopped, leaving one untracked, uncompiled and untested
-`contracts/src/ProcurementEscrow.sol` draft. No M2 tests, ABI, commits or deployment
-were produced. Preserve the draft, but do not treat it as a current candidate.
-The revised flow is in `docs/FOUNDATION_SETTLEMENT_FLOW.md`; Donors individually
-convert simulated HKD and donate stablecoins directly to a project's locked
-Escrow. Both conversions are simulated; Recipient confirms receipt, Foundation
-pays HKD to the vendor. Clarify invoice-limited versus full-project release amount
-before revised dispatch.
+The user approved revised M2 on 2026-10-03: invoice-limited stablecoin release to
+Foundation, active-project locking, and proportional refunds after closure and
+human reconciliation. `docs/M2_V2_SPEC.md` freezes the scope. The coder completed
+independent RegistryV2/EscrowV2, V2 tests, exact interface documentation and ABIs.
+CEO source review and independent full verification passed. M2 is a technically
+verified candidate awaiting publication/CI and the user's milestone acceptance.
+
+The obsolete direct-vendor draft was moved without changing bytes into ignored
+`.task-archives/m2-direct-vendor/ProcurementEscrow.direct-vendor.unverified.sol.txt`
+(SHA-256 `ea37aa6c24edbb90eed69e81f67d535eb5b030107c4f4ac53776a78c01042777`).
+It is not compiled, uploaded or used as the current candidate. Donors convert
+simulated HKD individually and deposit stablecoins to a specific project. Both
+conversions are simulated; Recipient signs receipt, Foundation receives exactly
+approved Invoice stablecoins then pays the fixed vendor simulated HKD.
 M1 formal tag `blockchain-v0.1.0-m1` points to merged commit `45e6bab`; main/tag CI
 passed. Historical M1 is unchanged. M3 remains unauthorized.
 
 M1 — MockHKD and PoGRegistry passed technical review, were accepted by the user on
 2026-10-02 with Hank's offline approval, and were merged and formally archived.
-The original M2 began afterward but was stopped by the user's architecture
-change. Revised M2 implementation has not been dispatched. M3 is unauthorized.
+The original M2 was stopped by the user's architecture change. Revised M2 has
+completed technical review; it must finish with a report and stop. M3 is unauthorized.
 
-## Completed
+## M2 V2 completed
+
+- Donor-only credited deposits into a specific project; surplus excluded.
+- PO-first pre-AI/human reservation, Invoice/goods and independent Recipient
+  receipt signature, final AI/human exact invoice release to fixed Foundation.
+- Separate full mock vendor settlement evidence and current human approval.
+- Current AI allowlist/expiry, exact-next signer nonces, EIP712 V2 domains,
+  expired-human renewal, same-evidence AI renewal, policy epoch invalidation,
+  stored ERC1271 votes, counterpart checks and pair-wide token callback defense.
+- Active remainder locking, Closing restrictions with existing obligations
+  allowed to finish, actual Closing-only stablecoin returns not erasing debt.
+- Human close snapshot only with no unresolved procurement/Q, up to 64 donors,
+  deterministic cumulative-interval refunds with no dust/sweep and O(1) claims.
+- Exact token deltas and aggregate real-balance solvency across projects;
+  net-release math avoids intermediate uint256 overflow.
+- Five generated ABI comparisons and precise team integration/call documentation.
+
+## Historical M0/M1 completed
 
 - Inspected repository: it was an empty Git repository on `main`, with no commits,
   no `AGENTS.md`, and no existing user files to overwrite.
@@ -51,7 +73,33 @@ change. Revised M2 implementation has not been dispatched. M3 is unauthorized.
   cancellation, and Allocation Roots.
 - Generated versioned `MockHKD` and `PoGRegistry` ABI JSON from Forge output.
 
-## Verification status
+## Current M2 verification
+
+CEO independently ran on 2026-10-03:
+
+```text
+bash scripts/check-blockchain.sh
+/Users/quyichen/.foundry/bin/forge test --fuzz-runs 2000 -vv
+```
+
+Both pass: 81/81 tests (44 preserved M1, 14 coder V2, 23 independent CEO V2).
+All five fuzz cases pass 2,000 runs each. Format/build/strict source lint,
+5 ABI comparisons, M1 hashes 15/15, push-guard 12/12 and diff checks pass.
+Runtime sizes: RegistryV2 21,328 B; EscrowV2 24,366 B (210 B below EIP170).
+Compiler/profile/limit unchanged; future modifications must recheck sizes.
+The sandbox emits an environment-only Foundry signature-cache write warning;
+it does not affect build/lint/test/check exit results.
+
+Reviewed defects were fixed and retested: pre-receipt Invoice cancellation;
+return after settlement evidence but before confirmation; Closing-only return;
+global insolvency fail-closed; missing-vote sentinel at timestamp zero;
+close/signing fail-fast checks; and max-uint net math. Final source review found
+no remaining functional P1/P2; this is not an external security audit.
+
+No live API/model/fiat ledger or three-computer booth has been deployed by M2.
+See `M2_V2_RUNBOOK.md` and `M2_V2_INTEGRATION.md` for boundaries and hand-off.
+
+## Historical M1 verification
 
 M1 is verified locally on 2026-10-02 with:
 
@@ -87,29 +135,29 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 - The user authorized removal of mandatory GitHub human reviews on 2026-10-02;
   main still requires PR/CI and forbids deletion/force push. Version tags remain
   immutable. The existing ruleset was updated in place and read back before merge.
-- M1 merge/version archival completed with passing CI. The earlier direct-vendor
-  M2 authorization was superseded; revised coding awaits the remaining release
-  policy and updated interfaces. No online Hank review is claimed.
+- M1 merge/version archival completed with passing CI. Revised M2 is authorized;
+  candidate publication uses the existing M2 branch and draft PR #2. No online
+  Hank review is claimed and no unaccepted M2 merge is authorized.
 
 ## Scope guard
 
-- No technically verified M2 custody, approval, release or payment implementation.
-  The untracked obsolete Escrow draft is not a completed or tested deliverable.
+- M2 V2 custody, approvals, Foundation release, mock settlement attestation and
+  refund composition are technically verified. No real supplier payment proof
+  or actual AI service is claimed; the obsolete draft is not a deliverable.
 - No deployment, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink, or zkML
-  work. M1 archival is complete; revised M2 needs its new flow/interfaces frozen.
+  work. M1 archival is complete; revised M2 scope is frozen in `M2_V2_SPEC.md`.
 - M2 completes at a technically verified candidate and user report. Do not
   auto-accept/merge M2 or start M3.
 
 ## Next gate
 
-The Foundation settlement architecture now takes precedence over the original
-M2 scope below. Update versioned contract/signing/API interfaces only after the
-release-amount question is resolved. Do not resume the direct-vendor implementation.
+Publish the verified candidate through existing draft PR #2, confirm CI, report
+and stop for user acceptance. Do not merge M2, resume direct-vendor implementation
+or start M3 automatically.
 
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.
 M1 acceptance/archival is complete. The old direct-vendor M2 approval-input plan
-is historical, not the current release-to-Foundation interface. Re-freeze the
-current flow's signatures, deadlines, receipt proofs and settlement evidence
-after resolving the release-amount question. See `docs/VERSION_CONTROL.md` for
-version gates.
+is historical, not the current release-to-Foundation interface. Current signatures,
+deadlines, receipt proofs and settlement are frozen in the implemented V2
+interface. See `docs/VERSION_CONTROL.md` for version gates.
