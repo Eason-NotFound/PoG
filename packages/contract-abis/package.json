@@ -1,0 +1,10 @@
+{
+  "name": "@pog/contract-abis",
+  "version": "0.1.0-m1",
+  "private": true,
+  "files": [
+    "MockHKD.json",
+    "PoGRegistry.json"
+  ]
+}
+
