@@ -9,7 +9,9 @@ Foundation, active-project locking, and proportional refunds after closure and
 human reconciliation. `docs/M2_V2_SPEC.md` freezes the scope. The coder completed
 independent RegistryV2/EscrowV2, V2 tests, exact interface documentation and ABIs.
 CEO source review and independent full verification passed. M2 is a technically
-verified candidate awaiting publication/CI and the user's milestone acceptance.
+verified candidate published in draft PR #2, awaiting the user's milestone
+acceptance. Source commit `810a54e` passed both push and PR CI and is archived
+as immutable `blockchain-v0.2.0-m2-rc.1`. M2 is not merged into main.
 
 The obsolete direct-vendor draft was moved without changing bytes into ignored
 `.task-archives/m2-direct-vendor/ProcurementEscrow.direct-vendor.unverified.sol.txt`
@@ -130,8 +132,17 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 - Merged review: <https://github.com/Eason-NotFound/PoG/pull/1>.
 - Published immutable technical snapshot: `blockchain-v0.1.0-m1-rc.1`.
 - Published immutable accepted version: `blockchain-v0.1.0-m1`.
-- Current design branch: `codex/blockchain-m2-escrow`; old Escrow draft is not
-  included in the new architecture documentation publication.
+- Current candidate branch: `codex/blockchain-m2-escrow`.
+- Draft/open review: <https://github.com/Eason-NotFound/PoG/pull/2>.
+- M2 V2 implementation commit: `810a54ea9d17c5ac80f1974035f690e49941e1e1`.
+- New immutable candidate tag: `blockchain-v0.2.0-m2-rc.1`, dereferenced locally
+  and remotely to the exact implementation commit. It is not an accepted version.
+- Passing implementation CI: push
+  <https://github.com/Eason-NotFound/PoG/actions/runs/37039034702> and PR
+  <https://github.com/Eason-NotFound/PoG/actions/runs/37039039417>.
+- Source/tests/ABIs are frozen; later publication-status documentation does not
+  move that tag or alter the 18-file candidate technical snapshot.
+- The old Escrow draft is ignored locally, not compiled, committed or published.
 - The user authorized removal of mandatory GitHub human reviews on 2026-10-02;
   main still requires PR/CI and forbids deletion/force push. Version tags remain
   immutable. The existing ruleset was updated in place and read back before merge.
@@ -151,9 +162,9 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 
 ## Next gate
 
-Publish the verified candidate through existing draft PR #2, confirm CI, report
+The verified candidate is published and its implementation CI has passed. Report
 and stop for user acceptance. Do not merge M2, resume direct-vendor implementation
-or start M3 automatically.
+or start M3 automatically. Any status-only checkpoint gets normal CI too.
 
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.

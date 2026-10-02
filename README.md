@@ -26,6 +26,10 @@ tests, with all five fuzz cases repeated at 2,000 runs, strict source lint, ABI
 consistency, runtime-size limits, M1 baseline 15/15 and push-guard 12/12.
 This does not imply Anvil deployment, actual AI service or real fiat payment.
 
+Verified source snapshot: `blockchain-v0.2.0-m2-rc.1` at `810a54e`.
+[Draft PR #2](https://github.com/Eason-NotFound/PoG/pull/2) holds the candidate;
+main still contains accepted M1. M2 requires user acceptance before merge/M3.
+
 ## Build and verify
 
 Requires Foundry 1.8.4, Solidity 0.8.24 and Python 3 (standard library only).
