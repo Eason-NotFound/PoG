@@ -11,6 +11,11 @@
 - On 2026-10-03 the user approved invoice-limited Foundation release, continued
   locking while a project is active, and closure/reconciliation followed by
   proportional stablecoin refunds to original Donors. Revised M2 may proceed.
+- On 2026-10-03 the user explicitly accepted M2 V2: AI assessments are risk
+  evidence; human approvals are the final fund decisions. MockHKD, simulated
+  supplier payment, and no live AI/API/database deployments are accepted limits.
+  PR #2 was merged as `61aa673`; the new annotated accepted tag is
+  `blockchain-v0.2.0-m2`. Archival is complete; report and STOP. M3 is not authorized.
 - Preserve M1 source, tests, ABIs, frozen specifications and immutable tags. Add
   independent `PoGRegistryV2` and `ProcurementEscrowV2`, reusing `MockHKD`.
   The obsolete direct-vendor Escrow draft is archived locally, not published.
@@ -35,6 +40,9 @@
 - M0.1 and M1 have passed technical review. The user accepted M1 on 2026-10-02
   and confirmed Hank's offline approval; no GitHub approving review was claimed.
   M1 implements MockHKD and PoGRegistry; ProcurementEscrow remains a test double.
+- M2 V2 has passed technical review and explicit user acceptance and is merged
+  and formally archived. Preserve its contracts, tests, ABIs, 18-file technical
+  snapshot and both M2 tags. Status-only archival documentation is not M3 work.
 - The original direct-vendor M2 authorization and its reserveAmount / unchanged
   ApprovalIntent interface constraints are historical and superseded by the
   latest architecture change above. New signing, release and settlement

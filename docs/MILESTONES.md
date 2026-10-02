@@ -26,7 +26,7 @@ runbook, and generated ABIs. Escrow custody/payment is not implemented.
 Exit: formatting/build/full tests/diff checks pass, CEO reports technical review,
 and the user accepts M1. Passing this exit does not automatically authorize M2.
 
-## M2 V2 — Foundation release, settlement attestation and refunds (authorized)
+## M2 V2 — Foundation release, settlement attestation and refunds (user accepted and archived)
 
 User authorization: 2026-10-03, after M1 archival and explicit approval of the
 revised Foundation settlement architecture, invoice-limited release, continued
@@ -45,6 +45,14 @@ fuzz/invariant and independent CEO checks; M1 regression and baseline hashes
 pass; generated V2 ABIs and exact integration instructions are reviewed. CEO
 publishes the technically verified candidate, reports results and stops.
 No M2 acceptance/merge or M3 authorization is implied by passing tests.
+
+Acceptance recorded on 2026-10-03: the user explicitly accepted AI assessments
+as risk evidence, human approval as the final fund decision, MockHKD, simulated
+supplier payment and no live AI/API/database deployments. The user authorized
+merge and formal archival only. PR #2 merged as `61aa673`; immutable accepted
+tag `blockchain-v0.2.0-m2` points to that merge. Main and tag CI passed.
+Preserve the RC technical snapshot at `810a54e`. Report and stop; M3 has not been
+authorized by this acceptance.
 
 ### Historical superseded M2 direct-vendor plan
 
