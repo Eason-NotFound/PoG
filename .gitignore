@@ -7,5 +7,6 @@ broadcast/
 !.env.*.example
 .DS_Store
 .tools/
+.task-archives/
 __pycache__/
 *.pyc

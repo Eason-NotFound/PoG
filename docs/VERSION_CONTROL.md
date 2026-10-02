@@ -1,14 +1,20 @@
 # PoG 版本控制与阶段验收
 
-更新日期：2026-10-02（香港时间）。团队远端：
+更新日期：2026-10-03（香港时间）。团队远端：
 https://github.com/Eason-NotFound/PoG.git。
 
 ## 当前状态
 
 - 远端最初是空仓库；现已创建 main 空根提交 `03368f7`，作为 PR 的目标分支。
-- 本地已接入 origin，工作分支为 `codex/blockchain-m1-verified`。
+- 本地已接入 origin，当前工作分支为 `codex/blockchain-m2-escrow`。
 - M0.1 / M1 已通过技术检查；用户于 2026-10-02 验收 M1，并确认 Hank 线下审批通过。
   用户授权 M1 合并并正式归档后启动 M2；M2 完成须先汇报，不进入 M3。
+- M1 已通过 PR #1 合并，正式标签 `blockchain-v0.1.0-m1` 指向 `45e6bab`。
+  用户于 2026-10-03 批准新版 M2（Foundation限额放款＋关闭比例退款）。
+  新版使用独立 V2 合约与子目录 ABI 包，原 M1 基线15项不改动。
+- M2源码 `810a54e` 已通过独立81项测试和两项GitHub CI，已上传草稿PR #2；
+  新候选标签 `blockchain-v0.2.0-m2-rc.1` 固定指向该提交。仅候选、未合并，
+  不表示用户验收。发布状态文档的新提交不得移动该标签。
 - GitHub 服务端规则已启用并经 API 读取验证：main ruleset `24365180`，
   immutable version tag ruleset `24365182`。两者均 active、无 bypass actor。
 - 用户于 2026-10-02 明确取消 GitHub 强制人工 review；main 仍要求 PR 和
@@ -100,5 +106,6 @@ gh api repos/Eason-NotFound/PoG/rulesets
 | 阶段 | 技术验证 | 用户验收 | 远端版本 |
 | --- | --- | --- | --- |
 | M0.1 规范 | build + smoke test 通过 | 架构作为当前实施规范 | 随 M1 候选发布 |
-| M1 token + Registry | 44/44；3 个 fuzz 用例各 2,000 次；lint/ABI 通过 | 用户于 2026-10-02 验收，确认 Hank 线下通过 | PR #1 已授权合并，随后新建正式 M1 标签；旧 rc 永久保留 |
+| M1 token + Registry | 44/44；3 个 fuzz 用例各 2,000 次；lint/ABI 通过 | 用户于 2026-10-02 验收，确认 Hank 线下通过 | PR #1 已合并；正式标签 blockchain-v0.1.0-m1；旧 rc 永久保留 |
+| M2 V2 | CEO独立81/81，5个fuzz各2000次；lint/ABI/size/基线；源码push/PR CI通过 | 技术通过，等待用户验收 | 草稿PR #2；RC blockchain-v0.2.0-m2-rc.1固定810a54e；无合并／M3授权 |
 | 版本配置 | remote/branch/hook 12/12，CI 配置、服务端规则 API 验证 | 本次用户授权配置 | main 和版本标签保护已 active |

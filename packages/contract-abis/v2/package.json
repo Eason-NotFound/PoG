@@ -1,0 +1,7 @@
+{
+  "name": "@pog/contracts-v2",
+  "version": "0.2.0-m2-rc.1",
+  "private": true,
+  "description": "PoG V2 Foundation-settlement demo contract ABIs; no deployment implied",
+  "files": ["MockHKD.json", "PoGRegistryV2.json", "ProcurementEscrowV2.json"]
+}
