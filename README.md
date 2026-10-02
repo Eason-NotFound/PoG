@@ -22,6 +22,13 @@ actual addresses/instance/receipts/ABI/runtime fingerprints. Default RPC is
 records, not a resumable business chain; a fresh chain requires explicit reset.
 Test Donor balances are a faucet, not HKD collection or conversion.
 
+Verified M3.1 source: `6295409`, published in
+[draft PR #4](https://github.com/Eason-NotFound/PoG/pull/4).
+Immutable technical snapshot:
+[`blockchain-v0.3.1-m3.1-rc.1`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.3.1-m3.1-rc.1).
+Both source push/PR workflows passed. This RC is not an accepted version;
+main remains accepted M2 until explicit M3.1 acceptance and merge.
+
 The accepted implementation is unchanged `MockHKD` plus independent `PoGRegistryV2` and
 `ProcurementEscrowV2`. MockHKD is a freely mintable, valueless 6-decimal demo token.
 The V2 contracts verify project custody, AI/Recipient/human signatures, exact

@@ -32,6 +32,21 @@ Read `M3_1_RUNBOOK.md` for commands and the deliberate reset/signature limits.
 The feature branch is `codex/blockchain-m3-1-anvil`; publish through PR/CI, report
 and STOP. All later M3 sub-gates are still unauthorized.
 
+The verified implementation was published as
+`62954094c3c08bf584b4ccc60384ff2f6578c1e2` in draft/open PR #4:
+<https://github.com/Eason-NotFound/PoG/pull/4>.
+New annotated technical snapshot `blockchain-v0.3.1-m3.1-rc.1` points to that
+source commit; it is not user acceptance, a merge or a formal accepted version.
+Source push CI passed: blockchain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054929913> and local chain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054929966>.
+Source PR CI passed: blockchain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054943891> and local chain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054943848>.
+Main remains the accepted M2 archival checkpoint `d6c2863`. Existing four M1/M2
+tags retain their original objects/targets. Later publication-status checkpoints
+do not move the M3.1 RC or modify its deployment script/tests/CI/spec/runbook.
+
 ## Accepted M2 archival checkpoint
 
 The following records M2's acceptance boundary at that time; the later M3.1
@@ -227,8 +242,8 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 
 ## Next gate
 
-M2 is accepted and archived. M3.1 is authorized and technically verified; publish
-its candidate, report and stop for the user's acceptance. Do not automatically
+M2 is accepted and archived. M3.1 is authorized, technically verified and
+published as a draft candidate; report and stop for the user's acceptance. Do not automatically
 merge M3.1 or begin M3.2. Do not resume direct-vendor implementation. Status-only
 publication checkpoints also use normal PR/CI and never move existing tags.
 
