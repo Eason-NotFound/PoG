@@ -17,7 +17,7 @@ describes sequencing; it authorizes no work beyond the current accepted scope.
 Exit: documents agree, directories exist, and `forge build` plus smoke test pass,
 or missing local tooling is captured with exact reproducible evidence.
 
-## M1 — test token and registry (current; awaiting review)
+## M1 — test token and registry (user accepted)
 
 Implemented `MockHKD`, Registry metadata/evidence/AI assessment/lifecycle paths,
 minimum Escrow interface and test doubles, unit/fuzz tests, pinned dependencies,
@@ -26,10 +26,20 @@ runbook, and generated ABIs. Escrow custody/payment is not implemented.
 Exit: formatting/build/full tests/diff checks pass, CEO reports technical review,
 and the user accepts M1. Passing this exit does not automatically authorize M2.
 
-## M2 — escrow and approval gates
+## M2 — escrow and approval gates (authorized after M1 archival)
 
-Planned only: implement deposits, human approval aggregation, reservation,
-payment, cancellation, invariants, and adversarial/replay tests.
+User authorization: 2026-10-02, after explicit M1 acceptance and confirmation of
+Hank's offline review. Begin only after M1 is merged and formally tagged.
+
+Implement deposits, human approval aggregation, reservation, payment,
+cancellation, invariants, and adversarial/replay tests. Add reserveAmount to the
+approval submission ABI while preserving ApprovalIntent typed-data fields;
+recompute exact terms at submission. Execution counts only unexpired approvals;
+an expired signer renews using a fresh nonce without duplicate counting.
+
+Exit: real Escrow unit/integration/invariant checks and full M1 regression pass,
+ABI/interface changes are documented, the CEO reports to the user, and work
+stops. No M2 acceptance/merge or M3 authorization is implied by passing tests.
 
 ## M3 — local integration
 

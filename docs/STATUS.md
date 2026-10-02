@@ -4,9 +4,10 @@ Last updated: 2026-10-02 (Asia/Hong_Kong)
 
 ## Current milestone
 
-M1 — MockHKD and PoGRegistry implementation has passed technical review and is
-awaiting user acceptance. Escrow custody, human approvals, reservation, and
-payment remain unauthorized and unimplemented.
+M1 — MockHKD and PoGRegistry implementation has passed technical review and was
+accepted by the user on 2026-10-02, with Hank's offline approval confirmed by the
+user. Archive M1 by merging and creating its formal immutable version before
+starting the authorized M2 Escrow implementation. M3 remains unauthorized.
 
 ## Completed
 
@@ -68,20 +69,25 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 - M1 candidate branch: `codex/blockchain-m1-verified`.
 - Draft review: <https://github.com/Eason-NotFound/PoG/pull/1>.
 - Published immutable technical snapshot: `blockchain-v0.1.0-m1-rc.1`.
-- Server-side main review/CI gates and version-tag protection are active.
-- Publication does not imply user acceptance, permission to merge, or M2
-  authorization. GitHub CI results are tracked on the PR.
+- The user authorized removal of mandatory GitHub human reviews on 2026-10-02;
+  main still requires PR/CI and forbids deletion/force push. Version tags remain
+  immutable. The existing ruleset was updated in place and read back before merge.
+- M1 merge/version archival and subsequent M2 are explicitly authorized. GitHub
+  CI results are tracked on the PR. No online Hank review is claimed.
 
 ## Scope guard
 
 - No `ProcurementEscrow.sol` custody, approval, reservation, or payment implementation.
-- No deployment, merge, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink,
-  or zkML work. Commits, candidate publication and a draft PR are separately
-  authorized repository-setup work, not the next blockchain milestone.
+- No deployment, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink, or zkML
+  work. M1 merge/version archival is authorized; M2 may begin only afterward.
+- M2 completes at a technically verified candidate and user report. Do not
+  auto-accept/merge M2 or start M3.
 
 ## Next gate
 
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.
-Stop at M1 and report to the user. Explicit user authorization is required before
-M2 starts. See `docs/VERSION_CONTROL.md` for repository publication and version gates.
+The user has accepted M1 and authorized its merge/version archival followed by
+M2. M2 includes the explicit reserveAmount approval input and execution-time
+human-expiry/renewal semantics. AI expiry/correction still uses cancellation and
+new procurement IDs. See `docs/VERSION_CONTROL.md` for version gates.
