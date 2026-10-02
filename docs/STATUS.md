@@ -4,10 +4,22 @@ Last updated: 2026-10-02 (Asia/Hong_Kong)
 
 ## Current milestone
 
-M1 — MockHKD and PoGRegistry implementation has passed technical review and was
-accepted by the user on 2026-10-02, with Hank's offline approval confirmed by the
-user. Archive M1 by merging and creating its formal immutable version before
-starting the authorized M2 Escrow implementation. M3 remains unauthorized.
+Latest user change: the original M2 direct-vendor implementation is superseded.
+The coder has stopped, leaving one untracked, uncompiled and untested
+`contracts/src/ProcurementEscrow.sol` draft. No M2 tests, ABI, commits or deployment
+were produced. Preserve the draft, but do not treat it as a current candidate.
+The revised flow is in `docs/FOUNDATION_SETTLEMENT_FLOW.md`; Donors individually
+convert simulated HKD and donate stablecoins directly to a project's locked
+Escrow. Both conversions are simulated; Recipient confirms receipt, Foundation
+pays HKD to the vendor. Clarify invoice-limited versus full-project release amount
+before revised dispatch.
+M1 formal tag `blockchain-v0.1.0-m1` points to merged commit `45e6bab`; main/tag CI
+passed. Historical M1 is unchanged. M3 remains unauthorized.
+
+M1 — MockHKD and PoGRegistry passed technical review, were accepted by the user on
+2026-10-02 with Hank's offline approval, and were merged and formally archived.
+The original M2 began afterward but was stopped by the user's architecture
+change. Revised M2 implementation has not been dispatched. M3 is unauthorized.
 
 ## Completed
 
@@ -64,30 +76,40 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 ## Repository publication
 
 - Author: `Eason-NotFound <23260068@life.hkbu.edu.hk>`.
-- `main` was initialized with empty root commit `03368f7`; it contains no
-  application code.
-- M1 candidate branch: `codex/blockchain-m1-verified`.
-- Draft review: <https://github.com/Eason-NotFound/PoG/pull/1>.
+- `main` was originally initialized with empty root `03368f7`; it now contains
+  accepted M1 at merge commit `45e6bab`.
+- Historical M1 candidate branch: `codex/blockchain-m1-verified`.
+- Merged review: <https://github.com/Eason-NotFound/PoG/pull/1>.
 - Published immutable technical snapshot: `blockchain-v0.1.0-m1-rc.1`.
+- Published immutable accepted version: `blockchain-v0.1.0-m1`.
+- Current design branch: `codex/blockchain-m2-escrow`; old Escrow draft is not
+  included in the new architecture documentation publication.
 - The user authorized removal of mandatory GitHub human reviews on 2026-10-02;
   main still requires PR/CI and forbids deletion/force push. Version tags remain
   immutable. The existing ruleset was updated in place and read back before merge.
-- M1 merge/version archival and subsequent M2 are explicitly authorized. GitHub
-  CI results are tracked on the PR. No online Hank review is claimed.
+- M1 merge/version archival completed with passing CI. The earlier direct-vendor
+  M2 authorization was superseded; revised coding awaits the remaining release
+  policy and updated interfaces. No online Hank review is claimed.
 
 ## Scope guard
 
-- No `ProcurementEscrow.sol` custody, approval, reservation, or payment implementation.
+- No technically verified M2 custody, approval, release or payment implementation.
+  The untracked obsolete Escrow draft is not a completed or tested deliverable.
 - No deployment, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink, or zkML
-  work. M1 merge/version archival is authorized; M2 may begin only afterward.
+  work. M1 archival is complete; revised M2 needs its new flow/interfaces frozen.
 - M2 completes at a technically verified candidate and user report. Do not
   auto-accept/merge M2 or start M3.
 
 ## Next gate
 
+The Foundation settlement architecture now takes precedence over the original
+M2 scope below. Update versioned contract/signing/API interfaces only after the
+release-amount question is resolved. Do not resume the direct-vendor implementation.
+
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.
-The user has accepted M1 and authorized its merge/version archival followed by
-M2. M2 includes the explicit reserveAmount approval input and execution-time
-human-expiry/renewal semantics. AI expiry/correction still uses cancellation and
-new procurement IDs. See `docs/VERSION_CONTROL.md` for version gates.
+M1 acceptance/archival is complete. The old direct-vendor M2 approval-input plan
+is historical, not the current release-to-Foundation interface. Re-freeze the
+current flow's signatures, deadlines, receipt proofs and settlement evidence
+after resolving the release-amount question. See `docs/VERSION_CONTROL.md` for
+version gates.

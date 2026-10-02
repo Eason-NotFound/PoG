@@ -28,6 +28,13 @@ and the user accepts M1. Passing this exit does not automatically authorize M2.
 
 ## M2 — escrow and approval gates (authorized after M1 archival)
 
+Superseded by the later Foundation settlement architecture request. The original
+implementation was stopped and its untested draft preserved. The new flow in
+`FOUNDATION_SETTLEMENT_FLOW.md` requires release-amount clarification and a revised
+versioned interface plan before coding. Donor-first simulated conversion and the
+Recipient/Foundation/vendor roles are confirmed. The original scope below is
+historical context, not authority to keep implementing direct vendor payment.
+
 User authorization: 2026-10-02, after explicit M1 acceptance and confirmation of
 Hank's offline review. Begin only after M1 is merged and formally tagged.
 

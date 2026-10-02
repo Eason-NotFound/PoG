@@ -1,5 +1,26 @@
 # PoG collaboration rules
 
+## Latest architecture change — takes precedence
+
+- On 2026-10-02 the user superseded the direct-vendor M2 plan: Foundation creates
+  the project; each Donor converts simulated HKD to stablecoins and donates to
+  that specific project's on-chain Escrow; funds are locked; PO is reviewed;
+  Invoice/goods evidence and Recipient receipt confirmation precede approval;
+  stablecoins are released to Foundation, converted back to HKD by the platform,
+  then used for the final transfer.
+- Stop the old M2 implementation and tests. Preserve any in-progress changes and
+  accepted M1 history; do not delete/rewrite them or publish an obsolete candidate.
+- `docs/FOUNDATION_SETTLEMENT_FLOW.md` captures the confirmed flow and outstanding
+  release-amount decision. The user confirmed simulated conversions, Recipient
+  receipt confirmation, and Foundation's final HKD payment to the vendor. Clarify
+  whether release is invoice-limited or all project funds before revised dispatch.
+- FundsReleased to Foundation is not supplier Paid. New state, signing, evidence
+  and settlement boundaries need an explicit versioned interface design. Do not
+  silently reuse M1's supplier-payment callback as proof of fiat supplier payment.
+- The preceding M2 coding instructions are superseded where they conflict with
+  this architecture change. M3 and real-value payment integrations remain
+  unauthorized. Do not implement real fiat conversion merely from this flow draft.
+
 ## Repository and scope
 
 - The team repository is https://github.com/Eason-NotFound/PoG.
@@ -8,14 +29,14 @@
 - M0.1 and M1 have passed technical review. The user accepted M1 on 2026-10-02
   and confirmed Hank's offline approval; no GitHub approving review was claimed.
   M1 implements MockHKD and PoGRegistry; ProcurementEscrow remains a test double.
-- The user authorized M2 only after M1 merge and immutable formal-version
-  archival. M2 implements real Escrow custody, human approvals, reservation,
-  payment, cancellation, and tests. M3 remains unauthorized.
-- M2 must add an explicit reserveAmount input to submitApproval without changing
-  ApprovalIntent EIP-712 fields. Execution counts only unexpired human approvals;
-  expired same-signer renewal uses a fresh nonce and replaces, not adds, a vote.
-  Keep the accepted M1 Registry/token code unchanged unless a necessary change is
-  explained and separately approved.
+- The original direct-vendor M2 authorization and its reserveAmount / unchanged
+  ApprovalIntent interface constraints are historical and superseded by the
+  latest architecture change above. New signing, release and settlement
+  interfaces must be versioned and frozen before revised coding. M3 remains
+  unauthorized.
+- Preserve accepted M1 contract history and tags. Any necessary new-version
+  Registry/token change must be explained and approved; do not overwrite the
+  accepted historical snapshot or silently change its interpretation.
 - Complete one authorized milestone, report actual tests and findings to the CEO
   and user, then STOP. The user must authorize the next milestone.
 - Changes to already reviewed code require a new branch, an explicit explanation
