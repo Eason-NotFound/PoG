@@ -16,6 +16,14 @@
   supplier payment, and no live AI/API/database deployments are accepted limits.
   PR #2 was merged as `61aa673`; the new annotated accepted tag is
   `blockchain-v0.2.0-m2`. Archival is complete; report and STOP. M3 is not authorized.
+- The user's subsequent request on 2026-10-03 authorizes M3.1 if no blocking
+  product decision is needed. There is none for the local-only default: implement
+  and verify Anvil startup/deployment/status/reset, independent test-role wallets,
+  mutual V2 binding and an address/ABI/bytecode manifest on chain 31337.
+  Bind RPC to 127.0.0.1 only. Preserve every accepted M1/M2 technical artifact
+  and tag. M3.2/API/relayer, M3.3/AI/payment services and M3.4/booth integration
+  are NOT authorized. Publish a verified M3.1 candidate through PR/CI, report and
+  STOP for user acceptance; do not merge or issue an accepted tag automatically.
 - Preserve M1 source, tests, ABIs, frozen specifications and immutable tags. Add
   independent `PoGRegistryV2` and `ProcurementEscrowV2`, reusing `MockHKD`.
   The obsolete direct-vendor Escrow draft is archived locally, not published.
