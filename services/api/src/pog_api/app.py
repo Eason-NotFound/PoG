@@ -27,14 +27,19 @@ from .idempotency import (
     begin_operation,
     ensure_namespace,
     validate_idempotency_key,
+    ensure_verified_namespace,
 )
+from .chain import LocalChainGateway
+from .a2 import install_a2_routes
 from .ids import new_resource_ids
 from .models import (
     AuditLog,
+    ChainTransaction,
     DeploymentInstance,
     Document,
     DocumentVersion,
     Operation,
+    OperationStep,
     Procurement,
     Project,
     Role,
@@ -132,7 +137,13 @@ def _project_response(project: Project, principal: Principal) -> ProjectResponse
         closingRule=CLOSING_RULE,
         foundationWallet=project.foundation_wallet if private else None,
         recipientWallet=project.recipient_wallet if private else None,
-        chainState=ChainState(status="off_chain_draft", verified=False),
+        chainState=ChainState(
+            status=project.chain_status,
+            verified=project.chain_status in {"active", "closing", "refundable", "closed"}
+            and project.chain_tx_hash is not None,
+            transactionHash=project.chain_tx_hash,
+            blockNumber=project.chain_block_number,
+        ),
         createdAt=project.created_at,
     )
 
@@ -145,7 +156,18 @@ def _procurement_response(procurement: Procurement) -> ProcurementResponse:
         title=procurement.title,
         vendorWallet=procurement.vendor_wallet,
         budgetCapAtomic=decimal_to_uint_string(procurement.budget_cap_atomic),
-        chainState=ChainState(status="off_chain_draft", verified=False),
+        chainState=ChainState(
+            status=procurement.chain_status,
+            verified=procurement.chain_status in {
+                "created", "po_recorded", "pre_assessed", "reserve_approval_pending", "reserved",
+                "invoice_recorded", "receipt_confirmed", "final_assessed", "release_approval_pending",
+                "funds_released", "settlement_recorded", "cancelled",
+                "settlement_approval_pending", "payment_confirmed", "cancellation_approval_pending",
+            }
+            and procurement.chain_tx_hash is not None,
+            transactionHash=procurement.chain_tx_hash,
+            blockNumber=procurement.chain_block_number,
+        ),
         createdAt=procurement.created_at,
     )
 
@@ -153,6 +175,7 @@ def _procurement_response(procurement: Procurement) -> ProcurementResponse:
 def _document_response(document: Document, version: DocumentVersion) -> DocumentResponse:
     return DocumentResponse(
         id=document.id,
+        versionId=version.id,
         procurementId=document.procurement_id,
         category=document.category,
         version=version.version,
@@ -167,7 +190,17 @@ def _document_response(document: Document, version: DocumentVersion) -> Document
     )
 
 
-def _operation_response(operation: Operation, replayed: bool) -> OperationResponse:
+def _operation_response(
+    operation: Operation, replayed: bool, steps: list[dict[str, object]] | None = None,
+) -> OperationResponse:
+    chain_verified = operation.status == "confirmed" and bool(steps) and all(
+        step.get("status") == "confirmed"
+        and isinstance(step.get("transaction"), dict)
+        and step["transaction"].get("status") == "confirmed"
+        and step["transaction"].get("receiptStatus") == 1
+        and step["transaction"].get("canonical") is True
+        for step in steps
+    )
     return OperationResponse(
         operationId=operation.id,
         status=operation.status,
@@ -175,10 +208,11 @@ def _operation_response(operation: Operation, replayed: bool) -> OperationRespon
         resourceType=operation.result_resource_type,
         resourceId=operation.result_resource_id,
         replayed=replayed,
-        chainVerified=False,
+        chainVerified=chain_verified,
         errorCode=operation.error_code,
         errorStatus=operation.error_status,
         errorMessage=operation.error_detail,
+        steps=steps,
     )
 
 
@@ -192,6 +226,16 @@ def create_app(
     factory = build_session_factory(engine)
     file_store = PrivateFileStore(settings.storage_root)
     get_session = session_dependency(factory)
+    gateway = None
+    gateway_error = None
+    if settings.chain_enabled:
+        try:
+            gateway = LocalChainGateway(
+                settings.chain_manifest,
+                Path(__file__).resolve().parents[4],
+            )
+        except Exception as exc:
+            gateway_error = str(exc)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -201,12 +245,14 @@ def create_app(
 
     app = FastAPI(
         title="PoG API",
-        version="0.1.0-a1",
+        version="0.2.0-a2-candidate",
         description=(
-            "A1 off-chain API/database foundation for FinTech #2. "
-            "No chain transactions, EIP-712 signatures, AI decisions, HKD ledger, "
-            "or confirmed payment state are implemented. Login creates a new session "
-            "on each success; logout is idempotent for the same bearer token."
+            "PoG A1 off-chain foundation with an opt-in, loopback-only A2 local-chain path. "
+            "No chain transactions are available in the default mode. A2 adds restricted "
+            "V2 operations and EIP-712 authorization through Recipient ReceiptConfirmed; "
+            "real AI, conversion, payment, release and settlement remain unavailable. "
+            "Login creates a new session on each success; logout is idempotent for the "
+            "same bearer token."
         ),
         lifespan=lifespan,
     )
@@ -226,26 +272,32 @@ def create_app(
         token_hash = session_token_hash(credentials.credentials)
         with factory() as auth_session:
             row = auth_session.execute(
-                select(SessionRecord, User, WalletAuthorization)
+                select(SessionRecord, User)
                 .join(User, User.id == SessionRecord.user_id)
-                .join(
-                    WalletAuthorization,
-                    and_(
-                        WalletAuthorization.user_id == User.id,
-                        WalletAuthorization.active.is_(True),
-                    ),
-                )
                 .where(SessionRecord.token_hash == token_hash)
             ).first()
         if row is None:
             raise APIError(401, "invalid_session", "Session token is invalid")
-        session_record, user, wallet = row
+        session_record, user = row
         if (
             session_record.revoked_at is not None
             or session_record.expires_at <= utcnow()
             or not user.active
         ):
             raise APIError(401, "session_inactive", "Session is expired, revoked or inactive")
+        with factory() as auth_session:
+            wallets = auth_session.scalars(
+                select(WalletAuthorization).where(
+                    WalletAuthorization.user_id == user.id,
+                    WalletAuthorization.active.is_(True),
+                )
+            ).all()
+        if len(wallets) != 1:
+            raise APIError(
+                409, "ambiguous_role_wallet",
+                "Session authorization requires exactly one active role-wallet",
+            )
+        wallet = wallets[0]
         return Principal(
             user_id=user.id,
             username=user.username,
@@ -255,11 +307,13 @@ def create_app(
         )
 
     def namespace(session: Session) -> DeploymentInstance:
+        if gateway is not None:
+            return ensure_verified_namespace(session, gateway)
         return ensure_namespace(session, settings.run_id, settings.instance_id)
 
     @app.get("/health", tags=["system"])
     def health():
-        return {"status": "healthy", "service": "pog-api", "version": "0.1.0-a1"}
+        return {"status": "healthy", "service": "pog-api", "version": "0.2.0-a2-candidate"}
 
     @app.get("/ready", tags=["system"])
     def ready(session: Session = Depends(get_session)):
@@ -271,7 +325,8 @@ def create_app(
                     "SELECT count(*) FROM information_schema.tables "
                     "WHERE table_schema = current_schema() "
                     "AND table_name IN ('users','sessions','operations','projects',"
-                    "'procurements','documents','document_versions','audit_logs')"
+                    "'procurements','documents','document_versions','audit_logs',"
+                    "'signing_requests','ledger_projections','donor_credit_projections')"
                 )
             )
             storage_ready = file_store.root.is_dir() and os.access(file_store.root, os.W_OK)
@@ -290,8 +345,10 @@ def create_app(
                     "adapters": adapters.statuses(),
                 },
             )
-        database_ready = revision == "84fcc48891be" and required_tables == 8
-        if not database_ready or not storage_ready:
+        expected_revision = "c31003a20003"
+        database_ready = revision == expected_revision and required_tables == 11
+        chain_ready = not settings.chain_enabled or gateway is not None
+        if not database_ready or not storage_ready or not chain_ready:
             return JSONResponse(
                 status_code=503,
                 content={
@@ -304,6 +361,7 @@ def create_app(
                         "chainVerified": False,
                     },
                     "adapters": adapters.statuses(),
+                    "chainError": gateway_error,
                 },
             )
         return {
@@ -316,12 +374,25 @@ def create_app(
                 "chainVerified": False,
             },
             "adapters": adapters.statuses(),
+            "chainGate": "verified" if gateway is not None else "disabled",
         }
 
     @app.get("/v2/deployment-config", tags=["system"])
     def deployment_config(session: Session = Depends(get_session)):
         with session.begin():
             item = namespace(session)
+        if gateway is not None:
+            return {
+                "schemaVersion": item.schema_version, "runId": item.run_id,
+                "instanceId": item.instance_id, "mode": "a2_local_verified",
+                "verified": True, "chainId": item.chain_id, "rpcUrl": item.rpc_url,
+                "contracts": {
+                    name: {"address": gateway.contract_address(name)}
+                    for name in ("MockHKD", "PoGRegistryV2", "ProcurementEscrowV2")
+                },
+                "adapters": adapters.statuses(),
+                "warning": "Local unlocked Anvil only; MockHKD has no value; AI/payment unavailable.",
+            }
         return {
             "schemaVersion": item.schema_version,
             "runId": item.run_id,
@@ -941,8 +1012,42 @@ def create_app(
             raise APIError(404, "operation_not_found", "Operation not found")
         if operation.principal_id != principal.user_id:
             raise APIError(403, "operation_forbidden", "Operation belongs to another principal")
-        return _operation_response(operation, False)
+        step_rows = session.scalars(
+            select(OperationStep).where(OperationStep.operation_id == operation.id)
+            .order_by(OperationStep.step_index)
+        ).all()
+        step_facts: list[dict[str, object]] = []
+        for step in step_rows:
+            transaction = session.scalar(
+                select(ChainTransaction).where(ChainTransaction.step_id == step.id)
+            )
+            tx_fact = None
+            if transaction is not None:
+                receipt = transaction.receipt_json or {}
+                tx_fact = {
+                    "status": transaction.status,
+                    "transactionHash": transaction.tx_hash,
+                    "receiptStatus": receipt.get("status"),
+                    "blockNumber": receipt.get("blockNumber"),
+                    "blockHash": transaction.block_hash,
+                    "canonical": transaction.canonical,
+                    "confirmedAt": transaction.confirmed_at,
+                }
+            step_facts.append({
+                "stepIndex": step.step_index,
+                "kind": step.kind,
+                "status": step.status,
+                "action": step.detail.get("action"),
+                "expectedEvent": step.detail.get("expectedEvent"),
+                "transaction": tx_fact,
+            })
+        return _operation_response(operation, False, step_facts or None)
 
+    install_a2_routes(
+        app, get_session=get_session, current_principal=current_principal,
+        namespace=namespace, gateway=gateway, gateway_error=gateway_error,
+        settings=settings,
+    )
     return app
 
 

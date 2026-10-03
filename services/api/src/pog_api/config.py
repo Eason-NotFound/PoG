@@ -15,6 +15,10 @@ class Settings:
     bind_host: str = "127.0.0.1"
     bind_port: int = 8080
     deployment_verified: bool = False
+    chain_enabled: bool = False
+    chain_manifest: Path | None = None
+    demo_signing_enabled: bool = False
+    signing_ttl_seconds: int = 300
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -31,6 +35,14 @@ class Settings:
             raise RuntimeError("POG_SESSION_TTL_SECONDS must be between 60 and 86400")
         if port < 1024 or port > 65535:
             raise RuntimeError("POG_BIND_PORT must be between 1024 and 65535")
+        chain_enabled = os.getenv("POG_A2_CHAIN_ENABLED", "false").lower() == "true"
+        demo_signing = os.getenv("POG_A2_DEMO_SIGNING_ENABLED", "false").lower() == "true"
+        manifest_value = os.getenv("POG_A2_CHAIN_MANIFEST", "")
+        signing_ttl = int(os.getenv("POG_A2_SIGNING_TTL_SECONDS", "300"))
+        if signing_ttl < 60 or signing_ttl > 3600:
+            raise RuntimeError("POG_A2_SIGNING_TTL_SECONDS must be between 60 and 3600")
+        if chain_enabled and not manifest_value:
+            raise RuntimeError("POG_A2_CHAIN_MANIFEST is required when A2 chain mode is enabled")
         return cls(
             database_url=database_url,
             storage_root=storage_root,
@@ -40,4 +52,8 @@ class Settings:
             bind_host=host,
             bind_port=port,
             deployment_verified=False,
+            chain_enabled=chain_enabled,
+            chain_manifest=Path(manifest_value).resolve() if manifest_value else None,
+            demo_signing_enabled=demo_signing,
+            signing_ttl_seconds=signing_ttl,
         )
