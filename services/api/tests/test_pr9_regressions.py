@@ -44,6 +44,14 @@ class RegressionGateway:
             "vendor": "0x00000000000000000000000000000000000000aa",
             "relayer": "0x00000000000000000000000000000000000000b1",
         }
+        # Synthetic deployment snapshot required by current signer binding.
+        # This fake remains intent-only: it never proves a real deployment.
+        self.manifest = {
+            "runId": self.run_id,
+            "chain": {"instanceId": self.instance_id, "chainId": 31337,
+                      "genesisHash": "0x" + "aa" * 32, "rpcUrl": self.rpc_url},
+            "roles": dict(self.roles),
+        }
 
     def verify(self):
         return None

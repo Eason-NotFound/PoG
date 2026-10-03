@@ -11,10 +11,11 @@ from sqlalchemy import text
 
 from pog_api.app import create_app
 from pog_api.config import Settings
-from pog_api.db import build_engine, build_session_factory
+from pog_api.db import build_session_factory
 from pog_api.models import ROLE_NAMES, Role, User, WalletAuthorization
 from pog_api.security import hash_password
-from pog_api.test_db_safety import assert_safe_test_target
+from pog_api.test_database import assert_safe_test_target, build_safe_test_engine
+from pog_api.test_db_safety import assert_safe_test_target as assert_published_safe_test_target
 
 
 TEST_DATABASE_URL = os.environ.get("POG_TEST_DATABASE_URL")
@@ -22,7 +23,8 @@ if not TEST_DATABASE_URL:
     raise RuntimeError("POG_TEST_DATABASE_URL is required; tests never fall back to SQLite")
 
 
-assert_safe_test_target(
+assert_safe_test_target(TEST_DATABASE_URL)
+assert_published_safe_test_target(
     TEST_DATABASE_URL, managed_state=os.getenv("POG_MANAGED_POSTGRES_STATE"),
     ci=os.getenv("CI"), target_confirmed=os.getenv("POG_TEST_TARGET_CONFIRMED"),
 )
@@ -30,7 +32,7 @@ assert_safe_test_target(
 
 @pytest.fixture(scope="session")
 def engine():
-    value = build_engine(TEST_DATABASE_URL)
+    value = build_safe_test_engine(TEST_DATABASE_URL)
     with value.connect() as connection:
         assert connection.dialect.name == "postgresql"
         assert connection.scalar(text("SHOW server_version_num")).startswith("17")
@@ -42,6 +44,7 @@ def engine():
 def clean_database(engine):
     tables = [
         "signing_requests",
+        "policy_projections",
         "donor_credit_projections",
         "ledger_projections",
         "receipt_proofs",

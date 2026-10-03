@@ -10,6 +10,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 import psycopg
+import pytest
 from psycopg import sql
 from sqlalchemy import inspect, text
 
@@ -99,13 +100,15 @@ def test_empty_migration_downgrade_reupgrade_and_ready_gate(tmp_path, monkeypatc
             assert response.json()["ready"] is False
         config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
         monkeypatch.setenv("POG_DATABASE_URL", target)
-        command.upgrade(config, "head")
+        command.upgrade(config, "c31003a20003")
         target_engine = build_engine(target)
         try:
             names = set(inspect(target_engine).get_table_names())
             assert {"users", "operations", "documents", "document_versions"} <= names
             with TestClient(create_app(settings)) as migrated_client:
-                assert migrated_client.get("/ready").status_code == 200
+                # Published migrations remain reversible, while this app now
+                # requires the additive review head for database readiness.
+                assert migrated_client.get("/ready").status_code == 503
             command.downgrade(config, "base")
             assert "users" not in set(inspect(target_engine).get_table_names())
             with TestClient(create_app(settings)) as downgraded_client:
@@ -134,6 +137,12 @@ def test_empty_migration_downgrade_reupgrade_and_ready_gate(tmp_path, monkeypatc
             assert {"signing_requests", "ledger_projections", "donor_credit_projections"} <= set(
                 inspect(target_engine).get_table_names()
             )
+            with TestClient(create_app(settings)) as reviewed_client:
+                assert reviewed_client.get("/ready").status_code == 200
+            with pytest.raises(RuntimeError, match="forward-only"):
+                command.downgrade(config, "c31003a20003")
+            with target_engine.connect() as connection:
+                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31003a20004"
         finally:
             target_engine.dispose()
     finally:

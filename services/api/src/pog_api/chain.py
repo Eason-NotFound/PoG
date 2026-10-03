@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections import OrderedDict
+from functools import wraps
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
+import threading
 from typing import Any
 from urllib.parse import urlparse
 
 from eth_utils import keccak
 import requests
 from web3 import HTTPProvider, Web3
+from web3.exceptions import BadResponseFormat, ProviderConnectionError, TransactionNotFound, Web3RPCError
 from web3.logs import DISCARD
 
 from .deployment_verification import verify_deployment
@@ -21,6 +28,57 @@ class ChainUnavailable(RuntimeError):
 
 class ChainMismatch(ChainUnavailable):
     pass
+
+
+class ChainNotBroadcast(ChainUnavailable):
+    """The adapter proved failure before attempting eth_sendTransaction."""
+
+
+def _rpc_read(method):
+    """Transport uncertainty is an unavailable dependency, never a missing fact."""
+    @wraps(method)
+    def guarded(*args, **kwargs):
+        try:
+            return method(*args, **kwargs)
+        except ChainUnavailable:
+            raise
+        except (requests.RequestException, OSError, TimeoutError,
+                BadResponseFormat, ProviderConnectionError, Web3RPCError) as exc:
+            raise ChainUnavailable("Local RPC read is temporarily unavailable") from exc
+    return guarded
+
+
+class _LoopbackSession(requests.Session):
+    """Never follow a redirect, even when a provider supplies its own kwargs."""
+
+    def send(self, request: Any, **kwargs: Any) -> requests.Response:
+        kwargs["allow_redirects"] = False
+        response = super().send(request, **kwargs)
+        if 300 <= response.status_code < 400:
+            response.close()
+            raise ChainMismatch("Loopback RPC redirects are forbidden")
+        return response
+
+
+def _loopback_port(rpc_url: Any) -> int:
+    if not isinstance(rpc_url, str):
+        raise ChainMismatch("A2 RPC must be loopback HTTP")
+    try:
+        parsed = urlparse(rpc_url)
+        port = parsed.port
+    except ValueError as exc:
+        raise ChainMismatch("A2 RPC must be loopback HTTP") from exc
+    # The accepted manager binds to this literal IP. Do not resolve localhost or
+    # accept URL credentials, alternate paths, query strings or redirect targets.
+    if (
+        parsed.scheme != "http" or parsed.hostname != "127.0.0.1"
+        or parsed.username is not None or parsed.password is not None
+        or parsed.path or parsed.params or parsed.query or parsed.fragment
+        or port is None or not 1024 <= port <= 65535
+        or rpc_url != f"http://127.0.0.1:{port}"
+    ):
+        raise ChainMismatch("A2 RPC must be the managed loopback HTTP URL")
+    return port
 
 
 @dataclass(frozen=True)
@@ -75,28 +133,34 @@ class LocalChainGateway:
         "PoGRegistryV2": "packages/contract-abis/v2/PoGRegistryV2.json",
         "ProcurementEscrowV2": "packages/contract-abis/v2/ProcurementEscrowV2.json",
     }
+    ROLE_NAMES = (
+        "deployerOwner", "foundation", "recipient", "aiSigner", "humanApprover",
+        "donorA", "donorB", "vendor", "relayer", "mockRedemption",
+    )
+    # Immutable accepted M3.1 verifier, not the manifest's own assertion of trust.
+    ACCEPTED_VERIFIER_SHA256 = "e3dbeb6bb92bfc739b1a6582c6d7f5baf08ac05fa1164a683259ac6bc5143586"
+    _verified_fingerprints: OrderedDict[str, None] = OrderedDict()
+    _verification_lock = threading.Lock()
 
     def __init__(self, manifest_path: Path, repository_root: Path):
+        if manifest_path.is_symlink():
+            raise ChainMismatch("A2 manifest cannot be a symlink")
         self.manifest_path = manifest_path.resolve()
         self.repository_root = repository_root.resolve()
         try:
             self.manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
         except Exception as exc:
             raise ChainUnavailable(f"Cannot read A2 manifest: {exc}") from exc
-        self._manifest_sha256 = _sha256(self.manifest_path)
         chain = self.manifest.get("chain", {})
         rpc_url = chain.get("rpcUrl", "")
-        parsed = urlparse(rpc_url)
-        if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"}:
-            raise ChainMismatch("A2 RPC must be loopback HTTP")
-        if parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in {"", "/"}:
-            raise ChainMismatch("A2 RPC must be a plain loopback endpoint")
+        self._rpc_port = _loopback_port(rpc_url)
         if chain.get("chainId") != 31337:
             raise ChainMismatch("A2 requires chainId 31337")
-        rpc_session = requests.Session()
+        rpc_session = _LoopbackSession()
         rpc_session.trust_env = False
         self.w3 = Web3(HTTPProvider(
             rpc_url, request_kwargs={"timeout": 5, "allow_redirects": False}, session=rpc_session,
+            exception_retry_configuration=None,
         ))
         self.abis: dict[str, list[dict[str, Any]]] = {}
         self.contracts: dict[str, Any] = {}
@@ -130,7 +194,129 @@ class LocalChainGateway:
                 raise ChainMismatch(f"{name} ABI package identity mismatch")
             self.artifacts[name] = artifact
             self._fixed_file_hashes[path] = _sha256(path)
+        self._verify_manifest_version()
+        self._manifest_digest = _sha256(self.manifest_path)
+        self._manifest_object_digest = hashlib.sha256(
+            json.dumps(self.manifest, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        if not self.w3.is_connected():
+            raise ChainUnavailable("A2 local RPC is unavailable")
+        self._startup_gate()
+        self._verify_artifact_deployments()
         self.verify()
+
+    def _verify_manifest_version(self) -> None:
+        if self.manifest.get("schemaVersion") != 1 or self.manifest.get("version") != {
+            "acceptedTag": "blockchain-v0.2.0-m2",
+            "acceptedMerge": "61aa673653dd31188d2627d76cbba3f97fed6137",
+            "technicalSnapshot": "810a54ea9d17c5ac80f1974035f690e49941e1e1",
+        }:
+            raise ChainMismatch("Manifest accepted contract version mismatch")
+        if self.manifest.get("foundry") != {
+            "version": "1.8.4", "commit": "50af4efe189dc64bad2b75ed6990b835de66c4ae",
+            "hardfork": "cancun", "eip170LimitBytes": 24_576,
+        }:
+            raise ChainMismatch("Manifest pinned tooling declaration mismatch")
+
+    @_rpc_read
+    def _verify_artifact_deployments(self) -> None:
+        # Preserve the independent constructor/immutable proof at every gateway
+        # startup, even when the accepted CLI verification fingerprint is cached.
+        # Fresh receipt/runtime/domain/bootstrap checks below remain uncached.
+        registry = self.contracts["PoGRegistryV2"]
+        for name, contract in self.contracts.items():
+            try:
+                verify_deployment(
+                    self.w3, name, self.manifest["contracts"][name],
+                    self.artifacts[name], self.roles, registry.address, contract,
+                )
+            except TransactionNotFound as exc:
+                raise ChainMismatch(f"{name} deployment transaction is missing") from exc
+            except (requests.RequestException, OSError, TimeoutError,
+                    BadResponseFormat, ProviderConnectionError, Web3RPCError):
+                # Some provider decode errors also inherit ValueError. Preserve
+                # transport uncertainty before interpreting proof failures below.
+                raise
+            except (ValueError, KeyError, TypeError, AttributeError) as exc:
+                raise ChainMismatch(f"{name} deployment verification failed: {exc}") from exc
+
+    def _artifact_fingerprint(self) -> str:
+        """Invalidate startup approval whenever local verification inputs change."""
+        verifier = self.repository_root / "scripts/local-chain.py"
+        if _sha256(verifier) != self.ACCEPTED_VERIFIER_SHA256:
+            raise ChainMismatch("Accepted M3.1 verifier fingerprint mismatch")
+        paths = {
+            verifier, self.manifest_path, self.manifest_path.parent / "state.json",
+            self.repository_root / "packages/contract-abis/v2/package.json",
+            Path(__file__).with_name("deployment_verification.py"),
+        }
+        for relative in self.ABI_PATHS.values():
+            paths.add(self.repository_root / relative)
+        for name in self.ABI_PATHS:
+            paths.add(self.repository_root / f"contracts/out/{name}.sol/{name}.json")
+        for baseline in ("blockchain-m1.sha256", "blockchain-m2-v2-rc.1.sha256"):
+            path = self.repository_root / "docs/baselines" / baseline
+            paths.add(path)
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if line.strip() and not line.startswith("#"):
+                    paths.add(self.repository_root / line.split(maxsplit=1)[1].lstrip("*"))
+        digest = hashlib.sha256()
+        for path in sorted(paths):
+            digest.update(str(path).encode())
+            digest.update(path.read_bytes())
+        return digest.hexdigest()
+
+    def _run_accepted_verifier(self) -> None:
+        # The accepted command anchors schema/version, owned PID, pinned tools,
+        # artifacts and constructors (including all immutable slots), canonical
+        # deployments/bootstrap, domain, owner, roles and mutual binding.
+        if self.manifest_path.name != "manifest.json":
+            raise ChainMismatch("A2 requires the managed manifest.json and adjacent owned state")
+        environment = {
+            key: value for key, value in os.environ.items()
+            if key in {"PATH", "HOME", "USER", "TMPDIR", "SYSTEMROOT"}
+        }
+        try:
+            result = subprocess.run(
+                [sys.executable, str(self.repository_root / "scripts/local-chain.py"),
+                 "verify", "--port", str(self._rpc_port),
+                 "--state-dir", str(self.manifest_path.parent)],
+                cwd=self.repository_root, env=environment,
+                capture_output=True, text=True, timeout=45, check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise ChainUnavailable("Accepted local deployment verification is unavailable") from exc
+        if result.returncode != 0:
+            raise ChainMismatch("Accepted local deployment verification failed: " + result.stderr.strip()[:600])
+        try:
+            report = json.loads(result.stdout)
+        except (ValueError, TypeError) as exc:
+            raise ChainMismatch("Accepted deployment verifier returned an invalid report") from exc
+        if (
+            report.get("status") != "ready" or report.get("runId") != self.run_id
+            or report.get("instanceId") != self.instance_id
+            or report.get("rpcUrl") != self.rpc_url or report.get("chainId") != 31337
+            or Path(report.get("manifestPath", "")).resolve() != self.manifest_path
+        ):
+            raise ChainMismatch("Accepted deployment report does not identify this manifest")
+
+    def _startup_gate(self) -> None:
+        try:
+            fingerprint = self._artifact_fingerprint()
+            with self._verification_lock:
+                if fingerprint not in self._verified_fingerprints:
+                    self._run_accepted_verifier()
+                    if self._artifact_fingerprint() != fingerprint:
+                        raise ChainMismatch("Deployment inputs changed during verification")
+                    self._verified_fingerprints[fingerprint] = None
+                    if len(self._verified_fingerprints) > 32:
+                        self._verified_fingerprints.popitem(last=False)
+                self._verified_fingerprints.move_to_end(fingerprint)
+            self._verified_fingerprint = fingerprint
+        except ChainUnavailable:
+            raise
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise ChainMismatch("Incomplete or invalid managed deployment inputs") from exc
 
     @property
     def run_id(self) -> str:
@@ -153,11 +339,33 @@ class LocalChainGateway:
         return {key: Web3.to_checksum_address(value) for key, value in self.manifest["roles"].items()}
 
     def verify(self) -> None:
-        if _sha256(self.manifest_path) != self._manifest_sha256:
-            raise ChainMismatch("Deployment manifest changed; restart and verify explicitly")
-        for path, expected in self._fixed_file_hashes.items():
-            if _sha256(path) != expected:
-                raise ChainMismatch("Accepted artifact or ABI file changed")
+        try:
+            self._verify_fresh_deployment()
+        except ChainUnavailable:
+            raise
+        except Exception as exc:
+            raise ChainUnavailable("Fresh local deployment verification is unavailable or invalid") from exc
+
+    def _manifest_receipt(self, recorded: dict[str, Any]) -> Any:
+        try:
+            receipt = self.w3.eth.get_transaction_receipt(recorded["transactionHash"])
+        except TransactionNotFound as exc:
+            raise ChainMismatch("Recorded deployment/bootstrap transaction is missing") from exc
+        if receipt is None:
+            raise ChainMismatch("Recorded deployment/bootstrap receipt is missing")
+        return receipt
+
+    def _verify_fresh_deployment(self) -> None:
+        # Successful startup verification is reusable only for these exact local
+        # inputs. Chain/instance/canonical/runtime/authority checks remain fresh.
+        if (
+            _sha256(self.manifest_path) != self._manifest_digest
+            or hashlib.sha256(json.dumps(
+                self.manifest, sort_keys=True, separators=(",", ":")
+            ).encode()).hexdigest() != self._manifest_object_digest
+            or self._artifact_fingerprint() != self._verified_fingerprint
+        ):
+            raise ChainMismatch("Verified deployment inputs changed; reopen the gateway")
         if not self.w3.is_connected():
             raise ChainUnavailable("A2 local RPC is unavailable")
         if self.w3.eth.chain_id != 31337:
@@ -169,27 +377,16 @@ class LocalChainGateway:
         actual_instance = (metadata.get("result") or {}).get("instanceId")
         if actual_instance != self.instance_id:
             raise ChainMismatch("Anvil instanceId changed")
-        role_values = [value.lower() for value in self.roles.values()]
-        if len(role_values) != 10 or len(set(role_values)) != 10:
-            raise ChainMismatch("Manifest roles must be ten distinct wallets")
-        role_names = ("deployerOwner", "foundation", "recipient", "aiSigner", "humanApprover",
-                      "donorA", "donorB", "vendor", "relayer", "mockRedemption")
+        roles = self.roles
         accounts = self.w3.eth.accounts
-        if set(self.roles) != set(role_names) or len(accounts) != len(role_names) or any(
-            self.roles[name].lower() != accounts[index].lower() for index, name in enumerate(role_names)
+        role_values = [value.lower() for value in roles.values()]
+        if (
+            set(roles) != set(self.ROLE_NAMES) or len(accounts) != 10
+            or len(role_values) != 10 or len(set(role_values)) != 10
+            or any(roles[name].lower() != accounts[index].lower()
+                   for index, name in enumerate(self.ROLE_NAMES))
         ):
-            raise ChainMismatch("Manifest role mapping differs from managed Anvil accounts")
-        if self.manifest.get("schemaVersion") != 1 or self.manifest.get("version") != {
-            "acceptedTag": "blockchain-v0.2.0-m2",
-            "acceptedMerge": "61aa673653dd31188d2627d76cbba3f97fed6137",
-            "technicalSnapshot": "810a54ea9d17c5ac80f1974035f690e49941e1e1",
-        }:
-            raise ChainMismatch("Manifest accepted contract version mismatch")
-        if self.manifest.get("foundry") != {
-            "version": "1.8.4", "commit": "50af4efe189dc64bad2b75ed6990b835de66c4ae",
-            "hardfork": "cancun", "eip170LimitBytes": 24_576,
-        }:
-            raise ChainMismatch("Manifest pinned tooling declaration mismatch")
+            raise ChainMismatch("Manifest roles must be ten distinct wallets")
         registry = self.contracts["PoGRegistryV2"]
         escrow = self.contracts["ProcurementEscrowV2"]
         token = self.contracts["MockHKD"]
@@ -200,31 +397,84 @@ class LocalChainGateway:
             expected = self.manifest["contracts"][name]["runtime"]["keccak256"]
             if "0x" + keccak(code).hex() != expected:
                 raise ChainMismatch(f"{name} runtime digest mismatch")
+            recorded = self.manifest["contracts"][name]["deployment"]
+            receipt = self._manifest_receipt(recorded)
+            if (
+                int(receipt["status"]) != 1
+                or _hex(receipt["blockHash"]).lower() != recorded["blockHash"].lower()
+                or int(receipt["blockNumber"]) != recorded["blockNumber"]
+                or (receipt.get("contractAddress") or "").lower() != contract.address.lower()
+                or not self.canonical(recorded["blockNumber"], recorded["blockHash"])
+            ):
+                raise ChainMismatch(f"{name} deployment receipt is not canonical")
+            if name != "MockHKD":
+                domain = contract.functions.eip712Domain().call()
+                if (
+                    bytes(domain[0]) != b"\x0f" or domain[1] != name or domain[2] != "2"
+                    or int(domain[3]) != 31337
+                    or domain[4].lower() != contract.address.lower()
+                ):
+                    raise ChainMismatch(f"{name} EIP712 V2 domain mismatch")
+        expected_bootstrap = {
+            "bindEscrow": (registry, registry.functions.bindEscrow(escrow.address)),
+            "allowAISigner": (registry, registry.functions.setAISigner(roles["aiSigner"], True)),
+            "mintDonorA": (token, token.functions.mint(roles["donorA"], 1_000_000_000)),
+            "mintDonorB": (token, token.functions.mint(roles["donorB"], 1_000_000_000)),
+        }
+        bootstrap = self.manifest["bootstrap"]["transactions"]
+        if set(bootstrap) != set(expected_bootstrap):
+            raise ChainMismatch("Invalid bootstrap transaction manifest")
+        for name, (contract, function) in expected_bootstrap.items():
+            recorded = bootstrap[name]
+            receipt = self._manifest_receipt(recorded)
             try:
-                verify_deployment(self.w3, name, self.manifest["contracts"][name],
-                                  self.artifacts[name], self.roles, registry.address, contract)
-            except Exception as exc:
-                raise ChainMismatch(f"{name} deployment verification failed: {exc}") from exc
+                transaction = self.w3.eth.get_transaction(recorded["transactionHash"])
+            except TransactionNotFound as exc:
+                raise ChainMismatch(f"{name} bootstrap transaction is missing") from exc
+            if transaction is None:
+                raise ChainMismatch(f"{name} bootstrap transaction is missing")
+            if (
+                int(receipt["status"]) != 1
+                or _hex(receipt["blockHash"]).lower() != recorded["blockHash"].lower()
+                or int(receipt["blockNumber"]) != recorded["blockNumber"]
+                or not self.canonical(recorded["blockNumber"], recorded["blockHash"])
+                or transaction["from"].lower() != roles["deployerOwner"].lower()
+                or (transaction.get("to") or "").lower() != contract.address.lower()
+                or _hex(transaction["input"]).lower() != function._encode_transaction_data().lower()
+            ):
+                raise ChainMismatch(f"{name} bootstrap transaction is not canonical or fixed")
+        if registry.functions.owner().call().lower() != roles["deployerOwner"].lower():
+            raise ChainMismatch("Registry owner mismatch")
         if registry.functions.escrow().call().lower() != escrow.address.lower():
             raise ChainMismatch("Registry/Escrow binding mismatch")
         if escrow.functions.registry().call().lower() != registry.address.lower():
             raise ChainMismatch("Escrow/Registry binding mismatch")
         if token.functions.decimals().call() != 6:
             raise ChainMismatch("MockHKD decimals mismatch")
+        if token.functions.name().call() != "Mock Hong Kong Dollar" or token.functions.symbol().call() != "mHKD":
+            raise ChainMismatch("MockHKD token metadata mismatch")
         if not registry.functions.aiSigners(self.roles["aiSigner"]).call():
             raise ChainMismatch("Manifest AI signer is not allowlisted")
 
     def contract_address(self, name: str) -> str:
         return self.contracts[name].address
 
+    @_rpc_read
     def latest_timestamp(self) -> int:
         self.verify()
         return int(self.w3.eth.get_block("latest")["timestamp"])
 
-    def call(self, contract: str, function: str, *args: Any) -> Any:
+    @_rpc_read
+    def call(self, contract: str, function: str, *args: Any, block_identifier: Any = "latest") -> Any:
         self.verify()
-        return getattr(self.contracts[contract].functions, function)(*args).call()
+        try:
+            return getattr(self.contracts[contract].functions, function)(*args).call(block_identifier=block_identifier)
+        except ChainUnavailable:
+            raise
+        except Exception as exc:
+            raise ChainUnavailable("Contract getter is unavailable or invalid") from exc
 
+    @_rpc_read
     def prepare(self, action: str, caller: str, args: list[Any], expected_event: str) -> PreparedEnvelope:
         self.verify()
         mapping = {
@@ -253,13 +503,26 @@ class LocalChainGateway:
         )
 
     def send(self, envelope: PreparedEnvelope) -> str:
-        self.verify()
-        tx_hash = self.w3.eth.send_transaction(
-            {"from": envelope.caller, "to": envelope.to, "chainId": envelope.chain_id,
-             "nonce": envelope.nonce, "data": envelope.data, "value": envelope.value}
-        )
+        transaction = {
+            "from": envelope.caller, "to": envelope.to, "chainId": envelope.chain_id,
+            "nonce": envelope.nonce, "data": envelope.data, "value": envelope.value,
+        }
+        try:
+            self.verify()
+            # An estimate rejection has no transaction side effect. Supplying the
+            # estimate also prevents middleware doing an implicit preflight after
+            # the worker has entered its ambiguous-send boundary.
+            transaction["gas"] = int(self.w3.eth.estimate_gas(transaction))
+            if transaction["gas"] <= 0:
+                raise ChainMismatch("Invalid local gas estimate")
+        except Exception as exc:
+            raise ChainNotBroadcast(str(exc)) from exc
+        # Every exception from this call is potentially accepted-with-response-
+        # lost. It must retain the exact prepared nonce/envelope for reconciliation.
+        tx_hash = self.w3.eth.send_transaction(transaction)
         return _hex(tx_hash)
 
+    @_rpc_read
     def find_envelope_transaction(self, envelope: PreparedEnvelope, lookback: int = 128) -> str | None:
         """Reconcile an unknown outcome by exact caller/nonce/to/data/value; never guesses by nonce alone."""
         self.verify()
@@ -278,10 +541,13 @@ class LocalChainGateway:
                     return _hex(tx["hash"])
         return None
 
+    @_rpc_read
     def receipt(self, tx_hash: str) -> dict[str, Any] | None:
         try:
             receipt = self.w3.eth.get_transaction_receipt(tx_hash)
-        except Exception:
+        except TransactionNotFound:
+            return None
+        if receipt is None:
             return None
         return {
             "transactionHash": _hex(receipt["transactionHash"]),
@@ -294,14 +560,38 @@ class LocalChainGateway:
         }
 
     def canonical(self, block_number: int, block_hash: str) -> bool:
-        try:
-            return _hex(self.w3.eth.get_block(block_number)["hash"]).lower() == block_hash.lower()
-        except Exception:
-            return False
+        from web3.exceptions import BlockNotFound
 
+        try:
+            block = self.w3.eth.get_block(block_number)
+        except BlockNotFound:
+            return False
+        except Exception as exc:
+            raise ChainUnavailable("Canonical block lookup is temporarily unavailable") from exc
+        try:
+            actual_hash = _hex(block["hash"])
+            if (len(actual_hash) != 66 or not actual_hash.startswith("0x")
+                    or len(bytes.fromhex(actual_hash[2:])) != 32
+                    or int(block["number"]) != block_number):
+                raise ValueError("Invalid canonical block identity")
+        except (KeyError, ValueError, TypeError, AttributeError) as exc:
+            raise ChainUnavailable("Canonical block lookup returned an invalid identity") from exc
+        return actual_hash.lower() == block_hash.lower()
+
+    @_rpc_read
     def block_identity(self, block_number: int) -> tuple[str, str]:
         block = self.w3.eth.get_block(block_number)
-        return _hex(block["hash"]), _hex(block["parentHash"])
+        try:
+            block_hash, parent_hash = _hex(block["hash"]), _hex(block["parentHash"])
+            if int(block["number"]) != block_number or any(
+                len(value) != 66 or not value.startswith("0x")
+                or len(bytes.fromhex(value[2:])) != 32
+                for value in (block_hash, parent_hash)
+            ):
+                raise ValueError("Invalid block identity")
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            raise ChainUnavailable("Local RPC block identity is invalid") from exc
+        return block_hash, parent_hash
 
     def deployment_start_block(self) -> int:
         return min(
@@ -309,6 +599,7 @@ class LocalChainGateway:
             for value in self.manifest["contracts"].values()
         )
 
+    @_rpc_read
     def events_in_range(self, start: int, end: int) -> list[dict[str, Any]]:
         self.verify()
         found: list[dict[str, Any]] = []
@@ -354,10 +645,13 @@ class LocalChainGateway:
                 continue
         return found
 
+    @_rpc_read
     def receipt_with_events(self, tx_hash: str, event_name: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
         try:
             raw = self.w3.eth.get_transaction_receipt(tx_hash)
-        except Exception:
+        except TransactionNotFound:
+            return None, []
+        if raw is None:
             return None, []
         serial = {
             "transactionHash": _hex(raw["transactionHash"]),
@@ -368,6 +662,7 @@ class LocalChainGateway:
         }
         return serial, self.decode_expected_event(raw, event_name)
 
+    @_rpc_read
     def sign_typed_data(self, signer: str, data: dict[str, Any]) -> str:
         self.verify()
         response = self.w3.provider.make_request(

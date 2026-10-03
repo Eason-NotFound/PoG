@@ -23,5 +23,5 @@ export PYTHONPATH="$REPO_ROOT/services/api/src"
 (
   cd services/api
   ../../.local/runtime/bin/alembic upgrade head
-  ../../.local/runtime/bin/python -m pytest
+  ../../.local/runtime/bin/python -m pytest tests unit_tests --tb=short
 )

@@ -14,7 +14,7 @@ from .db import build_engine, build_session_factory
 from .idempotency import ensure_namespace, ensure_verified_namespace
 from .models import ROLE_NAMES, Role, User, WalletAuthorization
 from .security import hash_password
-from .chain import LocalChainGateway
+from .chain import LocalChainGateway, ChainUnavailable
 from .worker import ChainIndexer, ChainWorker
 
 
@@ -230,7 +230,12 @@ def run_chain_service(kind: str, once: bool, interval: float, rebuild: bool = Fa
             service.once()
             return 0
         while True:
-            worked = service.once()
+            try:
+                worked = service.once()
+            except ChainUnavailable:
+                # Outage is not evidence of a reorg or failed send; retry the
+                # next bounded reconciliation tick, never assign a new nonce.
+                worked = False
             if not worked:
                 time.sleep(interval)
     except KeyboardInterrupt:

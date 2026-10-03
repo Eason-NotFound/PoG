@@ -8,13 +8,20 @@ from urllib.parse import urlsplit, urlunsplit
 import psycopg
 from psycopg import sql
 
-from pog_api.test_db_safety import validate_test_database_url
+from pog_api.test_database import assert_safe_test_target
 
 
 def main() -> None:
     if os.getenv("POG_ALLOW_TEST_DB_RESET") != "1":
         raise RuntimeError("POG_ALLOW_TEST_DB_RESET=1 is required")
-    state = Path(os.environ["POG_MANAGED_POSTGRES_STATE"]).resolve()
+    url = os.getenv("POG_TEST_DATABASE_URL")
+    # Prove the exact target before resolving an ownership marker or allowing
+    # libpq to see a connection string, including the administrative connection.
+    target = assert_safe_test_target(url)
+    managed_state = os.getenv("POG_MANAGED_POSTGRES_STATE")
+    if not managed_state:
+        raise RuntimeError("POG_MANAGED_POSTGRES_STATE is required for database reset")
+    state = Path(managed_state).resolve()
     marker_path = state / "managed.json"
     marker = json.loads(marker_path.read_text(encoding="utf-8"))
     if (
@@ -22,8 +29,6 @@ def main() -> None:
         or marker.get("testDatabase") != "pog_api_test"
     ):
         raise RuntimeError("Managed PostgreSQL marker is invalid")
-    url = os.environ["POG_TEST_DATABASE_URL"]
-    target = validate_test_database_url(url)
     plain = url.replace("postgresql+psycopg://", "postgresql://", 1)
     parsed = urlsplit(plain)
     database = target.database

@@ -12,9 +12,10 @@ from sqlalchemy import text
 from pog_api.app import create_app
 from pog_api.chain import LocalChainGateway
 from pog_api.config import Settings
-from pog_api.db import build_engine, build_session_factory
+from pog_api.db import build_session_factory
 from pog_api.models import ROLE_NAMES, Role, User, WalletAuthorization
 from pog_api.security import hash_password
+from pog_api.test_database import assert_safe_test_target as assert_strict_safe_test_target, build_safe_test_engine
 from pog_api.test_db_safety import assert_safe_test_target
 from pog_api.worker import ChainIndexer, ChainWorker
 from pog_api.typed_data import (
@@ -23,7 +24,8 @@ from pog_api.typed_data import (
 )
 
 
-DATABASE_URL = os.environ["POG_TEST_DATABASE_URL"]
+DATABASE_URL = os.environ.get("POG_TEST_DATABASE_URL") or ""
+assert_strict_safe_test_target(DATABASE_URL)
 MANIFEST = Path(os.environ["POG_A2_LIVE_MANIFEST"]).resolve()
 REPOSITORY = Path(__file__).resolve().parents[3]
 PASSWORD = "A2 isolated demo password 123!"
@@ -80,9 +82,9 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
         ci=os.getenv("CI"), target_confirmed=os.getenv("POG_TEST_TARGET_CONFIRMED"),
     )
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    engine = build_engine(DATABASE_URL)
+    engine = build_safe_test_engine(DATABASE_URL)
     tables = [
-        "signing_requests", "donor_credit_projections", "ledger_projections",
+        "signing_requests", "policy_projections", "donor_credit_projections", "ledger_projections",
         "receipt_proofs", "document_versions", "risk_reports", "payment_operation_links",
         "documents", "approval_records", "procurements", "operation_steps",
         "chain_transactions", "audit_logs", "wallet_authorizations", "sessions", "projects",
@@ -400,7 +402,9 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
             ) == 51000000
             assert gateway.w3.provider.make_request("evm_revert", [snapshot])["result"] is True
             gateway.w3.provider.make_request("evm_mine", [])
-            indexer.rebuild()
+            # Automatic once must discover the orphaned confirmation even when
+            # the replacement branch is shorter; operators do not hand-rebuild.
+            assert indexer.once() is True
             assert gateway.call(
                 "ProcurementEscrowV2", "donorCredit", project["businessId"],
                 gateway.roles["donorA"],

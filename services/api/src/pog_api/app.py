@@ -28,8 +28,9 @@ from .idempotency import (
     ensure_namespace,
     validate_idempotency_key,
     ensure_verified_namespace,
+    persisted_verified_namespace,
 )
-from .chain import LocalChainGateway
+from .chain import LocalChainGateway, ChainMismatch, ChainUnavailable
 from .a2 import install_a2_routes
 from .ids import new_resource_ids
 from .models import (
@@ -228,6 +229,7 @@ def create_app(
     get_session = session_dependency(factory)
     gateway = None
     gateway_error = None
+    gateway_rejected = False
     if settings.chain_enabled:
         try:
             gateway = LocalChainGateway(
@@ -236,6 +238,7 @@ def create_app(
             )
         except Exception as exc:
             gateway_error = str(exc)
+            gateway_rejected = isinstance(exc, ChainMismatch)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -306,9 +309,33 @@ def create_app(
             session_id=session_record.id,
         )
 
-    def namespace(session: Session) -> DeploymentInstance:
+    def namespace(session: Session, *, for_chain: bool = False) -> DeploymentInstance:
+        # A1 draft/file reads use the exact persisted deployment snapshot. They
+        # are not claims of fresh chain readiness and must be restart-consistent.
+        if settings.chain_enabled and not for_chain:
+            cached = persisted_verified_namespace(session, settings.chain_manifest)
+            if cached is not None:
+                return cached
+        if gateway_rejected:
+            if for_chain:
+                raise APIError(503, "chain_gate_failed", gateway_error or "Deployment rejected")
+            return ensure_namespace(session, settings.run_id, settings.instance_id)
         if gateway is not None:
-            return ensure_verified_namespace(session, gateway)
+            try:
+                return ensure_verified_namespace(session, gateway)
+            except ChainMismatch as exc:
+                if for_chain:
+                    raise APIError(503, "chain_gate_failed", str(exc)) from exc
+                # A1 remains available in its separate unverified namespace.
+                return ensure_namespace(session, settings.run_id, settings.instance_id)
+            except ChainUnavailable:
+                pass
+        if settings.chain_enabled:
+            cached = persisted_verified_namespace(session, settings.chain_manifest)
+            if cached is not None:
+                return cached
+            if for_chain:
+                raise APIError(503, "chain_unavailable", gateway_error or "No verified deployment snapshot")
         return ensure_namespace(session, settings.run_id, settings.instance_id)
 
     @app.get("/health", tags=["system"])
@@ -326,7 +353,7 @@ def create_app(
                     "WHERE table_schema = current_schema() "
                     "AND table_name IN ('users','sessions','operations','projects',"
                     "'procurements','documents','document_versions','audit_logs',"
-                    "'signing_requests','ledger_projections','donor_credit_projections')"
+                    "'signing_requests','ledger_projections','donor_credit_projections','policy_projections')"
                 )
             )
             storage_ready = file_store.root.is_dir() and os.access(file_store.root, os.W_OK)
@@ -345,9 +372,16 @@ def create_app(
                     "adapters": adapters.statuses(),
                 },
             )
-        expected_revision = "c31003a20003"
-        database_ready = revision == expected_revision and required_tables == 11
+        expected_revision = "c31003a20004"
+        database_ready = revision == expected_revision and required_tables == 12
         chain_ready = not settings.chain_enabled or gateway is not None
+        chain_error = gateway_error
+        if settings.chain_enabled and gateway is not None:
+            try:
+                gateway.verify()
+            except Exception as exc:
+                chain_ready = False
+                chain_error = str(exc)
         if not database_ready or not storage_ready or not chain_ready:
             return JSONResponse(
                 status_code=503,
@@ -361,7 +395,7 @@ def create_app(
                         "chainVerified": False,
                     },
                     "adapters": adapters.statuses(),
-                    "chainError": gateway_error,
+                    "chainError": chain_error,
                 },
             )
         return {
@@ -374,13 +408,25 @@ def create_app(
                 "chainVerified": False,
             },
             "adapters": adapters.statuses(),
-            "chainGate": "verified" if gateway is not None else "disabled",
+            "chainGate": "verified" if settings.chain_enabled else "disabled",
+            **({"deployment": {
+                "mode": "a2_local_chain_verified", "verified": True, "chainVerified": True,
+                "runId": gateway.run_id, "instanceId": gateway.instance_id,
+                "chainId": 31337, "manifestSha256": gateway.manifest_sha256,
+            }} if settings.chain_enabled else {}),
         }
 
     @app.get("/v2/deployment-config", tags=["system"])
     def deployment_config(session: Session = Depends(get_session)):
+        if settings.chain_enabled:
+            if gateway is None:
+                raise APIError(503, "chain_unavailable", gateway_error or "Chain unavailable")
+            try:
+                gateway.verify()
+            except Exception as exc:
+                raise APIError(503, "chain_gate_failed", str(exc)) from exc
         with session.begin():
-            item = namespace(session)
+            item = namespace(session, for_chain=settings.chain_enabled)
         if gateway is not None:
             return {
                 "schemaVersion": item.schema_version, "runId": item.run_id,

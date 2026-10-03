@@ -42,3 +42,48 @@ returns 409. Receipt evidence must be uploaded by the original Recipient.
 Migration `c31003a20003` replaces the permanent nonce uniqueness constraint with
 an index excluding expired requests. Downgrade refuses when expired history
 exists, because the preceding schema cannot retain it safely.
+
+## Local review integration — additive 004
+
+The published 003 remains byte-for-byte unchanged. Successor
+`c31003a20004` adds uint/canonical-text guards, stale/unbroadcast retirement,
+canonical policy/event projections, and live-only reservation indexes. It is
+forward-only; restore a verified isolated backup with its matching application
+version for rollback. Backup restoration has not been rehearsed in this review.
+
+Replay accepts all preserved historical hashes (9189 body-only, Hank resource
+type/ID/body and procurement ID/body, and the newer resource ID/business ID/body).
+Every format independently checks the saved target plus current authorization;
+existing payload hashes, operations and audit history are never bulk rewritten.
+
+Fresh signing validates the current nonce, typed digest, material, allowed AI
+signer and human policy. PRE renewal permits accepted states 1/2/3 and human
+Reserve renewal 2/3. Review/Reject outcomes remain risk evidence, not an AI veto.
+Retirement requires never-submitted expiry/staleness, or a failed submission with
+persistent positive proof of no broadcast. Queued, ambiguous and consumed
+authorizations are protected; a new key/deadline never reuses an old signature.
+Expiry keeps `signing_request.expire` with the original operation pointer,
+deadline and chain timestamp. Other stale retirement is separately audited.
+
+Recipient uploader mismatch retains HTTP 403
+`receipt_evidence_uploader_mismatch`; durable caller/nonce collision retains
+HTTP 409 `chain_nonce_history_conflict` and `chain.nonce_conflict` audit. Definite
+read-only rejection is `not_broadcast`; transport uncertainty is not proof of it.
+Readiness freshly checks chain identity/authority and requires schema head004.
+An exact persisted snapshot supports offchain reads and authorized replay only,
+not a claim that the chain is currently verified or permission for new sends.
+
+New Receipt requests bind `receiptEvidenceDocumentVersionId` in their persisted
+context (not a new EIP-712 field). Signing and submission recheck that exact
+immutable version's namespace, procurement, category, uploader and frozen hash.
+Legacy missing context cannot be repaired by a later same-hash upload. Only
+unsubmitted prepared/signed authorization may be safely retired and rebuilt;
+new mutation is also refused whenever a submitted operation pointer exists.
+Worker checks original source before a queued Receipt creates an attempt and
+before a prepared envelope makes a new send. Invalid source is audited as
+`chain.receipt_source_blocked` / `requires_attention`, not proof of no broadcast
+and not permission to release its reserved nonce. Exact already-broadcast
+reconciliation and confirmed historical facts remain untouched.
+
+This is a local review candidate only: no GitHub update, acceptance tag, release,
+settlement, payment, closure, refund or production deployment is authorized here.

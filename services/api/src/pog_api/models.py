@@ -174,6 +174,8 @@ class Procurement(TimestampMixin, Base):
             f"budget_cap_atomic >= 0 AND budget_cap_atomic <= {UINT256_MAX}",
             name="ck_proc_budget_uint256",
         ),
+        CheckConstraint(f"reserved_amount_atomic >= 0 AND reserved_amount_atomic <= {UINT256_MAX}", name="ck_proc_reserved_uint256"),
+        CheckConstraint(f"invoice_amount_atomic >= 0 AND invoice_amount_atomic <= {UINT256_MAX}", name="ck_proc_invoice_uint256"),
     )
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     namespace_id: Mapped[UUID] = mapped_column(
@@ -361,12 +363,13 @@ class ChainTransaction(TimestampMixin, Base):
     __tablename__ = "chain_transactions"
     __table_args__ = (
         UniqueConstraint("step_id", name="uq_chain_tx_step"),
-        UniqueConstraint(
+        Index(
+            "uq_chain_tx_caller_nonce",
             "namespace_id", "caller_address", "evm_nonce_text",
-            name="uq_chain_tx_caller_nonce",
+            unique=True, postgresql_where=text("status <> 'not_broadcast'"),
         ),
         CheckConstraint(
-            "status IN ('prepared','sending','submitted','confirmed','failed','requires_attention','invalidated_instance')",
+            "status IN ('prepared','sending','submitted','confirmed','failed','requires_attention','invalidated_instance','not_broadcast')",
             name="ck_chain_tx_status",
         ),
     )
@@ -402,15 +405,16 @@ class SigningRequest(TimestampMixin, Base):
         Index(
             "uq_signing_request_nonce_family",
             "namespace_id", "contract_address", "signer_wallet", "nonce_text", "kind",
-            unique=True, postgresql_where=text("status <> 'expired'"),
+            unique=True, postgresql_where=text("status NOT IN ('expired','invalidated_stale','invalidated_instance','invalidated_not_broadcast')"),
         ),
         CheckConstraint("kind IN ('ai_pre','reserve','receipt')", name="ck_signing_kind"),
         CheckConstraint(
-            "status IN ('prepared','signed','queued','confirmed','failed','requires_attention','invalidated_instance','expired')",
+            "status IN ('prepared','signed','queued','confirmed','failed','requires_attention','invalidated_instance','expired','invalidated_stale','invalidated_not_broadcast')",
             name="ck_signing_status",
         ),
-        CheckConstraint("deadline_text ~ '^[0-9]+$'", name="ck_signing_deadline_text"),
-        CheckConstraint("nonce_text ~ '^[0-9]+$'", name="ck_signing_nonce_text"),
+        CheckConstraint("deadline_text ~ '^(0|[1-9][0-9]*)$' AND deadline_text::numeric <= 18446744073709551615", name="ck_signing_deadline_text"),
+        CheckConstraint(f"nonce_text ~ '^(0|[1-9][0-9]*)$' AND nonce_text::numeric <= {UINT256_MAX}", name="ck_signing_nonce_text"),
+        CheckConstraint("status NOT IN ('expired','invalidated_stale') OR submitted_operation_id IS NULL", name="ck_signing_terminal_unsubmitted"),
         CheckConstraint(
             "policy_epoch BETWEEN 0 AND 4294967295", name="ck_signing_policy_epoch"
         ),
@@ -448,8 +452,7 @@ class LedgerProjection(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("namespace_id", "project_id", name="uq_ledger_projection_project"),
         CheckConstraint(
-            "deposits_atomic >= 0 AND reserved_atomic >= 0 AND released_atomic >= 0 "
-            "AND returned_atomic >= 0",
+            " AND ".join(f"{field} >= 0 AND {field} <= {UINT256_MAX}" for field in ("deposits_atomic", "reserved_atomic", "released_atomic", "returned_atomic")),
             name="ck_ledger_amounts_nonnegative",
         ),
         CheckConstraint(
@@ -478,7 +481,7 @@ class DonorCreditProjection(TimestampMixin, Base):
     __tablename__ = "donor_credit_projections"
     __table_args__ = (
         UniqueConstraint("namespace_id", "project_id", "donor_wallet", name="uq_donor_credit"),
-        CheckConstraint("credit_atomic >= 0", name="ck_donor_credit_nonnegative"),
+        CheckConstraint(f"credit_atomic >= 0 AND credit_atomic <= {UINT256_MAX}", name="ck_donor_credit_nonnegative"),
     )
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     namespace_id: Mapped[UUID] = mapped_column(
@@ -490,6 +493,24 @@ class DonorCreditProjection(TimestampMixin, Base):
     donor_wallet: Mapped[str] = mapped_column(String(42), nullable=False)
     credit_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0)
     block_number: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+
+class PolicyProjection(TimestampMixin, Base):
+    __tablename__ = "policy_projections"
+    __table_args__ = (
+        UniqueConstraint("namespace_id", "project_id", name="uq_policy_projection_project"),
+        CheckConstraint("policy_epoch BETWEEN 0 AND 4294967295", name="ck_policy_projection_epoch"),
+        CheckConstraint("threshold > 0", name="ck_policy_projection_threshold"),
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    namespace_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("deployment_instances.id"), nullable=False)
+    project_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    policy_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    threshold: Mapped[int] = mapped_column(Integer, nullable=False)
+    approver_wallets: Mapped[list] = mapped_column(JSONB, nullable=False)
+    block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    block_hash: Mapped[str] = mapped_column(String(66), nullable=False)
+    tx_hash: Mapped[str] = mapped_column(String(66), nullable=False)
 
 
 class ChainEvent(TimestampMixin, Base):
@@ -505,6 +526,8 @@ class ChainEvent(TimestampMixin, Base):
     contract_address: Mapped[str] = mapped_column(String(42), nullable=False)
     tx_hash: Mapped[str] = mapped_column(String(66), nullable=False)
     log_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    block_number: Mapped[int | None] = mapped_column(BigInteger)
+    transaction_index: Mapped[int | None] = mapped_column(Integer)
     block_hash: Mapped[str] = mapped_column(String(66), nullable=False)
     event_name: Mapped[str] = mapped_column(String(100), nullable=False)
     canonical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
