@@ -3,7 +3,32 @@
 HacKU 2026 FinTech MVP. The team repository is
 [Eason-NotFound/PoG](https://github.com/Eason-NotFound/PoG).
 
-Current blockchain milestone: **M2 V2 accepted, merged and formally archived; M3 not authorized**.
+Current blockchain milestone: **M3.1 local deployment technically verified; awaiting user acceptance**.
+The user authorized M3.1 after M2 archival. Local startup/deployment/verification
+and explicit reset are implemented in Python; 32/32 new unit/live tests passed.
+No M3.2/API/relayer, AI/payment service or three-computer booth work is authorized.
+
+From the repository root:
+
+```sh
+python3 scripts/local-chain.py up
+python3 scripts/local-chain.py verify
+```
+
+Use the generated, ignored `contracts/deployments/local/manifest.json` for the
+actual addresses/instance/receipts/ABI/runtime fingerprints. Default RPC is
+`http://127.0.0.1:8545`, chain ID 31337, loopback-only with no CORS. Read
+[M3.1 runbook](docs/M3_1_RUNBOOK.md) before stopping or resetting: stop retains
+records, not a resumable business chain; a fresh chain requires explicit reset.
+Test Donor balances are a faucet, not HKD collection or conversion.
+
+Verified M3.1 source: `6295409`, published in
+[draft PR #4](https://github.com/Eason-NotFound/PoG/pull/4).
+Immutable technical snapshot:
+[`blockchain-v0.3.1-m3.1-rc.1`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.3.1-m3.1-rc.1).
+Both source push/PR workflows passed. This RC is not an accepted version;
+main remains accepted M2 until explicit M3.1 acceptance and merge.
+
 The accepted implementation is unchanged `MockHKD` plus independent `PoGRegistryV2` and
 `ProcurementEscrowV2`. MockHKD is a freely mintable, valueless 6-decimal demo token.
 The V2 contracts verify project custody, AI/Recipient/human signatures, exact
@@ -24,7 +49,8 @@ all accepted M1 source/ABIs unchanged. Scope is frozen in
 [M2 V2 specification](docs/M2_V2_SPEC.md). Independent verification passed 81/81
 tests, with all five fuzz cases repeated at 2,000 runs, strict source lint, ABI
 consistency, runtime-size limits, M1 baseline 15/15 and push-guard 12/12.
-This does not imply Anvil deployment, actual AI service or real fiat payment.
+M2 itself did not deploy Anvil. M3.1 now supplies local deployment only; there is
+still no actual AI service, API/database or fiat payment integration.
 
 Verified source snapshot: `blockchain-v0.2.0-m2-rc.1` at `810a54e`.
 The user accepted M2 V2 on 2026-10-03, including AI as risk evidence, human
@@ -35,7 +61,8 @@ the new immutable accepted tag is
 Main and accepted-tag CI passed. M1 and the M2 RC remain unchanged.
 The frozen ABI package retains its original `0.2.0-m2-rc.1` artifact identifier;
 acceptance is recorded by the formal Git tag and [current status](docs/STATUS.md),
-not by rewriting verified artifacts. Stop after archival; M3 needs a separate authorization.
+not by rewriting verified artifacts. The subsequent M3.1 request authorizes only
+local deployment tooling; M3.1 acceptance and M3.2 need separate user decisions.
 
 ## Build and verify
 

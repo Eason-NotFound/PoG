@@ -74,8 +74,34 @@ stops. No M2 acceptance/merge or M3 authorization is implied by passing tests.
 
 ## M3 — local integration
 
-Planned only: Anvil deployment scripts/manifests, API/relayer integration,
-event-confirmation flow, and three booth views using preset test wallets.
+Split into explicit sub-gates. M2 acceptance did not itself authorize M3; the
+user's subsequent request on 2026-10-03 conditionally authorized M3.1. No blocking
+product choice is needed for the local-only defaults in `M3_1_SPEC.md`.
+
+### M3.1 — local Anvil deployment (authorized, not yet accepted)
+
+Implement startup/deploy/status/verify/stop/explicit-reset tools, separate demo
+role addresses, RegistryV2/EscrowV2 binding and an instance-bound deployment
+manifest. Preserve accepted Solidity, tests, dependencies, ABIs and technical
+baselines. RPC is loopback only, chain ID 31337. Test balances are a faucet,
+not fiat conversion. Exit: local/live isolated tests and full regression pass;
+verified feature PR/CI is reported to the user, then STOP for acceptance.
+
+### M3.2 — API/relayer hand-off (planned, not authorized)
+
+ABI/typed-data/nonce/deadline integration, idempotent submission, confirmed-event
+read model and deployment-instance/cache invalidation with the API/database team.
+
+### M3.3 — AI/human/payment service loop (planned, not authorized)
+
+Integrate actual off-chain risk reports, Recipient signature, final human
+decisions, Foundation release and separate simulated supplier-payment attestation
+with the AI/API/payment teams. Do not claim M3.1 runs these services.
+
+### M3.4 — three-computer booth acceptance (planned, not authorized)
+
+Foundation/Recipient/Donor interfaces share one API/chain; normal/failure/refund
+paths, cold start and supervised reset are rehearsed with the other teams.
 
 ## M4 — Base Sepolia demo readiness
 

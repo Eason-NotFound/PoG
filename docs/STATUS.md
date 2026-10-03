@@ -4,6 +4,54 @@ Last updated: 2026-10-03 (Asia/Hong_Kong)
 
 ## Current milestone
 
+M3.1 was authorized by the user's subsequent 2026-10-03 request if no blocking
+product choice was needed. None is needed for the local-only defaults frozen in
+`M3_1_SPEC.md`. Implementation and independent verification are complete:
+Python startup/deploy/status/verify/stop/confirmed-reset, pinned Anvil, three
+unchanged accepted contracts, separate roles and instance-bound manifest.
+This is a technically verified candidate, not user acceptance or authority to
+merge it, issue an accepted tag or begin M3.2.
+
+CEO independently ran `python3 scripts/test-local-chain.py --live`: 32/32 passed
+(13 unit and 19 actual isolated-node cases, 40.443 seconds, no skips). A separate
+tester ran the same suite successfully. The existing full blockchain regression
+passed 81/81; five ABIs, runtime sizes, M1 baseline 15/15, M2 technical snapshot
+18/18, push guard 12/12 and diff checks remain intact. No accepted source,
+Solidity test, ABI, dependency, compiler profile or frozen check script changed.
+
+CEO separately started the actual default `127.0.0.1:8545` chain, chain ID 31337,
+and ran read-only verification successfully. The three contracts are bound,
+the test AI signer is allowlisted, both Donors hold 1,000 mHKD each, and no
+project/donation/allowance was pre-created. Runtime and canonical creation
+receipts including all immutable fields and EIP-712 domains were verified.
+`lsof` confirmed loopback-only listening; a cross-origin preflight returned 405
+without an allow-origin header. The current run's manifest/state/logs are local,
+ignored records, not a deployment that a GitHub reader may assume is running.
+
+Read `M3_1_RUNBOOK.md` for commands and the deliberate reset/signature limits.
+The feature branch is `codex/blockchain-m3-1-anvil`; publish through PR/CI, report
+and STOP. All later M3 sub-gates are still unauthorized.
+
+The verified implementation was published as
+`62954094c3c08bf584b4ccc60384ff2f6578c1e2` in draft/open PR #4:
+<https://github.com/Eason-NotFound/PoG/pull/4>.
+New annotated technical snapshot `blockchain-v0.3.1-m3.1-rc.1` points to that
+source commit; it is not user acceptance, a merge or a formal accepted version.
+Source push CI passed: blockchain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054929913> and local chain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054929966>.
+Source PR CI passed: blockchain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054943891> and local chain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37054943848>.
+Main remains the accepted M2 archival checkpoint `d6c2863`. Existing four M1/M2
+tags retain their original objects/targets. Later publication-status checkpoints
+do not move the M3.1 RC or modify its deployment script/tests/CI/spec/runbook.
+
+## Accepted M2 archival checkpoint
+
+The following records M2's acceptance boundary at that time; the later M3.1
+authorization above supersedes only its previous prohibition on local deployment.
+
 The user approved revised M2 on 2026-10-03: invoice-limited stablecoin release to
 Foundation, active-project locking, and proportional refunds after closure and
 human reconciliation. `docs/M2_V2_SPEC.md` freezes the scope. The coder completed
@@ -184,17 +232,20 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 - M2 V2 custody, approvals, Foundation release, mock settlement attestation and
   refund composition are technically verified and accepted. No real supplier payment proof
   or actual AI service is claimed; the obsolete draft is not a deliverable.
-- No deployment, proxy, NFT, DAO, real stablecoin, cross-chain, Chainlink, or zkML
-  work. M1 archival is complete; revised M2 scope is frozen in `M2_V2_SPEC.md`.
-- The authorized M2 merge/archive is complete. Report and stop; do not deploy
-  Anvil, implement API/model/database/payment services or start M3.
+- M3.1 adds local Anvil deployment only. No public deployment, proxy, NFT, DAO,
+  real stablecoin, cross-chain, Chainlink or zkML work. M1/M2 archival and their
+  accepted technical artifacts remain intact.
+- Do not implement API/model/database/payment services, frontend wallets or
+  three-computer booth integration under M3.1. Local unlocked accounts are not
+  production security, faucet mint is not exchange, and reset discards chain
+  business state without making old same-domain signatures cryptographically invalid.
 
 ## Next gate
 
-The user has accepted M2 V2 and authorized its merge and formal archival only.
-PR #2 and `blockchain-v0.2.0-m2` complete that gate. Report the archival result
-and stop. M3 may begin only after a NEW explicit user authorization. Do not
-resume direct-vendor implementation. Any status-only checkpoint gets normal CI too.
+M2 is accepted and archived. M3.1 is authorized, technically verified and
+published as a draft candidate; report and stop for the user's acceptance. Do not automatically
+merge M3.1 or begin M3.2. Do not resume direct-vendor implementation. Status-only
+publication checkpoints also use normal PR/CI and never move existing tags.
 
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.

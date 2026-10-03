@@ -1,0 +1,82 @@
+{
+  "exampleOnly": true,
+  "notADeployment": true,
+  "schemaVersion": 1,
+  "runId": "GENERATED_PER_OWNED_LOCAL_RUN",
+  "chain": {
+    "chainId": 31337,
+    "rpcUrl": "http://127.0.0.1:8545",
+    "genesisHash": "GENERATED_FROM_BLOCK_ZERO",
+    "instanceId": "GENERATED_BY_ANVIL_METADATA"
+  },
+  "version": {
+    "acceptedTag": "blockchain-v0.2.0-m2",
+    "acceptedMerge": "61aa673653dd31188d2627d76cbba3f97fed6137",
+    "technicalSnapshot": "810a54ea9d17c5ac80f1974035f690e49941e1e1"
+  },
+  "foundry": {
+    "version": "1.8.4",
+    "commit": "50af4efe189dc64bad2b75ed6990b835de66c4ae",
+    "hardfork": "cancun",
+    "eip170LimitBytes": 24576
+  },
+  "roles": {
+    "deployerOwner": "ANVIL_ACCOUNT_0_PUBLIC_ADDRESS",
+    "foundation": "ANVIL_ACCOUNT_1_PUBLIC_ADDRESS",
+    "recipient": "ANVIL_ACCOUNT_2_PUBLIC_ADDRESS",
+    "aiSigner": "ANVIL_ACCOUNT_3_PUBLIC_ADDRESS",
+    "humanApprover": "ANVIL_ACCOUNT_4_PUBLIC_ADDRESS",
+    "donorA": "ANVIL_ACCOUNT_5_PUBLIC_ADDRESS",
+    "donorB": "ANVIL_ACCOUNT_6_PUBLIC_ADDRESS",
+    "vendor": "ANVIL_ACCOUNT_7_PUBLIC_ADDRESS",
+    "relayer": "ANVIL_ACCOUNT_8_PUBLIC_ADDRESS",
+    "mockRedemption": "ANVIL_ACCOUNT_9_PUBLIC_ADDRESS"
+  },
+  "contracts": {
+    "MockHKD": {
+      "address": "GENERATED_DEPLOYMENT_ADDRESS",
+      "constructorArguments": [],
+      "deployment": {
+        "transactionHash": "ACTUAL_RECEIPT_TRANSACTION_HASH",
+        "blockHash": "ACTUAL_CANONICAL_RECEIPT_BLOCK_HASH",
+        "blockNumber": "ACTUAL_INTEGER_BLOCK_NUMBER",
+        "contractAddress": "GENERATED_DEPLOYMENT_ADDRESS"
+      },
+      "abi": {
+        "path": "packages/contract-abis/v2/MockHKD.json",
+        "sha256": "ACTUAL_ABI_FILE_SHA256",
+        "artifactId": "@pog/contracts-v2@0.2.0-m2-rc.1"
+      },
+      "artifact": {
+        "path": "contracts/out/MockHKD.sol/MockHKD.json",
+        "creationBytecodeKeccak256": "ACTUAL_CREATION_BYTECODE_KECCAK256",
+        "compilerVersion": "0.8.24+commit.e11b9ed9"
+      },
+      "runtime": {
+        "keccak256": "ACTUAL_DEPLOYED_RUNTIME_KECCAK256",
+        "sha256": "ACTUAL_DEPLOYED_RUNTIME_SHA256",
+        "sizeBytes": "ACTUAL_INTEGER_BYTE_COUNT",
+        "immutableReferences": {},
+        "templateMaskedSha256": "MASKED_TEMPLATE_SHA256",
+        "verification": "accepted-template-mask AND historical-constructor-full-runtime"
+      }
+    },
+    "PoGRegistryV2": {
+      "exampleNote": "Same complete record shape as MockHKD, constructorArguments=[roles.deployerOwner]."
+    },
+    "ProcurementEscrowV2": {
+      "exampleNote": "Same complete record shape as MockHKD, constructorArguments=[contracts.PoGRegistryV2.address]. Runtime immutable fields are reconstructed, not assumed to equal raw template."
+    }
+  },
+  "bootstrap": {
+    "tokenDecimals": 6,
+    "donorMintAtomic": "1000000000",
+    "transactions": {
+      "bindEscrow": "ACTUAL_TRANSACTION_RECEIPT_RECORD",
+      "allowAISigner": "ACTUAL_TRANSACTION_RECEIPT_RECORD",
+      "mintDonorA": "ACTUAL_TRANSACTION_RECEIPT_RECORD",
+      "mintDonorB": "ACTUAL_TRANSACTION_RECEIPT_RECORD"
+    },
+    "meaning": "Direct valueless development mint; not HKD receipt, conversion or a project donation."
+  }
+}

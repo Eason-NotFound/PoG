@@ -8,5 +8,6 @@ broadcast/
 .DS_Store
 .tools/
 .task-archives/
+contracts/deployments/local/
 __pycache__/
 *.pyc
