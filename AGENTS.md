@@ -7,7 +7,10 @@
   annotated accepted tag `blockchain-v0.3.1-m3.1` points to that merge. Preserve
   RC `6295409`, the accepted implementation and every old tag. Archive-status
   changes use a separate PR/CI and never rewrite the technical snapshot.
-  Report and STOP; M3.2 implementation is not authorized. Later implementation milestones require separate scope authorization. This latest
+  M3.1 archival required a report and STOP. The subsequently authorized and
+  published API A2 local-chain scope supersedes the earlier M3.2/API onboarding
+  stop for that scope only. A3/A4 and later milestones still require separate
+  scope authorization. This M3.1
   acceptance supersedes earlier M3.1 candidate-gate wording below, not its
   technical limits or the later milestone gates.
 - On 2026-10-02 the user superseded the direct-vendor M2 plan: Foundation creates

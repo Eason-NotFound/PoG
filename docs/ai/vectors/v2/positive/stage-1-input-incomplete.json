@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "pog.ai.input/0.2-candidate",
+  "stage": 1,
+  "claimAlias": null,
+  "projectPolicy": {
+    "version": "synthetic-policy-v1",
+    "periodStart": "2026-10-01",
+    "periodEnd": "2026-10-31",
+    "category": "teaching_materials",
+    "budgetAtomic": "100000000",
+    "unitPriceLimitAtomic": "1000000",
+    "assetDecimals": 6
+  },
+  "vendorContext": {
+    "vendorId": "synthetic-vendor-001",
+    "identityStatus": "unverified_fixture",
+    "accountHistorySnapshot": null,
+    "relatedPartySnapshot": null
+  },
+  "comparisonContext": {
+    "quoteComparatorsSnapshot": null,
+    "crossProjectDuplicateSnapshot": null,
+    "procurementHistorySnapshot": null
+  },
+  "registrySnapshot": {
+    "verified": false,
+    "blockNumber": null,
+    "blockHash": null,
+    "projectId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "procurementId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "foundation": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recipient": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "vendor": "0xcccccccccccccccccccccccccccccccccccccccc",
+    "asset": "0xdddddddddddddddddddddddddddddddddddddddd",
+    "state": "ReceiptConfirmed",
+    "reservedAmount": "80000000",
+    "poHash": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+    "invoiceHash": "0xa2571d810e8889319d490e066a4ff93d3803cd725123ad6326cfb2ab783aa5f4",
+    "invoiceAmount": "72000000",
+    "goodsHash": "0x8775520f518f06adf1ad96b01b3b10b4d2896b03d1b3659ade05c7030fbca87d",
+    "receiptDigest": "0x587c297f75307820a71ae7d837b35b04686f4f24c322cf2eebbd514759a8195f",
+    "currentEvidenceHash": "0x4f9db4a8a491975af43a4750526b7ba0de8d10dd085e7baaedbaa653c69d0d66"
+  },
+  "deliveryData": {
+    "poVersion": "1",
+    "poQuantity": "100",
+    "grnVersion": "1",
+    "grnQuantity": "98",
+    "invoiceVersion": "1",
+    "invoiceQuantity": "100",
+    "inspectionVersion": null,
+    "receiptAccepted": true
+  },
+  "documents": [
+    {
+      "evidenceId": "grn-001",
+      "kind": "GRN",
+      "version": "1",
+      "contentSha256": "0xde135b88d5d08923a46268de4fd88b4b2c5169ac782076f9b7230e5e3d86fedc",
+      "leafKeccak256": "0x8775520f518f06adf1ad96b01b3b10b4d2896b03d1b3659ade05c7030fbca87d",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "invoice-001",
+      "kind": "Invoice",
+      "version": "1",
+      "contentSha256": "0x95228cf045165449bb407a0d745814d192f76cab9d6f86cddc45b1f1ce732f42",
+      "leafKeccak256": "0xa2571d810e8889319d490e066a4ff93d3803cd725123ad6326cfb2ab783aa5f4",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "po-001",
+      "kind": "PO",
+      "version": "1",
+      "contentSha256": "0xb65425d4f7e603bfee5d5ab2887d7fbbe70877058120b5fd8b421b40824d9706",
+      "leafKeccak256": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "receipt-001",
+      "kind": "Receipt",
+      "version": "1",
+      "contentSha256": "0x653a9b910b5243c001c907808aadbbb893f78a926d1b10ca6861fbc4bf3a4c10",
+      "leafKeccak256": "0x725e39cbf299bb7e8a36ed5b3f1029d69859075323ecea61fa3af29b0dba30ac",
+      "pages": [
+        1
+      ]
+    }
+  ],
+  "evidenceSnapshot": {
+    "snapshotId": "synthetic-final-release-snapshot-v2",
+    "evidenceVersion": "2",
+    "createdAt": "2026-10-03T00:00:00Z",
+    "owner": "api",
+    "deployment": {
+      "runId": "synthetic-run-001",
+      "instanceId": "synthetic-unverified-instance-001",
+      "chainId": "31337",
+      "registry": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "documentVersions": [
+      {
+        "evidenceId": "grn-001",
+        "documentId": "synthetic-grn-001",
+        "documentVersionId": "synthetic-grn-001-v1",
+        "version": "1",
+        "kind": "GRN",
+        "category": "goods_evidence",
+        "contentType": "application/pdf",
+        "sizeBytes": 686,
+        "contentSha256": "0xde135b88d5d08923a46268de4fd88b4b2c5169ac782076f9b7230e5e3d86fedc",
+        "leafKeccak256": "0x8775520f518f06adf1ad96b01b3b10b4d2896b03d1b3659ade05c7030fbca87d",
+        "pages": [
+          1
+        ]
+      },
+      {
+        "evidenceId": "invoice-001",
+        "documentId": "synthetic-invoice-001",
+        "documentVersionId": "synthetic-invoice-001-v1",
+        "version": "1",
+        "kind": "Invoice",
+        "category": "invoice",
+        "contentType": "application/pdf",
+        "sizeBytes": 690,
+        "contentSha256": "0x95228cf045165449bb407a0d745814d192f76cab9d6f86cddc45b1f1ce732f42",
+        "leafKeccak256": "0xa2571d810e8889319d490e066a4ff93d3803cd725123ad6326cfb2ab783aa5f4",
+        "pages": [
+          1
+        ]
+      },
+      {
+        "evidenceId": "po-001",
+        "documentId": "synthetic-po-001",
+        "documentVersionId": "synthetic-po-001-v1",
+        "version": "1",
+        "kind": "PO",
+        "category": "purchase_order",
+        "contentType": "application/pdf",
+        "sizeBytes": 685,
+        "contentSha256": "0xb65425d4f7e603bfee5d5ab2887d7fbbe70877058120b5fd8b421b40824d9706",
+        "leafKeccak256": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+        "pages": [
+          1
+        ]
+      },
+      {
+        "evidenceId": "receipt-001",
+        "documentId": "synthetic-receipt-001",
+        "documentVersionId": "synthetic-receipt-001-v1",
+        "version": "1",
+        "kind": "Receipt",
+        "category": "receipt_evidence",
+        "contentType": "application/pdf",
+        "sizeBytes": 690,
+        "contentSha256": "0x653a9b910b5243c001c907808aadbbb893f78a926d1b10ca6861fbc4bf3a4c10",
+        "leafKeccak256": "0x725e39cbf299bb7e8a36ed5b3f1029d69859075323ecea61fa3af29b0dba30ac",
+        "pages": [
+          1
+        ]
+      }
+    ],
+    "commitments": [
+      {
+        "evidenceRole": "goodsHash",
+        "commitmentHash": "0x8775520f518f06adf1ad96b01b3b10b4d2896b03d1b3659ade05c7030fbca87d",
+        "scheme": "raw_file_keccak256",
+        "documentVersionIds": [
+          "synthetic-grn-001-v1"
+        ],
+        "sourceRecordId": "synthetic-record-goodsHash",
+        "recipeVersion": null
+      },
+      {
+        "evidenceRole": "invoiceHash",
+        "commitmentHash": "0xa2571d810e8889319d490e066a4ff93d3803cd725123ad6326cfb2ab783aa5f4",
+        "scheme": "raw_file_keccak256",
+        "documentVersionIds": [
+          "synthetic-invoice-001-v1"
+        ],
+        "sourceRecordId": "synthetic-record-invoiceHash",
+        "recipeVersion": null
+      },
+      {
+        "evidenceRole": "poHash",
+        "commitmentHash": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+        "scheme": "raw_file_keccak256",
+        "documentVersionIds": [
+          "synthetic-po-001-v1"
+        ],
+        "sourceRecordId": "synthetic-record-poHash",
+        "recipeVersion": null
+      },
+      {
+        "evidenceRole": "receiptDigest",
+        "commitmentHash": "0x587c297f75307820a71ae7d837b35b04686f4f24c322cf2eebbd514759a8195f",
+        "scheme": "recipient_receipt_digest",
+        "documentVersionIds": [],
+        "sourceRecordId": "synthetic-unaccepted-receipt-proof-001",
+        "recipeVersion": "PoGRegistryV2/2"
+      }
+    ],
+    "externalSnapshots": []
+  }
+}

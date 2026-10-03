@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "pog.ai.input/0.2-candidate",
+  "stage": 0,
+  "claimAlias": null,
+  "projectPolicy": {
+    "version": "synthetic-policy-v1",
+    "periodStart": "2026-10-01",
+    "periodEnd": "2026-10-31",
+    "category": "teaching_materials",
+    "budgetAtomic": "100000000",
+    "unitPriceLimitAtomic": "1000000",
+    "assetDecimals": 6
+  },
+  "vendorContext": {
+    "vendorId": "synthetic-vendor-001",
+    "identityStatus": "unverified_fixture",
+    "accountHistorySnapshot": null,
+    "relatedPartySnapshot": null
+  },
+  "comparisonContext": {
+    "quoteComparatorsSnapshot": null,
+    "crossProjectDuplicateSnapshot": null,
+    "procurementHistorySnapshot": null
+  },
+  "registrySnapshot": {
+    "verified": false,
+    "blockNumber": null,
+    "blockHash": null,
+    "projectId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "procurementId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "foundation": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recipient": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "vendor": "0xcccccccccccccccccccccccccccccccccccccccc",
+    "asset": "0xdddddddddddddddddddddddddddddddddddddddd",
+    "state": "PORecorded",
+    "budgetCap": "100000000",
+    "poHash": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+    "requestHash": "0x5044d916fe931336514b0d3d3901a8570fd1a3ff6c822ae5b3bded4832166e4f",
+    "goodsRequestHash": "0x3e88704fdd2e153ec5c690688d1d977341c0708a9e0a428bb35c59f18c27a20c",
+    "currentEvidenceHash": "0xa0df269bf16024f5148da541bf4fded63cfe16ac3a43b6b1f2f0eed0716e0527"
+  },
+  "procurementData": {
+    "requestVersion": "1",
+    "category": "teaching_materials",
+    "description": "教学用品；合成采购需求",
+    "quantity": "100",
+    "quoteAmountAtomic": "80000000",
+    "poVersion": "1"
+  },
+  "documents": [
+    {
+      "evidenceId": "goods-request-001",
+      "kind": "ProcurementRequest",
+      "version": "1",
+      "contentSha256": "0xbe060cdf23e3ac633fc0b515c9a1f7dddb6f1b463d38426ef4a217d3934e4283",
+      "leafKeccak256": "0x3e88704fdd2e153ec5c690688d1d977341c0708a9e0a428bb35c59f18c27a20c",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "po-001",
+      "kind": "PO",
+      "version": "1",
+      "contentSha256": "0xb65425d4f7e603bfee5d5ab2887d7fbbe70877058120b5fd8b421b40824d9706",
+      "leafKeccak256": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "quote-001",
+      "kind": "Quote",
+      "version": "1",
+      "contentSha256": "0x21af942e06dc701f958b7a6fc5c1d5ea721bfd64f69668d57e730027a16fb806",
+      "leafKeccak256": "0x6844f12ae8bc4e466016b2e2b9c8dcd7ba67e34c2a15d7d980f7115b52b1eb78",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "request-001",
+      "kind": "ProcurementRequest",
+      "version": "1",
+      "contentSha256": "0x5894c22f1f03bb37734858a824aa96e39e37ee9bd063b0371d55c7faa1ece829",
+      "leafKeccak256": "0x5044d916fe931336514b0d3d3901a8570fd1a3ff6c822ae5b3bded4832166e4f",
+      "pages": [
+        1
+      ]
+    }
+  ],
+  "evidenceSnapshot": {
+    "snapshotId": "synthetic-prepurchase-snapshot-v1",
+    "evidenceVersion": "1",
+    "createdAt": "2026-10-03T00:00:00Z",
+    "owner": "api",
+    "deployment": {
+      "runId": "synthetic-run-001",
+      "instanceId": "synthetic-unverified-instance-001",
+      "chainId": "31337",
+      "registry": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "documentVersions": [
+      {
+        "evidenceId": "goods-request-001",
+        "documentId": "synthetic-goods-request-001",
+        "documentVersionId": "synthetic-goods-request-001-v1",
+        "version": "1",
+        "kind": "ProcurementRequest",
+        "category": "goods_request",
+        "contentType": "application/pdf",
+        "sizeBytes": 696,
+        "contentSha256": "0xbe060cdf23e3ac633fc0b515c9a1f7dddb6f1b463d38426ef4a217d3934e4283",
+        "leafKeccak256": "0x3e88704fdd2e153ec5c690688d1d977341c0708a9e0a428bb35c59f18c27a20c",
+        "pages": [
+          1
+        ]
+      },
+      {
+        "evidenceId": "po-001",
+        "documentId": "synthetic-po-001",
+        "documentVersionId": "synthetic-po-001-v1",
+        "version": "1",
+        "kind": "PO",
+        "category": "purchase_order",
+        "contentType": "application/pdf",
+        "sizeBytes": 685,
+        "contentSha256": "0xb65425d4f7e603bfee5d5ab2887d7fbbe70877058120b5fd8b421b40824d9706",
+        "leafKeccak256": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+        "pages": [
+          1
+        ]
+      },
+      {
+        "evidenceId": "quote-001",
+        "documentId": "synthetic-quote-001",
+        "documentVersionId": "synthetic-quote-001-v1",
+        "version": "1",
+        "kind": "Quote",
+        "category": "quote",
+        "contentType": "application/pdf",
+        "sizeBytes": 688,
+        "contentSha256": "0x21af942e06dc701f958b7a6fc5c1d5ea721bfd64f69668d57e730027a16fb806",
+        "leafKeccak256": "0x6844f12ae8bc4e466016b2e2b9c8dcd7ba67e34c2a15d7d980f7115b52b1eb78",
+        "pages": [
+          1
+        ]
+      },
+      {
+        "evidenceId": "request-001",
+        "documentId": "synthetic-request-001",
+        "documentVersionId": "synthetic-request-001-v1",
+        "version": "1",
+        "kind": "ProcurementRequest",
+        "category": "request",
+        "contentType": "application/pdf",
+        "sizeBytes": 690,
+        "contentSha256": "0x5894c22f1f03bb37734858a824aa96e39e37ee9bd063b0371d55c7faa1ece829",
+        "leafKeccak256": "0x5044d916fe931336514b0d3d3901a8570fd1a3ff6c822ae5b3bded4832166e4f",
+        "pages": [
+          1
+        ]
+      }
+    ],
+    "commitments": [
+      {
+        "evidenceRole": "goodsRequestHash",
+        "commitmentHash": "0x3e88704fdd2e153ec5c690688d1d977341c0708a9e0a428bb35c59f18c27a20c",
+        "scheme": "raw_file_keccak256",
+        "documentVersionIds": [
+          "synthetic-goods-request-001-v1"
+        ],
+        "sourceRecordId": "synthetic-record-goodsRequestHash",
+        "recipeVersion": null
+      },
+      {
+        "evidenceRole": "poHash",
+        "commitmentHash": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+        "scheme": "raw_file_keccak256",
+        "documentVersionIds": [
+          "synthetic-po-001-v1"
+        ],
+        "sourceRecordId": "synthetic-record-poHash",
+        "recipeVersion": null
+      },
+      {
+        "evidenceRole": "requestHash",
+        "commitmentHash": "0x5044d916fe931336514b0d3d3901a8570fd1a3ff6c822ae5b3bded4832166e4f",
+        "scheme": "raw_file_keccak256",
+        "documentVersionIds": [
+          "synthetic-request-001-v1"
+        ],
+        "sourceRecordId": "synthetic-record-requestHash",
+        "recipeVersion": null
+      }
+    ],
+    "externalSnapshots": []
+  }
+}

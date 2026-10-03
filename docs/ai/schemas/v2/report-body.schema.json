@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:report-body",
+  "title": "ReportBody 0.2 候选",
+  "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "pog.ai.report/0.2-candidate"
+    },
+    "stage": {
+      "type": "integer",
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "projectId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "procurementId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "evidenceVersion": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+    },
+    "evidenceHash": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "inputHash": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "executionMode": {
+      "enum": [
+        "synthetic_fixture",
+        "rules_only",
+        "model_and_rules"
+      ]
+    },
+    "versions": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/versions"
+    },
+    "outcome": {
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ]
+    },
+    "riskScoreBps": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "completeness": {
+      "enum": [
+        "complete",
+        "incomplete"
+      ]
+    },
+    "summary": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/text"
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceRef"
+      },
+      "maxItems": 1024,
+      "description": "按 (evidenceId,version 数值) 排序，ID 唯一；文件字段与 input.documents/documentVersions 一致，pages 为可信页集子集。"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/finding"
+      },
+      "maxItems": 1024,
+      "description": "按 (reasonCode,findingId) ASCII 排序，findingId 唯一。"
+    },
+    "missingInputs": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/missingInput"
+      },
+      "maxItems": 1024,
+      "description": "按 inputKey ASCII 排序，inputKey 唯一。"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "stage",
+    "projectId",
+    "procurementId",
+    "evidenceVersion",
+    "evidenceHash",
+    "inputHash",
+    "executionMode",
+    "versions",
+    "outcome",
+    "riskScoreBps",
+    "completeness",
+    "summary",
+    "evidenceRefs",
+    "findings",
+    "missingInputs"
+  ],
+  "additionalProperties": false,
+  "$comment": "仅该完整对象的 canonical UTF-8 bytes 进入 reportHash；报告不能包含签名字段或其他 envelope。必须语义核对 BODY.inputHash/evidenceVersion/stage/projectId/procurementId/evidenceHash、证据页码及后续签名 AssessmentInput。Schema 通过不能授权 synthetic_fixture 生产签名。",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "executionMode": {
+            "enum": [
+              "synthetic_fixture",
+              "rules_only"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "versions": {
+            "properties": {
+              "modelProvider": {
+                "type": "null"
+              },
+              "modelId": {
+                "type": "null"
+              },
+              "modelVersion": {
+                "type": "null"
+              },
+              "promptVersion": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "executionMode": {
+            "const": "model_and_rules"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "versions": {
+            "properties": {
+              "modelProvider": {
+                "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+              },
+              "modelId": {
+                "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+              },
+              "modelVersion": {
+                "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+              },
+              "promptVersion": {
+                "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "completeness": {
+            "const": "incomplete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outcome": {
+            "const": 1
+          },
+          "riskScoreBps": {
+            "type": "null"
+          },
+          "missingInputs": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "completeness": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "missingInputs": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "riskScoreBps": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outcome": {
+            "const": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "versions": {
+            "properties": {
+              "scorePolicyVersion": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "riskScoreBps": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

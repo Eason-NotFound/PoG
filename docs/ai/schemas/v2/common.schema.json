@@ -1,0 +1,903 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:common",
+  "title": "PoG AI 0.2 候选共用类型",
+  "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+  "$comment": "PoG-CJSON-0.2 是本轮选定的自有候选 profile，不等同 RFC 8785/JCS。原始 JSON 的重复键、UTF-8/BOM、孤立 surrogate、整数 token (1.0/1e0/-0)、递归 ASCII 键排序、数组语义排序及跨对象绑定必须在 schema 外校验。字符串十进制上界需要任意精度整数检查，maxLength 不能代替上界。",
+  "$defs": {
+    "text": {
+      "type": "string",
+      "maxLength": 8192,
+      "description": "Unicode scalar 序列；拒绝孤立 surrogate，不做 trim 或 Unicode 正规化。"
+    },
+    "nonemptyText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$(?![\\s\\S])",
+      "minLength": 1,
+      "maxLength": 8192,
+      "description": "非空 ASCII 标识符；排序按 ASCII 字节。"
+    },
+    "bytes32": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$(?![\\s\\S])"
+    },
+    "address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{40}$(?![\\s\\S])"
+    },
+    "uint64String": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$(?![\\s\\S])",
+      "maxLength": 20,
+      "description": "规范 uint64 十进制 string；语义校验 0 <= value <= 18446744073709551615，不转浮点。"
+    },
+    "uint256String": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$(?![\\s\\S])",
+      "maxLength": 78,
+      "description": "规范 uint256 十进制 string；语义校验 0 <= value <= 115792089237316195423570985008687907853269984665640564039457584007913129639935，不转浮点。"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$(?![\\s\\S])",
+      "description": "有效 YYYY-MM-DD；需启用 format assertion/日期校验。"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$(?![\\s\\S])",
+      "description": "有效 UTC 秒时间，无小数或其他时区偏移；需启用 format assertion。"
+    },
+    "evidenceKind": {
+      "type": "string",
+      "enum": [
+        "ProcurementRequest",
+        "Quote",
+        "PO",
+        "GRN",
+        "Invoice",
+        "Receipt",
+        "Photo",
+        "Inspection"
+      ]
+    },
+    "evidenceRef": {
+      "type": "object",
+      "properties": {
+        "evidenceId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "kind": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceKind"
+        },
+        "version": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+        },
+        "contentSha256": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "leafKeccak256": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "pages": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/page"
+              },
+              "maxItems": 1024,
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "可信 MIME 为 JPEG/PNG 时必须 null，表示文件无分页；PDF 是严格递增的可信页码子集，[] 仅表示本引用未选择页面。BODY 不带 MIME，须解析可信 DocumentVersion 再核验 null/array 和页码；不能以 [] 表示图片。"
+        }
+      },
+      "required": [
+        "evidenceId",
+        "kind",
+        "version",
+        "contentSha256",
+        "leafKeccak256",
+        "pages"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "Photo"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "pages": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "description": "kind=Photo 仅用于 JPEG/PNG；PDF 的图片页作为其它已登记 kind 的分页引用，不使用 Photo。除 Photo 的显式约束外，schema 无法验证报告引用的可信 MIME；适配器必须关联不可变 DocumentVersion。"
+    },
+    "locator": {
+      "type": "object",
+      "properties": {
+        "evidenceId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/page"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "field": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "evidenceId",
+        "page",
+        "field"
+      ],
+      "additionalProperties": false,
+      "description": "evidenceId 必须引用本报告及输入可信记录；非 null page 必须在引用 pages 数组内，非分页 JPEG/PNG 的 pages=null 且 Locator.page=null。pages=[] 的 PDF 引用不能带数值页 Locator。按 (evidenceId,page null-first,field null-first) 排序且元组唯一。"
+    },
+    "finding": {
+      "type": "object",
+      "properties": {
+        "findingId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "reasonCode": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "severity": {
+          "enum": [
+            "information",
+            "review"
+          ]
+        },
+        "message": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/text"
+        },
+        "evidenceLocators": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/locator"
+          },
+          "maxItems": 1024,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "findingId",
+        "reasonCode",
+        "severity",
+        "message",
+        "evidenceLocators"
+      ],
+      "additionalProperties": false
+    },
+    "missingInput": {
+      "type": "object",
+      "properties": {
+        "inputKey": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "reasonCode": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "requiredForStages": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "description": "递增，取 [0,1] 的非空有序子集。"
+        }
+      },
+      "required": [
+        "inputKey",
+        "reasonCode",
+        "requiredForStages"
+      ],
+      "additionalProperties": false
+    },
+    "versions": {
+      "type": "object",
+      "properties": {
+        "serviceVersion": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "ruleSetVersion": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "scorePolicyVersion": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "modelProvider": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "modelId": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "modelVersion": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "promptVersion": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extractionSchemaVersion": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        }
+      },
+      "required": [
+        "serviceVersion",
+        "ruleSetVersion",
+        "scorePolicyVersion",
+        "modelProvider",
+        "modelId",
+        "modelVersion",
+        "promptVersion",
+        "extractionSchemaVersion"
+      ],
+      "additionalProperties": false
+    },
+    "documentVersion": {
+      "type": "object",
+      "properties": {
+        "evidenceId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "documentId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "documentVersionId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "version": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+        },
+        "kind": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceKind"
+        },
+        "category": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText",
+          "description": "API A1 上传类别为 purchase_order/request/goods_request/invoice/goods_evidence/receipt_evidence。辅助类别（例如 quote）须来自另行登记的可信外部快照或后续 API 扩展，不能宣称 A1 已支持，也不能自行改写成链承诺角色。"
+        },
+        "contentType": {
+          "enum": [
+            "application/pdf",
+            "image/jpeg",
+            "image/png"
+          ]
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10485760
+        },
+        "contentSha256": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "leafKeccak256": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "pages": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/page"
+              },
+              "maxItems": 1024,
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "JPEG/PNG 必须 null；PDF 必须非空、严格递增的 1-based 可授权阅读页码数组，[] 不表示无分页。文件服务须核验真实 MIME、总页数和授权页范围。"
+        }
+      },
+      "required": [
+        "evidenceId",
+        "documentId",
+        "documentVersionId",
+        "version",
+        "kind",
+        "category",
+        "contentType",
+        "sizeBytes",
+        "contentSha256",
+        "leafKeccak256",
+        "pages"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "contentType": {
+                "enum": [
+                  "image/jpeg",
+                  "image/png"
+                ]
+              }
+            },
+            "required": [
+              "contentType"
+            ]
+          },
+          "then": {
+            "properties": {
+              "pages": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "contentType": {
+                "const": "application/pdf"
+              }
+            },
+            "required": [
+              "contentType"
+            ]
+          },
+          "then": {
+            "properties": {
+              "pages": {
+                "type": "array",
+                "items": {
+                  "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/page"
+                },
+                "maxItems": 1024,
+                "uniqueItems": true,
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "Photo"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "contentType": {
+                "enum": [
+                  "image/jpeg",
+                  "image/png"
+                ]
+              },
+              "pages": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "description": "API 文件服务或显式登记的外部快照持有的不可覆盖版本事实，非 AI 自报值；两个摘要均基于同一原文件 bytes。链文件承诺只接受 x-pog-registry-category-role-map 的精确类别映射，不把 procurement_request 或文件名当作 request 类别别名。receipt_evidence 仅为支持文件，不直接产生 receiptDigest。"
+    },
+    "commitment": {
+      "type": "object",
+      "properties": {
+        "evidenceRole": {
+          "enum": [
+            "poHash",
+            "requestHash",
+            "goodsRequestHash",
+            "invoiceHash",
+            "goodsHash",
+            "receiptDigest"
+          ]
+        },
+        "commitmentHash": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "scheme": {
+          "enum": [
+            "raw_file_keccak256",
+            "registered_manifest",
+            "recipient_receipt_digest"
+          ]
+        },
+        "documentVersionIds": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+          },
+          "maxItems": 1024,
+          "uniqueItems": true,
+          "description": "ASCII 升序；引用 documentVersions.documentVersionId。"
+        },
+        "sourceRecordId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "recipeVersion": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "evidenceRole",
+        "commitmentHash",
+        "scheme",
+        "documentVersionIds",
+        "sourceRecordId",
+        "recipeVersion"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "scheme": {
+              "const": "raw_file_keccak256"
+            },
+            "evidenceRole": {
+              "enum": [
+                "poHash",
+                "requestHash",
+                "goodsRequestHash",
+                "invoiceHash",
+                "goodsHash"
+              ]
+            },
+            "documentVersionIds": {
+              "minItems": 1,
+              "maxItems": 1
+            },
+            "recipeVersion": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "scheme": {
+              "const": "registered_manifest"
+            },
+            "evidenceRole": {
+              "enum": [
+                "poHash",
+                "requestHash",
+                "goodsRequestHash",
+                "invoiceHash",
+                "goodsHash"
+              ]
+            },
+            "documentVersionIds": {
+              "minItems": 1
+            },
+            "recipeVersion": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            }
+          }
+        },
+        {
+          "properties": {
+            "scheme": {
+              "const": "recipient_receipt_digest"
+            },
+            "evidenceRole": {
+              "const": "receiptDigest"
+            },
+            "documentVersionIds": {
+              "maxItems": 0
+            },
+            "recipeVersion": {
+              "const": "PoGRegistryV2/2"
+            }
+          }
+        }
+      ],
+      "description": "role→Registry 字段显式绑定。解析 documentVersionIds 后逐个核验 x-pog-registry-category-role-map：purchase_order→poHash、request→requestHash、goods_request→goodsRequestHash、invoice→invoiceHash、goods_evidence→goodsHash；该跨对象查表在 schema 外执行。raw_file_keccak256 等于唯一文件 leafKeccak256；registered_manifest 只能解析已批准 recipe，不新增 Merkle 算法；recipient_receipt_digest 来自已接受 Registry RecipientReceipt 记录，绝非 receipt_evidence 图片/PDF 或 Receipt 文件的 Keccak。"
+    },
+    "externalSnapshot": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "provider": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "version": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "contentSha256": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "contentKeccak256": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "provider",
+        "version",
+        "contentSha256",
+        "contentKeccak256"
+      ],
+      "additionalProperties": false,
+      "description": "供应商/关联交易/报价/历史等外部不可变快照引用；原 bytes 须可授权读取并复核，不包含私密下载 URL 或路径。"
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "instanceId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "chainId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+        },
+        "registry": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+        }
+      },
+      "required": [
+        "runId",
+        "instanceId",
+        "chainId",
+        "registry"
+      ],
+      "additionalProperties": false
+    },
+    "evidenceSnapshot": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "evidenceVersion": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+        },
+        "createdAt": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/utcTimestamp"
+        },
+        "owner": {
+          "const": "api"
+        },
+        "deployment": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/deployment"
+        },
+        "documentVersions": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/documentVersion"
+          },
+          "maxItems": 1024,
+          "description": "按 (evidenceId,version 数值) 排序，evidenceId、documentVersionId 唯一。"
+        },
+        "commitments": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/commitment"
+          },
+          "maxItems": 1024,
+          "description": "按 evidenceRole ASCII 排序且 role 唯一；必须覆盖当前阶段 Registry 承诺字段。"
+        },
+        "externalSnapshots": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/externalSnapshot"
+          },
+          "maxItems": 1024,
+          "description": "按 snapshotId ASCII 排序且唯一；context 中非 null 快照 ID 必须解析到这里。"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "evidenceVersion",
+        "createdAt",
+        "owner",
+        "deployment",
+        "documentVersions",
+        "commitments",
+        "externalSnapshots"
+      ],
+      "additionalProperties": false,
+      "description": "API 创建且不可覆盖。稳定 evidenceVersion 命名空间为 (deployment.instanceId,deployment.registry,procurementId,stage)；runId/chainId/projectId 须绑定核验，currentEvidenceHash 是快照内容而非版本分区键，其改变生成新快照并递增版本、不重置为 1。版本分配与可信来源校验在 schema 外执行。 文件类别↔role 查表、可信 MIME/页码、当前链状态和摘要相等均为 schema 外门禁。evidenceHash/inputHash/reportHash 分别承诺固定链上聚合证据/完整离链输入/报告正文，不能互相替代。"
+    },
+    "projectPolicy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "periodStart": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/date"
+        },
+        "periodEnd": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/date"
+        },
+        "category": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "budgetAtomic": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+        },
+        "unitPriceLimitAtomic": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+        },
+        "assetDecimals": {
+          "type": "integer",
+          "const": 6
+        }
+      },
+      "required": [
+        "version",
+        "periodStart",
+        "periodEnd",
+        "category",
+        "budgetAtomic",
+        "unitPriceLimitAtomic",
+        "assetDecimals"
+      ],
+      "additionalProperties": false
+    },
+    "vendorContext": {
+      "type": "object",
+      "properties": {
+        "vendorId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+        },
+        "identityStatus": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+        },
+        "accountHistorySnapshot": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "relatedPartySnapshot": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "vendorId",
+        "identityStatus",
+        "accountHistorySnapshot",
+        "relatedPartySnapshot"
+      ],
+      "additionalProperties": false
+    },
+    "comparisonContext": {
+      "type": "object",
+      "properties": {
+        "quoteComparatorsSnapshot": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "crossProjectDuplicateSnapshot": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "procurementHistorySnapshot": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "quoteComparatorsSnapshot",
+        "crossProjectDuplicateSnapshot",
+        "procurementHistorySnapshot"
+      ],
+      "additionalProperties": false
+    },
+    "domain": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "const": "PoGRegistryV2"
+        },
+        "version": {
+          "const": "2"
+        },
+        "chainId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+        },
+        "verifyingContract": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "chainId",
+        "verifyingContract"
+      ],
+      "additionalProperties": false
+    },
+    "assessmentInput": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "procurementId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "assessmentId": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "outcome": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "riskScoreBps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "evidenceHash": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "reportHash": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        "signer": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+        },
+        "nonce": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+        },
+        "deadline": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+        }
+      },
+      "required": [
+        "stage",
+        "procurementId",
+        "assessmentId",
+        "outcome",
+        "riskScoreBps",
+        "evidenceHash",
+        "reportHash",
+        "signer",
+        "nonce",
+        "deadline"
+      ],
+      "additionalProperties": false,
+      "description": "十字段顺序为现有 V2 Solidity/ABI 顺序；typed data primaryType=AIAssessment。JSON 对象 canonical 编码按 ASCII 键排序，不用于替换 ABI 编码。"
+    }
+  },
+  "x-pog-registry-category-role-map": {
+    "purchase_order": "poHash",
+    "request": "requestHash",
+    "goods_request": "goodsRequestHash",
+    "invoice": "invoiceHash",
+    "goods_evidence": "goodsHash"
+  }
+}

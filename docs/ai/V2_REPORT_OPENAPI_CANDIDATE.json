@@ -1,0 +1,3463 @@
+{
+  "openapi": "3.1.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "PoG V2 AI report transport candidate",
+    "version": "0.2-candidate-r2",
+    "description": "CHANGE_REQUIRED / UNFROZEN. 异步报告协议候选；A1无AI报告endpoint；A2 9189d8c为未验收local-only synthetic ai_pre fixture；真实HTTP adapter/报告存储/联调属于另授权A3/M3.3。本文既不部署服务，也不授权签名或有界链测试。"
+  },
+  "x-contract-status": "CHANGE_REQUIRED_UNFROZEN",
+  "x-bounded-test-approval": "NOT_APPROVED",
+  "x-source-baselines": [
+    {
+      "component": "API A1",
+      "tag": "api-v0.1.0-a1",
+      "commit": "1844186df10854cd49ccc0886f5622e71e572d8e"
+    },
+    {
+      "component": "Contracts and ABI M2",
+      "tag": "blockchain-v0.2.0-m2",
+      "commit": "61aa673653dd31188d2627d76cbba3f97fed6137"
+    },
+    {
+      "component": "Local deployment specification M3.1",
+      "tag": "blockchain-v0.3.1-m3.1",
+      "commit": "977ea6223f2ce8a9e0f0159c42c289bab4420656"
+    }
+  ],
+  "security": [
+    {
+      "serviceBearer": []
+    }
+  ],
+  "paths": {
+    "/v2/ai/assessments": {
+      "post": {
+        "operationId": "createAIAssessmentOperation",
+        "summary": "异步受理或恢复一次审核",
+        "description": "API先校验身份/scope、可信immutable input及PoG-CJSON-0.2原token/字节，再原子持久化operationId、aiRequestId、幂等记录和inputbytes后入队。新操作和同键恢复均202；终态恢复也不重新运行。Bearer服务身份不授予AI签名权。",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "1..128 ASCII标识符。稳定service principal+POST+route+deployment(runId,instanceId,chainId,Registry) namespace；绑定完整canonical inputBytes。",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$(?![\\s\\S])"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "PrePurchaseInput(stage0)或FinalReleaseInput(stage1)。UTF-8/no BOM；重复键、未知键、无效raw token及超限输入在JSON信息丢失前拒绝；客户端自填verified不能证明可信。",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "持久化后的同一操作。客户端使用Location轮询；status为queued/running/completed/error。终态不因POST重传重跑。",
+            "headers": {
+              "Location": {
+                "description": "同服务内的相对路径 /v2/ai/operations/{operationId}；operationId 必须作为单个路径参数百分号编码。",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^/v2/ai/operations/(?:[A-Za-z0-9._~-]|%[0-9A-Fa-f]{2})+$(?![\\s\\S])"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INPUT_FORMAT_INVALID"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "AUTHENTICATION_REQUIRED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Bearer 服务身份认证 challenge；不包含 credential。",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "Bearer"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "FORBIDDEN"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "RESOURCE_NOT_FOUND"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "IDEMPOTENCY_CONFLICT",
+                            "IDEMPOTENCY_KEY_EXPIRED",
+                            "REGISTRY_SNAPSHOT_STALE",
+                            "SCORING_POLICY_UNCONFIRMED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "REQUEST_TOO_LARGE"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "DOCUMENT_HASH_MISMATCH",
+                            "EVIDENCE_BINDING_MISMATCH",
+                            "CANONICALIZATION_FAILED",
+                            "VERSION_UNSUPPORTED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "RATE_LIMITED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "再次同键查询前等待的整数秒数。",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "RULE_FAILURE",
+                            "INTERNAL_ERROR"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "MODEL_FAILURE",
+                            "MODEL_OUTPUT_INVALID"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "DOCUMENT_READ_UNAVAILABLE",
+                            "REGISTRY_SNAPSHOT_UNVERIFIED",
+                            "EXTERNAL_DATA_UNAVAILABLE",
+                            "DEPENDENCY_UNAVAILABLE"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "MODEL_TIMEOUT",
+                            "REQUEST_DEADLINE_EXCEEDED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-auth-owner": "API",
+        "x-resource-authorization": "受控service principal对input deployment/project/procurement具备审核发起权限",
+        "x-idempotency": {
+          "namespace": [
+            "authenticatedServicePrincipalId",
+            "HTTPMethod",
+            "route",
+            "deployment.runId",
+            "deployment.instanceId",
+            "deployment.chainId",
+            "deployment.registry"
+          ],
+          "payloadHash": "0x + lowercase_hex(SHA-256(PoG-CJSON-0.2(complete validated input)))",
+          "idOwners": {
+            "operationId": "API",
+            "aiRequestId": "API; AI adapter must echo"
+          },
+          "sameKeyDifferentBytes": "409 IDEMPOTENCY_CONFLICT",
+          "expiry": "7 days after operation and all signing/submission unresolved work resolves; no expiry while unresolved",
+          "expiredKey": "409 IDEMPOTENCY_KEY_EXPIRED; durable key-fingerprint tombstone prevents namespace reuse",
+          "auditRetention": "Project archive policy; 7 days does not authorize deleting immutable input/report/signature/transaction audit"
+        },
+        "x-execution-budget": {
+          "totalDeadlineSeconds": 120,
+          "maxAttempts": 2,
+          "retryScope": "same operationId, aiRequestId, canonical inputBytes and immutable snapshot; same remaining total deadline",
+          "disconnectRecovery": "same key and exact input POST; known operationId GET; no automatic fresh operation"
+        },
+        "x-input-hash": "0x + lowercase_hex(Ethereum Keccak-256(same complete canonical inputBytes))",
+        "x-report-hash": "Ethereum Keccak-256(PoG-CJSON-0.2(ReportBody)) only; operation/error/signing envelopes and HTTP metadata excluded"
+      }
+    },
+    "/v2/ai/operations/{operationId}": {
+      "get": {
+        "operationId": "getAIAssessmentOperation",
+        "summary": "轮询同一审核操作",
+        "description": "再次认证并授权相同deployment/project/procurement资源；operationId不是访问凭证。任意合法操作状态均200，执行失败保持OperationEnvelope.error，不能伪造ReportBody。该资源只描述报告执行，completed不等于签名/链成功。",
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "description": "API生成并持久化的ASCII操作标识；客户端必须对路径参数URI编码。",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$(?![\\s\\S])"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "同一OperationEnvelope；queued/running和completed/error tagged union均由status确定。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "AUTHENTICATION_REQUIRED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Bearer 服务身份认证 challenge；不包含 credential。",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "const": "Bearer"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "FORBIDDEN"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "OPERATION_NOT_FOUND"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "RATE_LIMITED"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "再次同键查询前等待的整数秒数。",
+                "required": true,
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "INTERNAL_ERROR"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "受理前或读取资源时的直接错误。已受理审核的执行错误写入 OperationEnvelope.error，GET 仍为 200。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "enum": [
+                            "DEPENDENCY_UNAVAILABLE"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-auth-owner": "API",
+        "x-resource-authorization": "受控service principal对原操作deployment/project/procurement具有读取权限"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "serviceBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Service credential",
+        "description": "受控service principal凭证；API组拥有发行/撤销/过期与稳定identity/scope校验职责，不假定A1已有实现。Credential不得进入规范对象、日志或示例。"
+      }
+    },
+    "schemas": {
+      "Common": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "PoG AI 0.2 候选共用类型",
+        "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+        "$comment": "PoG-CJSON-0.2 是本轮选定的自有候选 profile，不等同 RFC 8785/JCS。原始 JSON 的重复键、UTF-8/BOM、孤立 surrogate、整数 token (1.0/1e0/-0)、递归 ASCII 键排序、数组语义排序及跨对象绑定必须在 schema 外校验。字符串十进制上界需要任意精度整数检查，maxLength 不能代替上界。",
+        "$defs": {
+          "text": {
+            "type": "string",
+            "maxLength": 8192,
+            "description": "Unicode scalar 序列；拒绝孤立 surrogate，不做 trim 或 Unicode 正规化。"
+          },
+          "nonemptyText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "identifier": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$(?![\\s\\S])",
+            "minLength": 1,
+            "maxLength": 8192,
+            "description": "非空 ASCII 标识符；排序按 ASCII 字节。"
+          },
+          "bytes32": {
+            "type": "string",
+            "pattern": "^0x[0-9a-f]{64}$(?![\\s\\S])"
+          },
+          "address": {
+            "type": "string",
+            "pattern": "^0x[0-9a-f]{40}$(?![\\s\\S])"
+          },
+          "uint64String": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$(?![\\s\\S])",
+            "maxLength": 20,
+            "description": "规范 uint64 十进制 string；语义校验 0 <= value <= 18446744073709551615，不转浮点。"
+          },
+          "uint256String": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$(?![\\s\\S])",
+            "maxLength": 78,
+            "description": "规范 uint256 十进制 string；语义校验 0 <= value <= 115792089237316195423570985008687907853269984665640564039457584007913129639935，不转浮点。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$(?![\\s\\S])",
+            "description": "有效 YYYY-MM-DD；需启用 format assertion/日期校验。"
+          },
+          "utcTimestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$(?![\\s\\S])",
+            "description": "有效 UTC 秒时间，无小数或其他时区偏移；需启用 format assertion。"
+          },
+          "evidenceKind": {
+            "type": "string",
+            "enum": [
+              "ProcurementRequest",
+              "Quote",
+              "PO",
+              "GRN",
+              "Invoice",
+              "Receipt",
+              "Photo",
+              "Inspection"
+            ]
+          },
+          "evidenceRef": {
+            "type": "object",
+            "properties": {
+              "evidenceId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "kind": {
+                "$ref": "#/components/schemas/Common/$defs/evidenceKind"
+              },
+              "version": {
+                "$ref": "#/components/schemas/Common/$defs/uint64String"
+              },
+              "contentSha256": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "leafKeccak256": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "pages": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Common/$defs/page"
+                    },
+                    "maxItems": 1024,
+                    "uniqueItems": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "可信 MIME 为 JPEG/PNG 时必须 null，表示文件无分页；PDF 是严格递增的可信页码子集，[] 仅表示本引用未选择页面。BODY 不带 MIME，须解析可信 DocumentVersion 再核验 null/array 和页码；不能以 [] 表示图片。"
+              }
+            },
+            "required": [
+              "evidenceId",
+              "kind",
+              "version",
+              "contentSha256",
+              "leafKeccak256",
+              "pages"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "Photo"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "pages": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            ],
+            "description": "kind=Photo 仅用于 JPEG/PNG；PDF 的图片页作为其它已登记 kind 的分页引用，不使用 Photo。除 Photo 的显式约束外，schema 无法验证报告引用的可信 MIME；适配器必须关联不可变 DocumentVersion。"
+          },
+          "locator": {
+            "type": "object",
+            "properties": {
+              "evidenceId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "page": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/page"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "field": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/identifier"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "evidenceId",
+              "page",
+              "field"
+            ],
+            "additionalProperties": false,
+            "description": "evidenceId 必须引用本报告及输入可信记录；非 null page 必须在引用 pages 数组内，非分页 JPEG/PNG 的 pages=null 且 Locator.page=null。pages=[] 的 PDF 引用不能带数值页 Locator。按 (evidenceId,page null-first,field null-first) 排序且元组唯一。"
+          },
+          "finding": {
+            "type": "object",
+            "properties": {
+              "findingId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "reasonCode": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "severity": {
+                "enum": [
+                  "information",
+                  "review"
+                ]
+              },
+              "message": {
+                "$ref": "#/components/schemas/Common/$defs/text"
+              },
+              "evidenceLocators": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/locator"
+                },
+                "maxItems": 1024,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "findingId",
+              "reasonCode",
+              "severity",
+              "message",
+              "evidenceLocators"
+            ],
+            "additionalProperties": false
+          },
+          "missingInput": {
+            "type": "object",
+            "properties": {
+              "inputKey": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "reasonCode": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "requiredForStages": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 2,
+                "uniqueItems": true,
+                "description": "递增，取 [0,1] 的非空有序子集。"
+              }
+            },
+            "required": [
+              "inputKey",
+              "reasonCode",
+              "requiredForStages"
+            ],
+            "additionalProperties": false
+          },
+          "versions": {
+            "type": "object",
+            "properties": {
+              "serviceVersion": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "ruleSetVersion": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "scorePolicyVersion": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "modelProvider": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "modelId": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "modelVersion": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "promptVersion": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "extractionSchemaVersion": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              }
+            },
+            "required": [
+              "serviceVersion",
+              "ruleSetVersion",
+              "scorePolicyVersion",
+              "modelProvider",
+              "modelId",
+              "modelVersion",
+              "promptVersion",
+              "extractionSchemaVersion"
+            ],
+            "additionalProperties": false
+          },
+          "documentVersion": {
+            "type": "object",
+            "properties": {
+              "evidenceId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "documentId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "documentVersionId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "version": {
+                "$ref": "#/components/schemas/Common/$defs/uint64String"
+              },
+              "kind": {
+                "$ref": "#/components/schemas/Common/$defs/evidenceKind"
+              },
+              "category": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText",
+                "description": "API A1 上传类别为 purchase_order/request/goods_request/invoice/goods_evidence/receipt_evidence。辅助类别（例如 quote）须来自另行登记的可信外部快照或后续 API 扩展，不能宣称 A1 已支持，也不能自行改写成链承诺角色。"
+              },
+              "contentType": {
+                "enum": [
+                  "application/pdf",
+                  "image/jpeg",
+                  "image/png"
+                ]
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10485760
+              },
+              "contentSha256": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "leafKeccak256": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "pages": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Common/$defs/page"
+                    },
+                    "maxItems": 1024,
+                    "uniqueItems": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "JPEG/PNG 必须 null；PDF 必须非空、严格递增的 1-based 可授权阅读页码数组，[] 不表示无分页。文件服务须核验真实 MIME、总页数和授权页范围。"
+              }
+            },
+            "required": [
+              "evidenceId",
+              "documentId",
+              "documentVersionId",
+              "version",
+              "kind",
+              "category",
+              "contentType",
+              "sizeBytes",
+              "contentSha256",
+              "leafKeccak256",
+              "pages"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "contentType": {
+                      "enum": [
+                        "image/jpeg",
+                        "image/png"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "contentType"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "pages": {
+                      "type": "null"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contentType": {
+                      "const": "application/pdf"
+                    }
+                  },
+                  "required": [
+                    "contentType"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "pages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Common/$defs/page"
+                      },
+                      "maxItems": 1024,
+                      "uniqueItems": true,
+                      "minItems": 1
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "Photo"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contentType": {
+                      "enum": [
+                        "image/jpeg",
+                        "image/png"
+                      ]
+                    },
+                    "pages": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            ],
+            "description": "API 文件服务或显式登记的外部快照持有的不可覆盖版本事实，非 AI 自报值；两个摘要均基于同一原文件 bytes。链文件承诺只接受 x-pog-registry-category-role-map 的精确类别映射，不把 procurement_request 或文件名当作 request 类别别名。receipt_evidence 仅为支持文件，不直接产生 receiptDigest。"
+          },
+          "commitment": {
+            "type": "object",
+            "properties": {
+              "evidenceRole": {
+                "enum": [
+                  "poHash",
+                  "requestHash",
+                  "goodsRequestHash",
+                  "invoiceHash",
+                  "goodsHash",
+                  "receiptDigest"
+                ]
+              },
+              "commitmentHash": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "scheme": {
+                "enum": [
+                  "raw_file_keccak256",
+                  "registered_manifest",
+                  "recipient_receipt_digest"
+                ]
+              },
+              "documentVersionIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/identifier"
+                },
+                "maxItems": 1024,
+                "uniqueItems": true,
+                "description": "ASCII 升序；引用 documentVersions.documentVersionId。"
+              },
+              "sourceRecordId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "recipeVersion": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "evidenceRole",
+              "commitmentHash",
+              "scheme",
+              "documentVersionIds",
+              "sourceRecordId",
+              "recipeVersion"
+            ],
+            "additionalProperties": false,
+            "oneOf": [
+              {
+                "properties": {
+                  "scheme": {
+                    "const": "raw_file_keccak256"
+                  },
+                  "evidenceRole": {
+                    "enum": [
+                      "poHash",
+                      "requestHash",
+                      "goodsRequestHash",
+                      "invoiceHash",
+                      "goodsHash"
+                    ]
+                  },
+                  "documentVersionIds": {
+                    "minItems": 1,
+                    "maxItems": 1
+                  },
+                  "recipeVersion": {
+                    "type": "null"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "scheme": {
+                    "const": "registered_manifest"
+                  },
+                  "evidenceRole": {
+                    "enum": [
+                      "poHash",
+                      "requestHash",
+                      "goodsRequestHash",
+                      "invoiceHash",
+                      "goodsHash"
+                    ]
+                  },
+                  "documentVersionIds": {
+                    "minItems": 1
+                  },
+                  "recipeVersion": {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "scheme": {
+                    "const": "recipient_receipt_digest"
+                  },
+                  "evidenceRole": {
+                    "const": "receiptDigest"
+                  },
+                  "documentVersionIds": {
+                    "maxItems": 0
+                  },
+                  "recipeVersion": {
+                    "const": "PoGRegistryV2/2"
+                  }
+                }
+              }
+            ],
+            "description": "role→Registry 字段显式绑定。解析 documentVersionIds 后逐个核验 x-pog-registry-category-role-map：purchase_order→poHash、request→requestHash、goods_request→goodsRequestHash、invoice→invoiceHash、goods_evidence→goodsHash；该跨对象查表在 schema 外执行。raw_file_keccak256 等于唯一文件 leafKeccak256；registered_manifest 只能解析已批准 recipe，不新增 Merkle 算法；recipient_receipt_digest 来自已接受 Registry RecipientReceipt 记录，绝非 receipt_evidence 图片/PDF 或 Receipt 文件的 Keccak。"
+          },
+          "externalSnapshot": {
+            "type": "object",
+            "properties": {
+              "snapshotId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "provider": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "version": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "contentSha256": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "contentKeccak256": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              }
+            },
+            "required": [
+              "snapshotId",
+              "provider",
+              "version",
+              "contentSha256",
+              "contentKeccak256"
+            ],
+            "additionalProperties": false,
+            "description": "供应商/关联交易/报价/历史等外部不可变快照引用；原 bytes 须可授权读取并复核，不包含私密下载 URL 或路径。"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "runId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "instanceId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "chainId": {
+                "$ref": "#/components/schemas/Common/$defs/uint256String"
+              },
+              "registry": {
+                "$ref": "#/components/schemas/Common/$defs/address"
+              }
+            },
+            "required": [
+              "runId",
+              "instanceId",
+              "chainId",
+              "registry"
+            ],
+            "additionalProperties": false
+          },
+          "evidenceSnapshot": {
+            "type": "object",
+            "properties": {
+              "snapshotId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "evidenceVersion": {
+                "$ref": "#/components/schemas/Common/$defs/uint64String"
+              },
+              "createdAt": {
+                "$ref": "#/components/schemas/Common/$defs/utcTimestamp"
+              },
+              "owner": {
+                "const": "api"
+              },
+              "deployment": {
+                "$ref": "#/components/schemas/Common/$defs/deployment"
+              },
+              "documentVersions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/documentVersion"
+                },
+                "maxItems": 1024,
+                "description": "按 (evidenceId,version 数值) 排序，evidenceId、documentVersionId 唯一。"
+              },
+              "commitments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/commitment"
+                },
+                "maxItems": 1024,
+                "description": "按 evidenceRole ASCII 排序且 role 唯一；必须覆盖当前阶段 Registry 承诺字段。"
+              },
+              "externalSnapshots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/externalSnapshot"
+                },
+                "maxItems": 1024,
+                "description": "按 snapshotId ASCII 排序且唯一；context 中非 null 快照 ID 必须解析到这里。"
+              }
+            },
+            "required": [
+              "snapshotId",
+              "evidenceVersion",
+              "createdAt",
+              "owner",
+              "deployment",
+              "documentVersions",
+              "commitments",
+              "externalSnapshots"
+            ],
+            "additionalProperties": false,
+            "description": "API 创建且不可覆盖。稳定 evidenceVersion 命名空间为 (deployment.instanceId,deployment.registry,procurementId,stage)；runId/chainId/projectId 须绑定核验，currentEvidenceHash 是快照内容而非版本分区键，其改变生成新快照并递增版本、不重置为 1。版本分配与可信来源校验在 schema 外执行。 文件类别↔role 查表、可信 MIME/页码、当前链状态和摘要相等均为 schema 外门禁。evidenceHash/inputHash/reportHash 分别承诺固定链上聚合证据/完整离链输入/报告正文，不能互相替代。"
+          },
+          "projectPolicy": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "periodStart": {
+                "$ref": "#/components/schemas/Common/$defs/date"
+              },
+              "periodEnd": {
+                "$ref": "#/components/schemas/Common/$defs/date"
+              },
+              "category": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "budgetAtomic": {
+                "$ref": "#/components/schemas/Common/$defs/uint256String"
+              },
+              "unitPriceLimitAtomic": {
+                "$ref": "#/components/schemas/Common/$defs/uint256String"
+              },
+              "assetDecimals": {
+                "type": "integer",
+                "const": 6
+              }
+            },
+            "required": [
+              "version",
+              "periodStart",
+              "periodEnd",
+              "category",
+              "budgetAtomic",
+              "unitPriceLimitAtomic",
+              "assetDecimals"
+            ],
+            "additionalProperties": false
+          },
+          "vendorContext": {
+            "type": "object",
+            "properties": {
+              "vendorId": {
+                "$ref": "#/components/schemas/Common/$defs/identifier"
+              },
+              "identityStatus": {
+                "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+              },
+              "accountHistorySnapshot": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/identifier"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "relatedPartySnapshot": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/identifier"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "vendorId",
+              "identityStatus",
+              "accountHistorySnapshot",
+              "relatedPartySnapshot"
+            ],
+            "additionalProperties": false
+          },
+          "comparisonContext": {
+            "type": "object",
+            "properties": {
+              "quoteComparatorsSnapshot": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/identifier"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "crossProjectDuplicateSnapshot": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/identifier"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "procurementHistorySnapshot": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/identifier"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "quoteComparatorsSnapshot",
+              "crossProjectDuplicateSnapshot",
+              "procurementHistorySnapshot"
+            ],
+            "additionalProperties": false
+          },
+          "domain": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "const": "PoGRegistryV2"
+              },
+              "version": {
+                "const": "2"
+              },
+              "chainId": {
+                "$ref": "#/components/schemas/Common/$defs/uint256String"
+              },
+              "verifyingContract": {
+                "$ref": "#/components/schemas/Common/$defs/address"
+              }
+            },
+            "required": [
+              "name",
+              "version",
+              "chainId",
+              "verifyingContract"
+            ],
+            "additionalProperties": false
+          },
+          "assessmentInput": {
+            "type": "object",
+            "properties": {
+              "stage": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              "procurementId": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "assessmentId": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "outcome": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "riskScoreBps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "evidenceHash": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "reportHash": {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              "signer": {
+                "$ref": "#/components/schemas/Common/$defs/address"
+              },
+              "nonce": {
+                "$ref": "#/components/schemas/Common/$defs/uint256String"
+              },
+              "deadline": {
+                "$ref": "#/components/schemas/Common/$defs/uint64String"
+              }
+            },
+            "required": [
+              "stage",
+              "procurementId",
+              "assessmentId",
+              "outcome",
+              "riskScoreBps",
+              "evidenceHash",
+              "reportHash",
+              "signer",
+              "nonce",
+              "deadline"
+            ],
+            "additionalProperties": false,
+            "description": "十字段顺序为现有 V2 Solidity/ABI 顺序；typed data primaryType=AIAssessment。JSON 对象 canonical 编码按 ASCII 键排序，不用于替换 ABI 编码。"
+          }
+        },
+        "x-pog-registry-category-role-map": {
+          "purchase_order": "poHash",
+          "request": "requestHash",
+          "goods_request": "goodsRequestHash",
+          "invoice": "invoiceHash",
+          "goods_evidence": "goodsHash"
+        }
+      },
+      "AssessmentRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "PrePurchaseInput / FinalReleaseInput 0.2 候选",
+        "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+        "$comment": "inputHash = Ethereum Keccak-256(PoG-CJSON-0.2(完整 input 对象))；input 不含 inputHash 自身。除纯格式外还要复算文件/外部 snapshot 摘要、承诺映射、Registry 证据、API scope 和 version、状态/收货门禁。模型无权改写可信事实。",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "const": "pog.ai.input/0.2-candidate"
+              },
+              "stage": {
+                "type": "integer",
+                "const": 0
+              },
+              "claimAlias": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/text"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "projectPolicy": {
+                "$ref": "#/components/schemas/Common/$defs/projectPolicy"
+              },
+              "vendorContext": {
+                "$ref": "#/components/schemas/Common/$defs/vendorContext"
+              },
+              "comparisonContext": {
+                "$ref": "#/components/schemas/Common/$defs/comparisonContext"
+              },
+              "registrySnapshot": {
+                "type": "object",
+                "properties": {
+                  "verified": {
+                    "type": "boolean"
+                  },
+                  "blockNumber": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Common/$defs/uint256String"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "blockHash": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Common/$defs/bytes32"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "projectId": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "procurementId": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "foundation": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "recipient": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "vendor": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "asset": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "currentEvidenceHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "state": {
+                    "enum": [
+                      "PORecorded",
+                      "PreAssessed",
+                      "ReserveApprovalPending"
+                    ]
+                  },
+                  "budgetCap": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "poHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "requestHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "goodsRequestHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  }
+                },
+                "required": [
+                  "verified",
+                  "blockNumber",
+                  "blockHash",
+                  "projectId",
+                  "procurementId",
+                  "foundation",
+                  "recipient",
+                  "vendor",
+                  "asset",
+                  "currentEvidenceHash",
+                  "state",
+                  "budgetCap",
+                  "poHash",
+                  "requestHash",
+                  "goodsRequestHash"
+                ],
+                "additionalProperties": false,
+                "description": "verified=true 时 blockNumber/blockHash 非 null，必须可由同一可信 deployment 的 canonical block 与 Registry 重算；客户端声明 true 本身无证明效力。",
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "verified": {
+                          "const": true
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "blockNumber": {
+                          "$ref": "#/components/schemas/Common/$defs/uint256String"
+                        },
+                        "blockHash": {
+                          "$ref": "#/components/schemas/Common/$defs/bytes32"
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "documents": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/evidenceRef"
+                },
+                "maxItems": 1024,
+                "description": "按 (evidenceId,version 数值) 升序、evidenceId 唯一；精确对应可信 documentVersions。"
+              },
+              "evidenceSnapshot": {
+                "$ref": "#/components/schemas/Common/$defs/evidenceSnapshot"
+              },
+              "procurementData": {
+                "type": "object",
+                "properties": {
+                  "requestVersion": {
+                    "$ref": "#/components/schemas/Common/$defs/uint64String"
+                  },
+                  "category": {
+                    "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                  },
+                  "description": {
+                    "$ref": "#/components/schemas/Common/$defs/text"
+                  },
+                  "quantity": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "quoteAmountAtomic": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "poVersion": {
+                    "$ref": "#/components/schemas/Common/$defs/uint64String"
+                  }
+                },
+                "required": [
+                  "requestVersion",
+                  "category",
+                  "description",
+                  "quantity",
+                  "quoteAmountAtomic",
+                  "poVersion"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "stage",
+              "claimAlias",
+              "projectPolicy",
+              "vendorContext",
+              "comparisonContext",
+              "registrySnapshot",
+              "documents",
+              "evidenceSnapshot",
+              "procurementData"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "const": "pog.ai.input/0.2-candidate"
+              },
+              "stage": {
+                "type": "integer",
+                "const": 1
+              },
+              "claimAlias": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Common/$defs/text"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "projectPolicy": {
+                "$ref": "#/components/schemas/Common/$defs/projectPolicy"
+              },
+              "vendorContext": {
+                "$ref": "#/components/schemas/Common/$defs/vendorContext"
+              },
+              "comparisonContext": {
+                "$ref": "#/components/schemas/Common/$defs/comparisonContext"
+              },
+              "registrySnapshot": {
+                "type": "object",
+                "properties": {
+                  "verified": {
+                    "type": "boolean"
+                  },
+                  "blockNumber": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Common/$defs/uint256String"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "blockHash": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Common/$defs/bytes32"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "projectId": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "procurementId": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "foundation": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "recipient": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "vendor": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "asset": {
+                    "$ref": "#/components/schemas/Common/$defs/address"
+                  },
+                  "currentEvidenceHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "state": {
+                    "enum": [
+                      "ReceiptConfirmed",
+                      "FinalAssessed",
+                      "ReleaseApprovalPending"
+                    ]
+                  },
+                  "reservedAmount": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "poHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "invoiceHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "invoiceAmount": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "goodsHash": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  },
+                  "receiptDigest": {
+                    "$ref": "#/components/schemas/Common/$defs/bytes32"
+                  }
+                },
+                "required": [
+                  "verified",
+                  "blockNumber",
+                  "blockHash",
+                  "projectId",
+                  "procurementId",
+                  "foundation",
+                  "recipient",
+                  "vendor",
+                  "asset",
+                  "currentEvidenceHash",
+                  "state",
+                  "reservedAmount",
+                  "poHash",
+                  "invoiceHash",
+                  "invoiceAmount",
+                  "goodsHash",
+                  "receiptDigest"
+                ],
+                "additionalProperties": false,
+                "description": "链上已接受收货是 FinalRelease 的生产前提。receiptDigest 是 RecipientReceipt typed commitment，非 Receipt 文件摘要。",
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "verified": {
+                          "const": true
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "blockNumber": {
+                          "$ref": "#/components/schemas/Common/$defs/uint256String"
+                        },
+                        "blockHash": {
+                          "$ref": "#/components/schemas/Common/$defs/bytes32"
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "documents": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Common/$defs/evidenceRef"
+                },
+                "maxItems": 1024,
+                "description": "按 (evidenceId,version 数值) 升序、evidenceId 唯一；精确对应可信 documentVersions。"
+              },
+              "evidenceSnapshot": {
+                "$ref": "#/components/schemas/Common/$defs/evidenceSnapshot"
+              },
+              "deliveryData": {
+                "type": "object",
+                "properties": {
+                  "poVersion": {
+                    "$ref": "#/components/schemas/Common/$defs/uint64String"
+                  },
+                  "poQuantity": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "grnVersion": {
+                    "$ref": "#/components/schemas/Common/$defs/uint64String"
+                  },
+                  "grnQuantity": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "invoiceVersion": {
+                    "$ref": "#/components/schemas/Common/$defs/uint64String"
+                  },
+                  "invoiceQuantity": {
+                    "$ref": "#/components/schemas/Common/$defs/uint256String"
+                  },
+                  "inspectionVersion": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/Common/$defs/uint64String"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "receiptAccepted": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "poVersion",
+                  "poQuantity",
+                  "grnVersion",
+                  "grnQuantity",
+                  "invoiceVersion",
+                  "invoiceQuantity",
+                  "inspectionVersion",
+                  "receiptAccepted"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "stage",
+              "claimAlias",
+              "projectPolicy",
+              "vendorContext",
+              "comparisonContext",
+              "registrySnapshot",
+              "documents",
+              "evidenceSnapshot",
+              "deliveryData"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "ReportBody": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "ReportBody 0.2 候选",
+        "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "const": "pog.ai.report/0.2-candidate"
+          },
+          "stage": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "projectId": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "procurementId": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "evidenceVersion": {
+            "$ref": "#/components/schemas/Common/$defs/uint64String"
+          },
+          "evidenceHash": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "inputHash": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "executionMode": {
+            "enum": [
+              "synthetic_fixture",
+              "rules_only",
+              "model_and_rules"
+            ]
+          },
+          "versions": {
+            "$ref": "#/components/schemas/Common/$defs/versions"
+          },
+          "outcome": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          },
+          "riskScoreBps": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completeness": {
+            "enum": [
+              "complete",
+              "incomplete"
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/Common/$defs/text"
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common/$defs/evidenceRef"
+            },
+            "maxItems": 1024,
+            "description": "按 (evidenceId,version 数值) 排序，ID 唯一；文件字段与 input.documents/documentVersions 一致，pages 为可信页集子集。"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common/$defs/finding"
+            },
+            "maxItems": 1024,
+            "description": "按 (reasonCode,findingId) ASCII 排序，findingId 唯一。"
+          },
+          "missingInputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common/$defs/missingInput"
+            },
+            "maxItems": 1024,
+            "description": "按 inputKey ASCII 排序，inputKey 唯一。"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "stage",
+          "projectId",
+          "procurementId",
+          "evidenceVersion",
+          "evidenceHash",
+          "inputHash",
+          "executionMode",
+          "versions",
+          "outcome",
+          "riskScoreBps",
+          "completeness",
+          "summary",
+          "evidenceRefs",
+          "findings",
+          "missingInputs"
+        ],
+        "additionalProperties": false,
+        "$comment": "仅该完整对象的 canonical UTF-8 bytes 进入 reportHash；报告不能包含签名字段或其他 envelope。必须语义核对 BODY.inputHash/evidenceVersion/stage/projectId/procurementId/evidenceHash、证据页码及后续签名 AssessmentInput。Schema 通过不能授权 synthetic_fixture 生产签名。",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "executionMode": {
+                  "enum": [
+                    "synthetic_fixture",
+                    "rules_only"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "versions": {
+                  "properties": {
+                    "modelProvider": {
+                      "type": "null"
+                    },
+                    "modelId": {
+                      "type": "null"
+                    },
+                    "modelVersion": {
+                      "type": "null"
+                    },
+                    "promptVersion": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "executionMode": {
+                  "const": "model_and_rules"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "versions": {
+                  "properties": {
+                    "modelProvider": {
+                      "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                    },
+                    "modelId": {
+                      "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                    },
+                    "modelVersion": {
+                      "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                    },
+                    "promptVersion": {
+                      "$ref": "#/components/schemas/Common/$defs/nonemptyText"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "completeness": {
+                  "const": "incomplete"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "outcome": {
+                  "const": 1
+                },
+                "riskScoreBps": {
+                  "type": "null"
+                },
+                "missingInputs": {
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "completeness": {
+                  "const": "complete"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "missingInputs": {
+                  "maxItems": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "riskScoreBps": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "outcome": {
+                  "const": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "versions": {
+                  "properties": {
+                    "scorePolicyVersion": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "riskScoreBps": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ErrorEnvelope": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "ErrorEnvelope 0.2 候选",
+        "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "const": "pog.ai.error/0.2-candidate"
+          },
+          "status": {
+            "const": "error"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "procurementId": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "enum": [
+              "INPUT_FORMAT_INVALID",
+              "REQUEST_TOO_LARGE",
+              "AUTHENTICATION_REQUIRED",
+              "FORBIDDEN",
+              "RESOURCE_NOT_FOUND",
+              "OPERATION_NOT_FOUND",
+              "IDEMPOTENCY_CONFLICT",
+              "IDEMPOTENCY_KEY_EXPIRED",
+              "RATE_LIMITED",
+              "DOCUMENT_READ_UNAVAILABLE",
+              "DOCUMENT_HASH_MISMATCH",
+              "EVIDENCE_BINDING_MISMATCH",
+              "REGISTRY_SNAPSHOT_UNVERIFIED",
+              "REGISTRY_SNAPSHOT_STALE",
+              "EXTERNAL_DATA_UNAVAILABLE",
+              "DEPENDENCY_UNAVAILABLE",
+              "MODEL_TIMEOUT",
+              "MODEL_FAILURE",
+              "MODEL_OUTPUT_INVALID",
+              "CANONICALIZATION_FAILED",
+              "RULE_FAILURE",
+              "SCORING_POLICY_UNCONFIRMED",
+              "VERSION_UNSUPPORTED",
+              "REQUEST_DEADLINE_EXCEEDED",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "message": {
+            "$ref": "#/components/schemas/Common/$defs/text"
+          },
+          "missingInputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common/$defs/missingInput"
+            },
+            "maxItems": 1024
+          },
+          "report": {
+            "type": "null"
+          },
+          "signingEnvelope": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "status",
+          "stage",
+          "procurementId",
+          "code",
+          "retryable",
+          "message",
+          "missingInputs",
+          "report",
+          "signingEnvelope"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "INPUT_FORMAT_INVALID"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "REQUEST_TOO_LARGE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "AUTHENTICATION_REQUIRED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "FORBIDDEN"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "RESOURCE_NOT_FOUND"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "OPERATION_NOT_FOUND"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "IDEMPOTENCY_CONFLICT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "RATE_LIMITED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "DOCUMENT_READ_UNAVAILABLE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "DOCUMENT_HASH_MISMATCH"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "EVIDENCE_BINDING_MISMATCH"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "REGISTRY_SNAPSHOT_UNVERIFIED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "REGISTRY_SNAPSHOT_STALE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "EXTERNAL_DATA_UNAVAILABLE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "DEPENDENCY_UNAVAILABLE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "MODEL_TIMEOUT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "MODEL_FAILURE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "MODEL_OUTPUT_INVALID"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "CANONICALIZATION_FAILED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "RULE_FAILURE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "SCORING_POLICY_UNCONFIRMED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "VERSION_UNSUPPORTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "REQUEST_DEADLINE_EXCEEDED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "INTERNAL_ERROR"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "IDEMPOTENCY_KEY_EXPIRED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retryable": {
+                  "const": false
+                }
+              }
+            }
+          }
+        ],
+        "$comment": "HTTP 与 retryable 的意义见 V2_REPORT_TRANSPORT_CANDIDATE.md；缺业务资料为 completed + incomplete Review/null，不用 REQUIRED_EVIDENCE_MISSING 技术错误。未知/不可信 stage、procurementId 必须 null。"
+      },
+      "SigningEnvelope": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "SigningEnvelope 0.2 候选",
+        "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "const": "pog.ai.signing-envelope/0.2-candidate"
+          },
+          "status": {
+            "enum": [
+              "blocked",
+              "prepared",
+              "signed"
+            ]
+          },
+          "blockReasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Common/$defs/identifier"
+            },
+            "maxItems": 1024,
+            "uniqueItems": true,
+            "description": "ASCII 升序；blocked 非空，prepared/signed 空。"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Common/$defs/domain"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Common/$defs/assessmentInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+                "maxLength": 8192,
+                "description": "非空 bytes hex，长度由 EOA/ERC1271 实际验证；不可对所有签名强制 65 bytes。"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "status",
+          "blockReasons",
+          "domain",
+          "assessment",
+          "signature"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "blocked"
+              },
+              "blockReasons": {
+                "minItems": 1
+              },
+              "domain": {
+                "type": "null"
+              },
+              "assessment": {
+                "type": "null"
+              },
+              "signature": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "prepared"
+              },
+              "blockReasons": {
+                "maxItems": 0
+              },
+              "domain": {
+                "$ref": "#/components/schemas/Common/$defs/domain"
+              },
+              "assessment": {
+                "$ref": "#/components/schemas/Common/$defs/assessmentInput"
+              },
+              "signature": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "signed"
+              },
+              "blockReasons": {
+                "maxItems": 0
+              },
+              "domain": {
+                "$ref": "#/components/schemas/Common/$defs/domain"
+              },
+              "assessment": {
+                "$ref": "#/components/schemas/Common/$defs/assessmentInput"
+              },
+              "signature": {
+                "type": "string",
+                "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])"
+              }
+            }
+          }
+        ],
+        "$comment": "生产 synthetic_fixture 永久禁止 prepared/signed；Schema 本身没有 BODY，无法完成门禁，签名适配器必须绑定完整可信 input、BODY、当前 domain/evidence/state/signer/nonce，复算 ID/digest 并验签。隔离 protocol fixture 不使用生产 SigningEnvelope 例外。prepared 必须已有原子持久化 SigningRequest：EIP-712 nonce、deadline、完整 typed data、digest 与唯一未决锁；链上 aiNonces 此时尚未消耗，relayer EVM tx nonce 独立。"
+      },
+      "OperationEnvelope": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "OperationEnvelope 0.2 候选",
+        "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "const": "pog.ai.operation/0.2-candidate"
+          },
+          "operationId": {
+            "$ref": "#/components/schemas/Common/$defs/identifier"
+          },
+          "aiRequestId": {
+            "$ref": "#/components/schemas/Common/$defs/identifier",
+            "description": "API 为逻辑审核生成并持久化的 AI 请求 ID；AI 适配器响应必须回显，所有内部 attempt 使用同一 ID。"
+          },
+          "payloadHash": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "error"
+            ]
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorEnvelope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "operationId",
+          "aiRequestId",
+          "payloadHash",
+          "status",
+          "report",
+          "error"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "enum": [
+                  "queued",
+                  "running"
+                ]
+              },
+              "report": {
+                "type": "null"
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "completed"
+              },
+              "report": {
+                "$ref": "#/components/schemas/ReportBody"
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "error"
+              },
+              "report": {
+                "type": "null"
+              },
+              "error": {
+                "$ref": "#/components/schemas/ErrorEnvelope"
+              }
+            }
+          }
+        ],
+        "$comment": "payloadHash=SHA-256(PoG-CJSON-0.2(input) bytes)，带 0x 小写 32-byte hex；区别于 BODY.inputHash 的 Ethereum Keccak-256。operationId/aiRequestId 由 API 生成且不入 BODY。只有 operation.report 进入 reportHash。异步 POST 202 + GET 200 候选待 API 确认；A1 和未验收 A2 均无真实 AI 报告 endpoint。"
+      },
+      "SigningRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "SigningRequest 0.2 候选持久化记录",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "const": "pog.ai.signing-request/0.2-candidate"
+          },
+          "signingRequestId": {
+            "$ref": "#/components/schemas/Common/$defs/identifier"
+          },
+          "operationId": {
+            "$ref": "#/components/schemas/Common/$defs/identifier"
+          },
+          "aiRequestId": {
+            "$ref": "#/components/schemas/Common/$defs/identifier"
+          },
+          "nonceScope": {
+            "type": "object",
+            "properties": {
+              "deployment": {
+                "$ref": "#/components/schemas/Common/$defs/deployment"
+              },
+              "verifyingContract": {
+                "$ref": "#/components/schemas/Common/$defs/address"
+              },
+              "nonceFamily": {
+                "const": "aiNonces"
+              },
+              "signer": {
+                "$ref": "#/components/schemas/Common/$defs/address"
+              }
+            },
+            "required": [
+              "deployment",
+              "verifyingContract",
+              "nonceFamily",
+              "signer"
+            ],
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "prepared",
+              "signed",
+              "submitted",
+              "requires_attention",
+              "recorded",
+              "invalidated"
+            ]
+          },
+          "inputHash": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "reportHash": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/Common/$defs/domain"
+          },
+          "assessment": {
+            "$ref": "#/components/schemas/Common/$defs/assessmentInput"
+          },
+          "typedData": {
+            "type": "object",
+            "properties": {
+              "primaryType": {
+                "const": "AIAssessment"
+              },
+              "types": {
+                "type": "object",
+                "properties": {
+                  "EIP712Domain": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "name"
+                          },
+                          "type": {
+                            "const": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "version"
+                          },
+                          "type": {
+                            "const": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "chainId"
+                          },
+                          "type": {
+                            "const": "uint256"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "verifyingContract"
+                          },
+                          "type": {
+                            "const": "address"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 4,
+                    "maxItems": 4
+                  },
+                  "AIAssessment": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "stage"
+                          },
+                          "type": {
+                            "const": "uint8"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "procurementId"
+                          },
+                          "type": {
+                            "const": "bytes32"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "assessmentId"
+                          },
+                          "type": {
+                            "const": "bytes32"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "outcome"
+                          },
+                          "type": {
+                            "const": "uint8"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "riskScoreBps"
+                          },
+                          "type": {
+                            "const": "uint16"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "evidenceHash"
+                          },
+                          "type": {
+                            "const": "bytes32"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "reportHash"
+                          },
+                          "type": {
+                            "const": "bytes32"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "signer"
+                          },
+                          "type": {
+                            "const": "address"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "nonce"
+                          },
+                          "type": {
+                            "const": "uint256"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "const": "deadline"
+                          },
+                          "type": {
+                            "const": "uint64"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 10,
+                    "maxItems": 10
+                  }
+                },
+                "required": [
+                  "EIP712Domain",
+                  "AIAssessment"
+                ],
+                "additionalProperties": false
+              },
+              "domain": {
+                "$ref": "#/components/schemas/Common/$defs/domain"
+              },
+              "message": {
+                "$ref": "#/components/schemas/Common/$defs/assessmentInput"
+              }
+            },
+            "required": [
+              "primaryType",
+              "types",
+              "domain",
+              "message"
+            ],
+            "additionalProperties": false,
+            "description": "固定 V2 完整 EIP-712 typed data；types 字段顺序和类型宽度不能变更。domain/message 必须逐字段等于请求的 domain/assessment，并以现有 V2 ABI 公式重算 assessmentId 和 digest；相等性校验位于 schema 外。"
+          },
+          "digest": {
+            "$ref": "#/components/schemas/Common/$defs/bytes32"
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+                "maxLength": 8192,
+                "description": "非空 bytes hex；EOA/ERC1271 的真实性由独立 signer/验签门禁验证，不以此结构校验替代。"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "txHash": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Common/$defs/bytes32"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "signingRequestId",
+          "operationId",
+          "aiRequestId",
+          "nonceScope",
+          "status",
+          "inputHash",
+          "reportHash",
+          "domain",
+          "assessment",
+          "typedData",
+          "digest",
+          "signature",
+          "txHash"
+        ],
+        "additionalProperties": false,
+        "description": "未冻结候选。prepared 前 API 原子持久化本完整请求（包含 assessment.nonce、deadline、typedData、digest）并取得唯一并发保护；operationId 和 aiRequestId 由 API 生成并绑定同一 operation，其重试沿用 aiRequestId。inputHash/reportHash 作为内容索引必须可解析到已保留的完整不可变输入/报告原 bytes，而非仅保留摘要。锁域为 deployment namespace {runId,instanceId,chainId,registry} + verifyingContract + nonceFamily=aiNonces + signer。deployment chainId/registry 必须绑定真实实例并与 domain/nonceScope 相等，规范地址不得因大小写形成多把锁。多个 deployment namespace 指向同一已验证物理链实例的 Registry 状态时，必须通过部署唯一映射归并为同一锁域；禁止通过 namespace 别名并行签署同一 nonce。PoGRegistryV2.aiNonces(signer) 是 EIP-712 AI signer nonce，prepared 只代表链上尚未消耗该 nonce；禁止另一活跃请求取得同一锁域。Relayer EVM transaction nonce 属于独立账户/队列，不能写入该 nonceFamily，也不能以它替代 assessment.nonce。Schema 无法证明已持久化、锁已取得、链状态可信或跨字段相等。",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "prepared"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "signature": {
+                  "type": "null"
+                },
+                "txHash": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "signed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "signature": {
+                  "type": "string",
+                  "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+                  "maxLength": 8192,
+                  "description": "非空 bytes hex；EOA/ERC1271 的真实性由独立 signer/验签门禁验证，不以此结构校验替代。"
+                },
+                "txHash": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "submitted",
+                    "recorded"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "signature": {
+                  "type": "string",
+                  "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+                  "maxLength": 8192,
+                  "description": "非空 bytes hex；EOA/ERC1271 的真实性由独立 signer/验签门禁验证，不以此结构校验替代。"
+                },
+                "txHash": {
+                  "$ref": "#/components/schemas/Common/$defs/bytes32"
+                }
+              }
+            }
+          }
+        ],
+        "$comment": "独立 AI signing component 由 AI 组控制密钥，必须 fail closed 复核完整可信 input/BODY、reportHash/inputHash、executionMode、资料完整性、有效评分、当前链 domain/evidence/state/allowlist/nonce/deadline、typed data 与 digest。complete 且已评分的 Review/Reject 可生成风险证据，但不决定资金；synthetic 生产请求永不 prepared/signed，协议向量只在独立 fixture/harness 中表示。模型失败不得以 rules_only 自动降级签署。requires_attention 保持并发保护直到核对 receipt、canonical block、accepted assessment 和 aiNonces；recorded/invalidation 仅在明确核对后释放，禁止超时盲目 nonce+1 或重新签名。后续 A3/M3.3 的持久化与 migration 另行授权，本文件不实现数据库。"
+      }
+    }
+  },
+  "x-canonical-json-profile": "PoG-CJSON-0.2",
+  "x-error-code-http-semantics": {
+    "INPUT_FORMAT_INVALID": 400,
+    "REQUEST_TOO_LARGE": 413,
+    "AUTHENTICATION_REQUIRED": 401,
+    "FORBIDDEN": 403,
+    "RESOURCE_NOT_FOUND": 404,
+    "OPERATION_NOT_FOUND": 404,
+    "IDEMPOTENCY_CONFLICT": 409,
+    "IDEMPOTENCY_KEY_EXPIRED": 409,
+    "RATE_LIMITED": 429,
+    "DOCUMENT_READ_UNAVAILABLE": 503,
+    "DOCUMENT_HASH_MISMATCH": 422,
+    "EVIDENCE_BINDING_MISMATCH": 422,
+    "REGISTRY_SNAPSHOT_UNVERIFIED": 503,
+    "REGISTRY_SNAPSHOT_STALE": 409,
+    "EXTERNAL_DATA_UNAVAILABLE": 503,
+    "DEPENDENCY_UNAVAILABLE": 503,
+    "MODEL_TIMEOUT": 504,
+    "MODEL_FAILURE": 502,
+    "MODEL_OUTPUT_INVALID": 502,
+    "CANONICALIZATION_FAILED": 422,
+    "RULE_FAILURE": 500,
+    "SCORING_POLICY_UNCONFIRMED": 409,
+    "VERSION_UNSUPPORTED": 422,
+    "REQUEST_DEADLINE_EXCEEDED": 504,
+    "INTERNAL_ERROR": 500
+  },
+  "x-signing-responsibilities": {
+    "AIModel": "AI group; generate report only, no private keys",
+    "API": "trusted snapshots, report verification, durable typed data/aiNonces/deadline/operation/signing request, submit orchestration",
+    "AISigningComponent": "AI group controls AI key; independently revalidates hashes, execution mode and signing gates; fail closed",
+    "Relayer": "API group; submit existing authorized signatures, own independent EVM transaction nonce; no AI/Human/Recipient keys"
+  },
+  "x-ai-nonce-lock-scope": [
+    "deployment namespace(runId,instanceId,chainId,registry)",
+    "verifying contract",
+    "nonce family aiNonces",
+    "AI signer address"
+  ],
+  "x-prepared-persistence": "SigningRequest durable write and persistent unique unresolved lock before prepared or signer invocation; prepared records aiNonces value but does not consume it on chain; restart/unknown transaction must recover same request and maintain lock",
+  "x-schema-components-sources": {
+    "Common": "schemas/v2/common.schema.json",
+    "AssessmentRequest": "schemas/v2/input.schema.json",
+    "ReportBody": "schemas/v2/report-body.schema.json",
+    "ErrorEnvelope": "schemas/v2/error-envelope.schema.json",
+    "SigningEnvelope": "schemas/v2/signing-envelope.schema.json",
+    "OperationEnvelope": "schemas/v2/operation.schema.json",
+    "SigningRequest": "schemas/v2/signing-request.schema.json"
+  },
+  "x-ai-nonce-alias-policy": "Registry is also verifyingContract; API deployment catalog must canonicalize runId/instanceId namespace aliases that reference the same verified physical chain instance and Registry state. Aliases share the same aiNonces unresolved lock and cannot create parallel requests for one actual counter."
+}
