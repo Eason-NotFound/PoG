@@ -2,6 +2,17 @@
 
 ## Latest architecture change — takes precedence
 
+- On 2026-10-03 the user confirmed "3.1没问题" and then requested uploading
+  M3.1 to GitHub. Under the established version workflow this authorizes M3.1
+  merge/formal archival and a report only. PR #4 merged as `977ea62`; new
+  annotated accepted tag `blockchain-v0.3.1-m3.1` points to that merge. Preserve
+  RC `6295409`, the accepted implementation and every old tag. Archive-status
+  changes use a separate PR/CI and never rewrite the technical snapshot.
+  Report and STOP; M3.2 implementation is not authorized. The API/database PM
+  chat is authorized only for read-only onboarding, guidance and a proposed
+  stage plan until the user separately approves implementation. This latest
+  acceptance supersedes earlier M3.1 candidate-gate wording below, not its
+  technical limits or the later milestone gates.
 - On 2026-10-02 the user superseded the direct-vendor M2 plan: Foundation creates
   the project; each Donor converts simulated HKD to stablecoins and donates to
   that specific project's on-chain Escrow; funds are locked; PO is reviewed;

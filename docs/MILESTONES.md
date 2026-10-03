@@ -78,7 +78,7 @@ Split into explicit sub-gates. M2 acceptance did not itself authorize M3; the
 user's subsequent request on 2026-10-03 conditionally authorized M3.1. No blocking
 product choice is needed for the local-only defaults in `M3_1_SPEC.md`.
 
-### M3.1 — local Anvil deployment (authorized, not yet accepted)
+### M3.1 — local Anvil deployment (user accepted and formally tagged)
 
 Implement startup/deploy/status/verify/stop/explicit-reset tools, separate demo
 role addresses, RegistryV2/EscrowV2 binding and an instance-bound deployment
@@ -86,6 +86,14 @@ manifest. Preserve accepted Solidity, tests, dependencies, ABIs and technical
 baselines. RPC is loopback only, chain ID 31337. Test balances are a faucet,
 not fiat conversion. Exit: local/live isolated tests and full regression pass;
 verified feature PR/CI is reported to the user, then STOP for acceptance.
+
+Acceptance recorded on 2026-10-03: the user confirmed "3.1没问题" and requested
+GitHub upload. PR #4 merged as `977ea62`; new annotated formal version
+`blockchain-v0.3.1-m3.1` points to that merge. Its tree equals accepted head
+`e6aebae`; RC `6295409` and all previous versions remain unchanged. Archival
+recheck: 32/32 local unit/live cases (36.843 seconds), 81/81 Solidity regression,
+M1 15/15, M2 18/18, five ABI checks and push guard 12/12 passed. Status records
+use a separate PR/CI. Report and STOP; this does not authorize M3.2.
 
 ### M3.2 — API/relayer hand-off (planned, not authorized)
 

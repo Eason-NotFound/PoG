@@ -3,10 +3,12 @@
 HacKU 2026 FinTech MVP. The team repository is
 [Eason-NotFound/PoG](https://github.com/Eason-NotFound/PoG).
 
-Current blockchain milestone: **M3.1 local deployment technically verified; awaiting user acceptance**.
-The user authorized M3.1 after M2 archival. Local startup/deployment/verification
-and explicit reset are implemented in Python; 32/32 new unit/live tests passed.
-No M3.2/API/relayer, AI/payment service or three-computer booth work is authorized.
+Current blockchain milestone: **M3.1 local deployment user accepted and formally tagged**.
+The user confirmed M3.1 and requested GitHub upload on 2026-10-03. Local
+startup/deployment/verification and explicit reset are implemented in Python;
+the archival recheck passed 32/32 new unit/live tests and 81/81 Solidity tests.
+No M3.2 implementation, AI/payment service or three-computer booth work is
+authorized. The API/database PM has read-only onboarding/planning scope only.
 
 From the repository root:
 
@@ -23,11 +25,15 @@ records, not a resumable business chain; a fresh chain requires explicit reset.
 Test Donor balances are a faucet, not HKD collection or conversion.
 
 Verified M3.1 source: `6295409`, published in
-[draft PR #4](https://github.com/Eason-NotFound/PoG/pull/4).
+[PR #4](https://github.com/Eason-NotFound/PoG/pull/4), now merged as `977ea62`.
 Immutable technical snapshot:
 [`blockchain-v0.3.1-m3.1-rc.1`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.3.1-m3.1-rc.1).
-Both source push/PR workflows passed. This RC is not an accepted version;
-main remains accepted M2 until explicit M3.1 acceptance and merge.
+New immutable accepted version:
+[`blockchain-v0.3.1-m3.1`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.3.1-m3.1)
+points to that merge, whose tree matches accepted PR head `e6aebae` exactly.
+Both merged-main and accepted-tag verification workflows passed.
+The RC and all M1/M2 tags remain unchanged. Subsequent status-only documentation
+does not change that tag or its deployment scripts/tests/spec/runbook.
 
 The accepted implementation is unchanged `MockHKD` plus independent `PoGRegistryV2` and
 `ProcurementEscrowV2`. MockHKD is a freely mintable, valueless 6-decimal demo token.
@@ -61,8 +67,9 @@ the new immutable accepted tag is
 Main and accepted-tag CI passed. M1 and the M2 RC remain unchanged.
 The frozen ABI package retains its original `0.2.0-m2-rc.1` artifact identifier;
 acceptance is recorded by the formal Git tag and [current status](docs/STATUS.md),
-not by rewriting verified artifacts. The subsequent M3.1 request authorizes only
-local deployment tooling; M3.1 acceptance and M3.2 need separate user decisions.
+not by rewriting verified artifacts. The subsequent M3.1 implementation,
+acceptance and archival authorize local deployment tooling only; M3.2 needs
+a separate user decision.
 
 ## Build and verify
 
