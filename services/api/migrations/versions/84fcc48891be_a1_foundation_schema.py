@@ -1,7 +1,7 @@
 """a1 foundation schema
 
 Revision ID: 84fcc48891be
-Revises: 
+Revises:
 Create Date: 2026-10-03 11:05:19.610831
 """
 from typing import Sequence, Union
