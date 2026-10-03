@@ -1,30 +1,12 @@
-# A2 技术审查修正记录
+# A2 可靠性与验证指南
 
-2026-10-03，香港时间。本文记录首轮候选 `9189d8c286af2314e136d1de843da5cb5be6d407`
-之后、`codex/api-db-a2-chain-integration` 工作区中的修正和专项证据。
-基线为 accepted A1 `1844186df10854cd49ccc0886f5622e71e572d8e` / `api-v0.1.0-a1`。
+本文对应公开 API A2 基线 `api-v0.2.0-a2` / `4c9f1a40ac225d684d00b5abcf8081c43594bfcc`，说明权限、恢复、迁移和测试边界。
+已发布 003 迁移保持不变；新增保护使用 successor 004，`down_revision=c31003a20003`。
+API 运行逻辑、历史 payload hash、Solidity/ABI 及已发布标签不因本文说明而改变。
 
-当前按用户最新要求**先交本地审核，不更新 GitHub**。后续用户在 PM 对话直接授权
-“跟ceo联合完成m3.2吧”，本地整合已启动。原 `9189d8c` 上的全部修正已保存为仅本地
-恢复快照 `f1b7c92`；整合候选在新本地分支 `codex/api-db-a2-local-review-integration`。
-候选以该分支 clean HEAD 的完整 40 位 SHA 定位。没有 PR 更新、main merge、push 或 tag；
-最终整合回归与实际交接结果记录在本地 `.local/A2_LOCAL_REVIEW_HANDOFF.md`，
-未通过的 gate 不会被本文件的历史计数替代。
-专项和本地完整回归不能替代远端整合后的新 exact SHA 回归与四类 CI。
+## 可靠性边界与测试入口
 
-发布前发现 Hank 已在同一远端分支发布 `194ae3e` 和
-`bcd5de4daa565b79876a58391292e1b127f46a35`，包括已发布的
-`c31003a20003_signing_expiry.py`。原本地独立草稿 003 与其编号重叠，已在整合工作区
-移到 `c31003a20004_a2_review_guards.py`，`down_revision=c31003a20003`；Hank 的已发布
-003 原文不改。两边提交均保留，新增 R1 历史格式兼容不会重写 persisted payload hash。
-完整双方回归和迁移升级验证仍待下述最终实测更新。
-已发布 A1/A2 migration、accepted M1/M2/M3.1 合约、ABI、local-chain 工具和旧 tag
-均未改写。整合工作区的 migration head 为 004；旧 003 草稿仅在恢复快照历史中保留。
-
-## R1–R12 对照
-
-下列路径均相对仓库根目录。测试文件是可执行证据入口；实际已运行的结果见后文，
-不能把新增但未重跑的场景计入早期结果。
+下列路径均相对仓库根目录。测试入口用于复现对应保护；存在测试文件不等于当前准确版本已运行通过，也不代替独立产品验收。
 
 | 审查项 | 修正边界 | 对应测试入口 |
 | --- | --- | --- |
@@ -51,12 +33,11 @@ attempt 或 audit，不由“没有看到 receipt”、到期或错误消息文�
 
 `queued`、unknown/requires_attention、可能广播或已 confirmed/消费的请求仍受保护，
 不能释放原 nonce reservation 或复用旧签名。若链 nonce 已确实消费，新授权只能使用
-当前链 nonce、当前 bundle 和新 deadline。新增两项正向未广播恢复参数场景在早期
-signing-renewal 的 34 项通过后才加入，已在本地完整回归中一并通过（该模块 36 项）。
+当前链 nonce、当前 bundle 和新 deadline。
 
 ## 数据库升级与回滚
 
-### 追加 R5 legacy 保护
+### Receipt 来源保护
 
 新 Receipt context 固定原 `receiptEvidenceDocumentVersionId`；sign-demo/submit
 复查原 version 的 namespace/procurement/category/uploader/frozen hash。缺绑定的
@@ -69,46 +50,43 @@ worker 在 queued 无 attempt 和 prepared envelope 的新 send 前做 DB 来源
 `chain.receipt_source_blocked` audit；不能被误当 `not_broadcast` 后自动释放。
 已有 prepared 的 RPC 不确定保守待处理，只有当前新建 attempt 的正向预发送证明可退役。
 已经精确找到的广播只如实 reconcile，不重发、不改 confirmed 链事实。
-新增31项 API/PG source/history、13项 worker/PG 用例的最终结果以交接记录为准。
 
 `c31003a20004` 只追加 review guards、renewal partial indexes、policy projection 和 canonical
-event 字段。旧 A1/002/Hank003 migration 不修改。populated A1 升级测试核对 synthetic
+event 字段。旧 A1/002/003 migration 不修改。populated A1 升级测试核对 synthetic
 旧 user/password hash/wallet/session、business ID/draft、operation/idempotency 和 audit 保留，
 且升级不创建 chain queue/signature/transaction。
 
 整合 migration 路径：先 upgrade published 003，再 downgrade base；由 populated A1
 升级 head004。003 对当前 app 的 `/ready` 应为 503（schema 尚未到 head），004 为 200。
-004 的 downgrade 显式拒绝且 revision 留在 004。独立 PG 测试还由 populated Hank003
+004 的 downgrade 显式拒绝且 revision 留在 004。独立 PG 测试还由 populated published003
 expired/live 同 nonce-family 升至004，逐字段证明原签名/typed-data/digest/payload hash/
 deadline/operation/audit/source/timestamps 原样保留，不生成新授权、队列或 transaction。
-Hank 003 原文的 SHA256 同步验证；该专项已实跑通过，最终整套整合结果见后续更新。
+已发布 003 的 SHA256 为 `fabff2145aab986001b635cb84bed96641cef996ace15379f909979c0fe32665`；升级验证应核对原文件保持不变。
 
 004 为 forward-only：恢复永久 nonce unique 可能破坏合法 renewal history，自动 downgrade
 也不能静默丢弃 policy/历史事实或复活已失效授权。回滚应恢复事前验证过的隔离备份，
 并使用对应旧应用版本；本文没有宣称执行了备份恢复演练，该演练为 **PENDING**。
 
-## 整合前已实际运行的专项结果（历史证据）
+## 隔离验证入口
 
-以下是 f1b7c92 整合前修正和各专项执行时的工作区版本；没有累加为最新整套通过数。
-均 0 skipped。PG 专项使用本组 owned loopback `pog_api_test`/55433，串行执行；
-no-connect 专项不创建 engine、不连接/清空 PG、不操作默认 Anvil。
+这些入口覆盖不同范围，不能把历史专项结果相加作为当前完整回归结果。测试只使用经过安全 guard 核对的自有隔离资源；no-connect 场景不能创建 engine、连接或清空 PostgreSQL，也不能操作默认 Anvil。
 
-| 专项 | 实际结果 | 测试路径 |
-| --- | --- | --- |
-| Worker 恢复 | 11 passed | `services/api/tests/test_a2_worker_recovery.py` |
-| Route recovery / 签名 / readiness | 59 passed | `services/api/tests/test_a2_route_recovery.py` |
-| Signing renewal / Receipt source / AI outcome | 单跑 34 passed，20.51s；新增后模块 36 项在完整回归中全通过 | `services/api/tests/test_a2_signing_renewal.py` |
-| PG bounds + 旧 migration 回归 | 56 passed，1.96s | `services/api/tests/test_a2_database_bounds.py services/api/tests/test_contracts_and_migrations.py` |
-| Indexer 恢复 + 独立 Python hash | 19 passed，5.40s = Indexer 17 + hash 2；之后新增 tip transport wrapper 待全套复跑 | `services/api/tests/test_a2_indexer_recovery.py services/api/tests/test_a2_independent_hash_vectors.py` |
-| 部署 gate（最新 transport 版本） | 42 passed，0.59s | `services/api/tests/test_a2_deployment_gate.py` |
-| 测试目标 no-connect guard | 49 passed，0.08s | `services/api/tests/test_test_database_guard.py` |
-| 新 nonzero V1 隔离合约 fixture | 1 passed，0 skipped，6.69s；21 个非零 Python==contract 比对，不是 21 个独立测试 | `services/api/live_tests/test_a2_nonzero_hash_vectors.py` |
-| 完整 API/PostgreSQL 回归 | 364 passed，0 skipped，80.47s；包括原 A1 回归和全部当时已保存的新专项 | `bash services/api/scripts/test.sh` |
-| 后续 manifest 类型/fallback 补测 | 31 passed，0 skipped，3.88s；25 no-engine + 6 PG；不冒充又跑过完整 395 项 | `services/api/tests/test_a2_cached_manifest.py` 和 route recovery 新参数场景 |
-| 真实 API ReceiptConfirmed + automatic reorg | 1 passed，0 skipped，10.93s | `services/api/live_tests/test_a2_receipt_confirmed.py` |
-| 真实已上链 AI/human 过期续签、Review/Reject 人工决定 | 4 passed，0 skipped，34.71s | `services/api/live_tests/test_a2_renewal_human.py` |
-| accepted Blockchain 回归 | 81 passed，0 skipped；M1 baseline 15/15、ABI 一致、push guard 12/12 | `bash scripts/check-blockchain.sh` |
-| accepted local-chain lifecycle | 32 passed，0 skipped，35.520s | `.local/runtime/bin/python scripts/test-local-chain.py --live` |
+| 范围 | 入口 |
+| --- | --- |
+| Worker 恢复 | `services/api/tests/test_a2_worker_recovery.py` |
+| Route recovery / 签名 / readiness | `services/api/tests/test_a2_route_recovery.py` |
+| Signing renewal / Receipt source / AI outcome | `services/api/tests/test_a2_signing_renewal.py` |
+| PG bounds + 旧 migration 回归 | `services/api/tests/test_a2_database_bounds.py services/api/tests/test_contracts_and_migrations.py` |
+| Indexer 恢复 + 独立 Python hash | `services/api/tests/test_a2_indexer_recovery.py services/api/tests/test_a2_independent_hash_vectors.py` |
+| 部署 gate（最新 transport 版本） | `services/api/tests/test_a2_deployment_gate.py` |
+| 测试目标 no-connect guard | `services/api/tests/test_test_database_guard.py` |
+| 新 nonzero V1 隔离合约 fixture | `services/api/live_tests/test_a2_nonzero_hash_vectors.py` |
+| 完整 API/PostgreSQL 回归 | `bash services/api/scripts/test.sh` |
+| 后续 manifest 类型/fallback 补测 | `services/api/tests/test_a2_cached_manifest.py` 和 route recovery 新参数场景 |
+| 真实 API ReceiptConfirmed + automatic reorg | `services/api/live_tests/test_a2_receipt_confirmed.py` |
+| 真实已上链 AI/human 过期续签、Review/Reject 人工决定 | `services/api/live_tests/test_a2_renewal_human.py` |
+| accepted Blockchain 回归 | `bash scripts/check-blockchain.sh` |
+| accepted local-chain lifecycle | `.local/runtime/bin/python scripts/test-local-chain.py --live` |
 
 可执行 PG 专项命令（先确认是本组 owned marker，且取得独占测试 slot）：
 
@@ -133,15 +111,11 @@ export POG_MANAGED_POSTGRES_STATE=.local/postgres
 .local/runtime/bin/python -m pytest services/api/tests/test_test_database_guard.py -q
 ```
 
-两个既有 dependency deprecation warnings（Starlette/httpx、websockets.legacy）未计作失败。
-命令不得替换成业务库/远端或共享/default chain，不得为了复现负测绕过安全 guard。
+命令中的 loopback 端口和相对目录是示例，必须与操作者的隔离配置一致；不可换成业务库、远端库或默认链，也不能绕过安全 guard。
 
-## V1 独立跨语言证据边界
+## V1 非零 hash 向量与证据边界
 
-新增 `pog_api.hash_vectors` 用独立 Python `keccak(abi.encode(...))` 实现，不调用 contract
-helper 生成预期值。非零固定输入和预期值在
-`services/api/tests/test_a2_independent_hash_vectors.py`；2 项已通过，其中 assessment ID
-含 uint256/uint64 最大值和 overflow/type negatives。
+`pog_api.hash_vectors` 使用独立 Python `keccak(abi.encode(...))` 实现，不能调用 contract helper 生成期望值后再自证。测试入口为 `services/api/tests/test_a2_independent_hash_vectors.py`，覆盖 uint256/uint64 边界以及 overflow/type negatives。
 
 | 公式 | ABI 有序输入（首项为对应 domain 的 keccak） |
 | --- | --- |
@@ -154,45 +128,21 @@ fixture：逐向量输出精确输入、Python hash 和 accepted contract helper
 PRE/FINAL、两种 stage assessment ID/digest、五种 terms 及 HumanIntent digest。后续 action
 只能在该 synthetic/direct-contract 测试中准备合法 state；不新增 A2 HTTP，不写 PG，不
 提供运营资金能力，不连接真实 AI/payment。不得把单个 fixture 报成多项独立故障测试。
-新 fixture 已在 owned Anvil 的真实 helper 比对中 **1 passed、0 skipped、6.69s**，输出
-21 个非零 Python==contract comparison rows（包括重复采购下的对应向量，不是 21 个
-独立 pytest 场景）。stdout JSON 给出每个实际输入与双方结果，没有签名。精确执行命令：
+
+向量 fixture 输出实际输入与 Python/contract 的比较结果。comparison rows 的数量不等于独立 pytest 场景数，也不能据此推断签名或付款验收。先按 [A2_RUNBOOK.md](A2_RUNBOOK.md) 设置并验证自有隔离链 manifest，再运行：
 
 ```sh
 source .local/postgres/connection.env
 export POG_MANAGED_POSTGRES_STATE=.local/postgres
 export PYTHONPATH=services/api/src
-export POG_A2_LIVE_MANIFEST=/private/tmp/pog-local-a2-api/manifest.json
+export POG_A2_LIVE_MANIFEST="${POG_A2_CHAIN_MANIFEST:?Set the verified owned-chain manifest path first}"
 .local/runtime/bin/python -m pytest services/api/live_tests/test_a2_nonzero_hash_vectors.py -q -s
 ```
 
-该 fixture 不连接/写入 PG，但仍要求 shared guard 校验测试环境。链目标必须是本组
-owned 隔离 Anvil，不能使用默认 8545。纯 Python 2 项或原综合 live 场景不能替代这些
-真实 helper 比对；新 exact candidate 的完整 live 回归/CI 仍待最终整合。
+该 fixture 不连接或写入 PostgreSQL，但仍要求 shared guard 校验测试环境。链目标必须是自有隔离 Anvil，不能使用默认 8545。纯 Python 比较不能替代实际 helper 比对；新版本仍须绑定准确 commit、命令及 CI 结果。
 
-A2 API 综合场景仍停在 ReceiptConfirmed：实际 HTTP 综合测试 Donor 50/30，
-D80、Reserve60、Invoice50；Foundation 尚未收到稳定币。CEO 的 60/40、D100、
-Reserve80、Invoice72、Q80/free20/released0 数例在独立 nonzero 合约 fixture 的
-ReceiptConfirmed checkpoint 中使用（最后新增该 checkpoint/计数 assert 尚未单独复跑）；
-新的四项 HTTP 续签场景使用 D100/Reserve80 并止于 Reserved，未冒充 ReceiptConfirmed。
-nonzero hash fixture 后续合约状态
-仅用于验证 accepted helper；所有资产为本机无价值 MockHKD，不是 supplier Paid 的证据，
-也不授权真实换汇、最终支付或可运营 Release/Settlement/Close/Refund API。
+## 运行与验收边界
 
-## 最终整合门禁
+A2 HTTP 综合流程止于 `ReceiptConfirmed`，不证明 Foundation 已收到稳定币或 Vendor 已付款。独立 direct-contract fixture 的后续状态只用于验证 helper，不提供新的 API 资金能力。所有资产是无真实价值的 MockHKD；真实 AI、换汇、最终支付和可运营 Release/Settlement/Close/Refund API 均不在此范围。
 
-- 本地完整 API/PostgreSQL suite：364 passed；后续 31 项单独通过，最终统一重跑及远端整合后的回归 **PENDING**。
-- 本地真实隔离 Anvil：原路径 1、renewal 4、nonzero vectors 1 分别通过；最终统一重跑及远端整合后的回归 **PENDING**。
-- 新 nonzero V1 live fixture：本机专项已通过 1 项/21 比对；新 exact SHA CI **PENDING**。
-- accepted Blockchain / local-chain 回归：81 / 32 passed，0 skip。
-- 新 exact candidate SHA、PR #9 四类 CI：**PENDING**。
-- PM/CEO 复审及用户 milestone acceptance：**PENDING**。
-
-本地审阅入口：本文件、`.local/A2_LOCAL_REVIEW_HANDOFF.md` 和 clean HEAD 的本地候选；
-恢复快照 `f1b7c92` 是原本地修正，不是给 bcd5 直接应用的整合 patch。测试 PG 使用
-owned `127.0.0.1:55433/pog_api_test`，Anvil 使用 owned `127.0.0.1:18545`；未触碰 8545。
-本轮将停止自有测试进程，保留 DB、部署记录和测试源码；Anvil 为内存测试链，stop
-不承诺保存其业务链状态。以后发布需填写 exact SHA、实际完整命令、passed/skipped、
-隔离目标、已知限制和 CI 链接。
-不从旧候选绿 CI 或当前专项结果推断上述门禁完成，也不自动 merge、发 accepted tag、
-启动 A3/A4 或扩展真实 AI/payment/公开部署。
+公开 CI 应按准确 commit 核对 [GitHub Actions](https://github.com/Eason-NotFound/PoG/actions)。本文不新增测试通过声明；局部技术验证不能替代新版本完整回归、备份恢复演练或独立产品验收。

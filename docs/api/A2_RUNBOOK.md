@@ -1,10 +1,9 @@
 # PoG API A2 local runbook
 
-Local review only: Hank's published signing-expiry 003 is preserved unchanged;
-the additional review guards use successor 004. The original local review work
-is recoverable at `f1b7c92`. Local integration is authorized, but GitHub updates,
-main merge and acceptance tags remain on hold for user review.
-See `A2_REVIEW_FIXES.md` for tested boundaries and known pending work.
+Published signing-expiry migration 003 is preserved unchanged; additional guards
+use successor 004. Migration 004 is forward-only. See
+[A2_REVIEW_FIXES.md](A2_REVIEW_FIXES.md) for compatibility, reproducible checks
+and verification limits. This runbook covers the local synthetic A2 scope only.
 
 Start an owned chain on a non-default loopback port and verify it once. The API
 does not create, reset or stop Anvil.

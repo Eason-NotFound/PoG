@@ -9,12 +9,10 @@ product choice was needed. None is needed for the local-only defaults frozen in
 `M3_1_SPEC.md`. Implementation and independent verification are complete:
 Python startup/deploy/status/verify/stop/confirmed-reset, pinned Anvil, three
 unchanged accepted contracts, separate roles and instance-bound manifest.
-The user subsequently confirmed "3.1没问题" and requested GitHub upload on
-2026-10-03. Under the established workflow, M3.1 has been accepted and merged
+M3.1 received user acceptance and GitHub upload authorization on 2026-10-03. Under the established workflow, M3.1 has been accepted and merged
 through PR #4 as `977ea6223f2ce8a9e0f0159c42c289bab4420656`. New annotated formal
 tag `blockchain-v0.3.1-m3.1` points to that exact merge. This authorizes archival
-and a report only, not M3.2. The separate API/database PM chat is onboarding
-read-only and proposing its own stage plan; no backend implementation is implied.
+and a report only, not M3.2. Later API/database implementation requires separately authorized scope.
 
 CEO independently ran `python3 scripts/test-local-chain.py --live`: 32/32 passed
 (13 unit and 19 actual isolated-node cases, 40.443 seconds, no skips). A separate
@@ -159,7 +157,7 @@ CEO independently ran on 2026-10-03:
 
 ```text
 bash scripts/check-blockchain.sh
-/Users/quyichen/.foundry/bin/forge test --fuzz-runs 2000 -vv
+forge test --fuzz-runs 2000 -vv
 ```
 
 Both pass: 81/81 tests (44 preserved M1, 14 coder V2, 23 independent CEO V2).
@@ -210,7 +208,6 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 
 ## Repository publication
 
-- Author: `Eason-NotFound <23260068@life.hkbu.edu.hk>`.
 - `main` was originally initialized with empty root `03368f7`; accepted M1
   remains at immutable `45e6bab`, and accepted M2 merged as `61aa673`.
 - Historical M1 candidate branch: `codex/blockchain-m1-verified`.
@@ -227,7 +224,7 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
   <https://github.com/Eason-NotFound/PoG/actions/runs/37039039417>.
 - Source/tests/ABIs are frozen; later publication-status documentation does not
   move that tag or alter the 18-file candidate technical snapshot.
-- Explicit user acceptance: 2026-10-03 in the CEO chat; it authorizes M2
+- Explicit user acceptance: 2026-10-03; it authorizes M2
   merge/archive only, not M3. Acceptance was recorded in PR #2 before merge.
 - Accepted M2 merge: `61aa673653dd31188d2627d76cbba3f97fed6137`.
 - New annotated formal tag: `blockchain-v0.2.0-m2`; remote tag object
