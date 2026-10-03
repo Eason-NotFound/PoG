@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Generator
 from pathlib import Path
-import json
 import os
 from uuid import UUID
 
@@ -15,7 +14,7 @@ from pog_api.config import Settings
 from pog_api.db import build_engine, build_session_factory
 from pog_api.models import ROLE_NAMES, Role, User, WalletAuthorization
 from pog_api.security import hash_password
-from pog_api.test_db_safety import validate_test_database_url
+from pog_api.test_db_safety import assert_safe_test_target
 
 
 TEST_DATABASE_URL = os.environ.get("POG_TEST_DATABASE_URL")
@@ -23,26 +22,10 @@ if not TEST_DATABASE_URL:
     raise RuntimeError("POG_TEST_DATABASE_URL is required; tests never fall back to SQLite")
 
 
-def assert_safe_test_target() -> None:
-    target = validate_test_database_url(TEST_DATABASE_URL)
-    state = os.environ.get("POG_MANAGED_POSTGRES_STATE")
-    if state:
-        marker = json.loads((Path(state).resolve() / "managed.json").read_text(encoding="utf-8"))
-        if (
-            marker.get("managedBy") != "pog-api-a1"
-            or marker.get("testDatabase") != "pog_api_test"
-            or marker.get("port") != target.port
-        ):
-            raise RuntimeError("Managed PostgreSQL marker does not match the test URL")
-        return
-    if not (
-        os.getenv("CI") == "true"
-        and os.getenv("POG_TEST_TARGET_CONFIRMED") == "github-actions"
-    ):
-        raise RuntimeError("Direct pytest requires a managed marker or explicit CI target")
-
-
-assert_safe_test_target()
+assert_safe_test_target(
+    TEST_DATABASE_URL, managed_state=os.getenv("POG_MANAGED_POSTGRES_STATE"),
+    ci=os.getenv("CI"), target_confirmed=os.getenv("POG_TEST_TARGET_CONFIRMED"),
+)
 
 
 @pytest.fixture(scope="session")
@@ -58,6 +41,9 @@ def engine():
 @pytest.fixture(autouse=True)
 def clean_database(engine):
     tables = [
+        "signing_requests",
+        "donor_credit_projections",
+        "ledger_projections",
         "receipt_proofs",
         "document_versions",
         "risk_reports",

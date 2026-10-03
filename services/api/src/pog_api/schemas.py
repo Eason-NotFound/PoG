@@ -5,7 +5,7 @@ import re
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StrictStr, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StrictStr, field_validator, model_serializer
 
 from .amounts import UInt256String
 
@@ -62,8 +62,14 @@ class ProcurementCreate(StrictModel):
 
 
 class ChainState(StrictModel):
-    status: Literal["off_chain_draft"]
-    verified: Literal[False]
+    status: str
+    verified: bool
+    transaction_hash: str | None = Field(default=None, alias="transactionHash")
+    block_number: int | None = Field(default=None, alias="blockNumber")
+
+    @model_serializer(mode="wrap")
+    def omit_unavailable_facts(self, handler):
+        return {key: value for key, value in handler(self).items() if value is not None}
 
 
 class ProjectResponse(StrictModel):
@@ -90,6 +96,33 @@ class ProcurementResponse(StrictModel):
     created_at: datetime = Field(alias="createdAt")
 
 
+class ChainTransactionFact(StrictModel):
+    status: str
+    transaction_hash: str | None = Field(default=None, alias="transactionHash")
+    receipt_status: int | None = Field(default=None, alias="receiptStatus")
+    block_number: int | None = Field(default=None, alias="blockNumber")
+    block_hash: str | None = Field(default=None, alias="blockHash")
+    canonical: bool
+    confirmed_at: datetime | None = Field(default=None, alias="confirmedAt")
+
+    @model_serializer(mode="wrap")
+    def omit_unavailable_facts(self, handler):
+        return {key: value for key, value in handler(self).items() if value is not None}
+
+
+class OperationStepFact(StrictModel):
+    step_index: int = Field(alias="stepIndex")
+    kind: str
+    status: str
+    action: str | None = None
+    expected_event: str | None = Field(default=None, alias="expectedEvent")
+    transaction: ChainTransactionFact | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unavailable_facts(self, handler):
+        return {key: value for key, value in handler(self).items() if value is not None}
+
+
 class OperationResponse(StrictModel):
     operation_id: UUID = Field(alias="operationId")
     status: str
@@ -97,14 +130,20 @@ class OperationResponse(StrictModel):
     resource_type: str | None = Field(alias="resourceType")
     resource_id: UUID | None = Field(alias="resourceId")
     replayed: bool
-    chain_verified: Literal[False] = Field(alias="chainVerified")
+    chain_verified: bool = Field(alias="chainVerified")
     error_code: str | None = Field(default=None, alias="errorCode")
     error_status: int | None = Field(default=None, alias="errorStatus")
     error_message: str | None = Field(default=None, alias="errorMessage")
+    steps: list[OperationStepFact] | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unavailable_facts(self, handler):
+        return {key: value for key, value in handler(self).items() if value is not None}
 
 
 class DocumentResponse(StrictModel):
     id: UUID
+    version_id: UUID = Field(alias="versionId")
     procurement_id: UUID = Field(alias="procurementId")
     category: str
     version: int
@@ -139,3 +178,44 @@ class ProjectListResponse(StrictModel):
 
 class ProcurementListResponse(StrictModel):
     items: list[ProcurementResponse]
+
+
+class EmptyMutation(StrictModel):
+    pass
+
+
+class DonationCreate(StrictModel):
+    amount_atomic: UInt256String = Field(alias="amountAtomic")
+
+
+class PurchaseOrderCreate(StrictModel):
+    po_document_version_id: UUID = Field(alias="poDocumentVersionId")
+    request_document_version_id: UUID = Field(alias="requestDocumentVersionId")
+    goods_request_document_version_id: UUID = Field(alias="goodsRequestDocumentVersionId")
+
+
+class InvoiceAndGoodsCreate(StrictModel):
+    invoice_document_version_id: UUID = Field(alias="invoiceDocumentVersionId")
+    goods_document_version_id: UUID = Field(alias="goodsDocumentVersionId")
+    invoice_amount_atomic: UInt256String = Field(alias="invoiceAmountAtomic")
+
+
+class SigningRequestCreate(StrictModel):
+    kind: Literal["ai_pre", "reserve", "receipt"]
+    reserve_amount_atomic: UInt256String | None = Field(default=None, alias="reserveAmountAtomic")
+    receipt_evidence_document_version_id: UUID | None = Field(
+        default=None, alias="receiptEvidenceDocumentVersionId"
+    )
+    deadline_ttl_seconds: int | None = Field(default=None, alias="deadlineTtlSeconds", ge=60, le=3600)
+
+
+class DemoSignRequest(StrictModel):
+    confirm: Literal[True]
+
+
+class SignatureSubmit(StrictModel):
+    signature: SafeStrictStr = Field(min_length=132, max_length=132)
+
+
+class ReserveCreate(StrictModel):
+    reserve_amount_atomic: UInt256String = Field(alias="reserveAmountAtomic")
