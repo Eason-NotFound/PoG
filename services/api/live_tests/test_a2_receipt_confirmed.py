@@ -171,11 +171,6 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
             po = _upload(client, tokens["foundation"], procurement["id"], "purchase_order", "live-po-doc")
             request = _upload(client, tokens["foundation"], procurement["id"], "request", "live-request-doc")
             goods_request = _upload(client, tokens["foundation"], procurement["id"], "goods_request", "live-goods-request-doc")
-            po_snapshot = gateway.w3.provider.make_request("evm_snapshot", [])["result"]
-            po_body = {
-                "poDocumentVersionId": po["versionId"], "requestDocumentVersionId": request["versionId"],
-                "goodsRequestDocumentVersionId": goods_request["versionId"],
-            }
             queued = client.post(
                 f"/v2/procurements/{procurement['id']}/chain/purchase-order",
                 json={
@@ -187,26 +182,6 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
             assert queued.status_code == 202, queued.text
             pending_po = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"]))
             assert pending_po.json()["chainState"]["verified"] is False
-            _drain(worker, indexer, factory, queued.json()["operation"]["operationId"])
-            confirmed_po = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"])).json()
-            assert confirmed_po["chainState"]["verified"] is True
-            orphan_po_hash = confirmed_po["chainState"]["transactionHash"]
-            for _ in range(100):
-                if not indexer.sync_one_block():
-                    break
-            else:
-                raise AssertionError("Indexer cursor did not catch up before PO reorg")
-            assert gateway.w3.provider.make_request("evm_revert", [po_snapshot])["result"] is True
-            gateway.w3.provider.make_request("evm_mine", [])
-            assert indexer.sync_one_block() is True  # detects the orphan checkpoint automatically
-            reverted_po = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"])).json()
-            assert reverted_po["chainState"]["status"] == "created"
-            assert reverted_po["chainState"]["transactionHash"] != orphan_po_hash
-            queued = client.post(
-                f"/v2/procurements/{procurement['id']}/chain/purchase-order", json=po_body,
-                headers=_auth(tokens["foundation"], "live-po-chain-restored"),
-            )
-            assert queued.status_code == 202, queued.text
             _drain(worker, indexer, factory, queued.json()["operation"]["operationId"])
 
             ai_request = client.post(
@@ -439,6 +414,57 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
                 ), {"id": project["id"]}).scalar_one()
             assert row == ("requires_attention", "chain_reorganization")
             assert int(deposits) == 80000000
+
+            # A separate procurement exercises a PO state rollback without
+            # interrupting the primary ReceiptConfirmed path above.
+            reorg_draft = client.post("/v2/procurements", json={
+                "projectId": project["id"], "title": "Synthetic reorg guard purchase",
+                "vendorWallet": gateway.roles["vendor"], "budgetCapAtomic": "1000000",
+            }, headers=_auth(tokens["foundation"], "reorg-procurement-draft"))
+            assert reorg_draft.status_code == 202, reorg_draft.text
+            reorg_procurement = reorg_draft.json()["procurement"]
+            reorg_id = reorg_procurement["id"]
+            created = client.post(f"/v2/procurements/{reorg_id}/chain/create", json={},
+                                  headers=_auth(tokens["foundation"], "reorg-procurement-create"))
+            assert created.status_code == 202, created.text
+            _drain(worker, indexer, factory, created.json()["operation"]["operationId"])
+            reorg_po_body = {}
+            for category, field in [("purchase_order", "poDocumentVersionId"),
+                                    ("request", "requestDocumentVersionId"),
+                                    ("goods_request", "goodsRequestDocumentVersionId")]:
+                uploaded = _upload(client, tokens["foundation"], reorg_id, category, "reorg-doc-" + category)
+                reorg_po_body[field] = uploaded["versionId"]
+            po_snapshot = gateway.w3.provider.make_request("evm_snapshot", [])["result"]
+            queued = client.post(f"/v2/procurements/{reorg_id}/chain/purchase-order", json=reorg_po_body,
+                                 headers=_auth(tokens["foundation"], "reorg-po-first"))
+            assert queued.status_code == 202, queued.text
+            _drain(worker, indexer, factory, queued.json()["operation"]["operationId"])
+            confirmed_po = client.get(f"/v2/procurements/{reorg_id}", headers=_auth(tokens["foundation"])).json()
+            assert confirmed_po["chainState"]["verified"] is True
+            orphan_po_hash = confirmed_po["chainState"]["transactionHash"]
+            for _ in range(100):
+                if not indexer.sync_one_block():
+                    break
+            else:
+                raise AssertionError("Indexer cursor did not catch up before PO reorg")
+            assert gateway.w3.provider.make_request("evm_revert", [po_snapshot])["result"] is True
+            gateway.w3.provider.make_request("evm_mine", [])
+            assert indexer.sync_one_block() is True
+            reverted_po = client.get(f"/v2/procurements/{reorg_id}", headers=_auth(tokens["foundation"])).json()
+            assert reverted_po["chainState"]["status"] == "created"
+            assert reverted_po["chainState"]["transactionHash"] != orphan_po_hash
+            retry = client.post(f"/v2/procurements/{reorg_id}/chain/purchase-order", json=reorg_po_body,
+                                headers=_auth(tokens["foundation"], "reorg-po-explicit-new-request"))
+            assert retry.status_code == 202, retry.text
+            assert worker.once() is True
+            with factory() as session:
+                status = session.execute(text("SELECT status,error_code FROM operations WHERE id=:id"),
+                                         {"id": retry.json()["operation"]["operationId"]}).one()
+            assert status == ("requires_attention", "chain_nonce_history_conflict")
+            assert gateway.receipt(orphan_po_hash) is None
+            primary = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"])).json()
+            assert primary["chainState"]["status"] == "receipt_confirmed"
+            assert primary["chainState"]["verified"] is True
     finally:
         worker.close()
         indexer.close()

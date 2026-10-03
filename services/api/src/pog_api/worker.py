@@ -6,11 +6,12 @@ from uuid import UUID
 
 from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
 from web3 import Web3
 
 from .chain import LocalChainGateway, PreparedEnvelope
 from .db import build_engine, build_session_factory
-from .idempotency import ensure_verified_namespace
+from .idempotency import audit, ensure_verified_namespace
 from .models import (
     ChainEvent, ChainTransaction, DonorCreditProjection, LedgerProjection,
     DeploymentInstance, IndexerCursor, Operation, OperationStep, Procurement, Project,
@@ -119,8 +120,29 @@ class ChainWorker:
                     ).hex(), value_text=str(envelope.value), envelope_hash=envelope.hash,
                     status="prepared", canonical=False,
                 )
-                session.add(existing)
-                session.flush()
+                try:
+                    with session.begin_nested():
+                        session.add(existing)
+                        session.flush()
+                except IntegrityError as exc:
+                    if getattr(getattr(exc.orig, "diag", None), "constraint_name", None) != "uq_chain_tx_caller_nonce":
+                        raise
+                    # A reorg or competing operation can expose a nonce already in
+                    # the durable history. Preserve that history and send nothing.
+                    step.status = "requires_attention"
+                    operation.status = "requires_attention"
+                    operation.error_code = "chain_nonce_history_conflict"
+                    operation.error_status = 409
+                    operation.error_detail = "Caller nonce is reserved in transaction history; inspect canonical and pending facts before authorizing recovery"
+                    audit(session, principal_id=operation.principal_id, operation_id=operation.id,
+                          action="chain.nonce_conflict", outcome="requires_attention",
+                          metadata={"caller": envelope.caller, "nonce": str(envelope.nonce)})
+                    signing_request = session.scalar(select(SigningRequest).where(
+                        SigningRequest.submitted_operation_id == operation.id,
+                    ))
+                    if signing_request is not None:
+                        signing_request.status = "requires_attention"
+                    return True
                 step.status = "prepared"
             existing.status = "sending"
             existing.submitted_at = _utcnow()

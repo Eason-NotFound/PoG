@@ -327,6 +327,53 @@ def test_two_workers_claim_one_step_and_send_once(
             worker.close()
 
 
+def test_recorded_caller_nonce_collision_preserves_history_without_sending(
+    created_project, session_factory, settings,
+):
+    _token, created = created_project
+    operation_id = _queue_worker_fixture(session_factory, created)
+    with session_factory() as session, session.begin():
+        operation = session.get(Operation, operation_id)
+        old_step = session.scalar(select(OperationStep).where(OperationStep.operation_id == operation.id))
+        old_step.status = "requires_attention"
+        old = ChainTransaction(
+            operation_id=operation.id, step_id=old_step.id, namespace_id=operation.namespace_id,
+            caller_address="0x" + "11" * 20, to_address="0x" + "22" * 20,
+            chain_id=31337, evm_nonce_text="7", calldata="0x1234", value_text="0",
+            envelope_hash="0x" + "33" * 32, calldata_hash="0x" + "44" * 32,
+            status="requires_attention", tx_hash="0x" + "55" * 32, canonical=False,
+        )
+        session.add(old)
+        replacement = Operation(
+            namespace_id=operation.namespace_id, principal_id=operation.principal_id,
+            operation_kind="project.chain.create", idempotency_key="new-conflicting-nonce",
+            payload_hash="66" * 32, status="queued",
+        )
+        session.add(replacement)
+        session.flush()
+        replacement_id = replacement.id
+        session.add(OperationStep(operation_id=replacement.id, step_index=0,
+                                  kind=old_step.kind, status="queued", detail=old_step.detail))
+    gateway = _WorkerGateway()
+    worker = ChainWorker(settings.database_url, gateway)
+    try:
+        assert worker.once() is True
+        assert gateway.send_calls == gateway.find_calls == 0
+        with session_factory() as session:
+            replacement = session.get(Operation, replacement_id)
+            assert (replacement.status, replacement.error_code) == ("requires_attention", "chain_nonce_history_conflict")
+            assert replacement.error_status == 409
+            replacement_step = session.scalar(select(OperationStep).where(OperationStep.operation_id == replacement_id))
+            assert replacement_step.status == "requires_attention"
+            assert session.scalar(select(func.count(ChainTransaction.id))) == 1
+            assert session.scalar(select(ChainTransaction.tx_hash)) == "0x" + "55" * 32
+            old = session.scalar(select(ChainTransaction))
+            assert old.status == "requires_attention" and old.canonical is False
+            assert session.scalar(select(func.count(AuditLog.id)).where(AuditLog.action == "chain.nonce_conflict")) == 1
+    finally:
+        worker.close()
+
+
 @pytest.mark.parametrize(
     "reconcile_after_error,expected_status",
     [(True, "submitted"), (False, "requires_attention")],

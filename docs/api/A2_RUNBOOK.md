@@ -40,6 +40,14 @@ caller/nonce/to/data/value envelope before it sends or binds anything. An
 unprovable outcome becomes `requires_attention`; it is never retried with a new
 nonce.
 
+After a reorg, a caller nonce already present in durable transaction history is
+held for investigation. A newly queued operation that encounters it becomes
+`requires_attention` with `chain_nonce_history_conflict` (409); it sends nothing
+and keeps the original transaction and audit records. A2 has no automatic nonce
+release or manual-resolution HTTP endpoint. Inspect canonical and pending facts
+before coordinating recovery; do not delete records or start a fresh namespace
+on the same running chain to bypass the hold.
+
 Standard application usernames are `foundation`, `recipient`, `donor`, and
 `admin`. `admin` maps only to `human_approver` and the manifest's independent
 `humanApprover` wallet. The optional `service-ai-fixture` and second Donor are
