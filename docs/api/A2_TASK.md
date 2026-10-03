@@ -1,22 +1,20 @@
-# PoG API / Database A2 任务书
+# PoG API / Database A2 范围与接口要求
 
-版本 A2.1，2026-10-03，香港时间。用户明确指示：「验收a1，继续a2，如果需要其他项目组信息就跟我说」。PM 冻结需求及代码审查；API & Database Coder 实现。本授权覆盖 API A2 本地链接入，不授权 A3/A4、其他组开发或修改已接受合约。
+版本 A2.1，2026-10-03。本文描述本地链 API 的能力、权限和验证要求；实际 HTTP 路径止于 Recipient `ReceiptConfirmed`，不包含真实 AI、付款或后续资金动作。
 
-### 最新用户名澄清（2026-10-03，优先于旧 demo 命名）
+## 标准账号与权限
 
-用户已明确要求并授权修改：Foundation=`foundation`；Recipient=`recipient`；Donor=`donor`；Human Approver 及页面维护等统一使用用户名 `admin`。不再将 `foundation-demo` / `recipient-demo` / `donor-demo` / `human-demo` 作为对外标准账号；不另建一个 Human Approver 登录入口。
+Foundation=`foundation`；Recipient=`recipient`；Donor=`donor`；Human Approver 及页面维护使用用户名 `admin`。历史 `foundation-demo` / `recipient-demo` / `donor-demo` / `human-demo` 示例不作为对外标准账号，不另建 Human Approver 登录入口。
 
-`admin` 是应用账号名，内部 Human Approver 角色和独立 manifest.humanApprover 钱包保持不变；不能因此赋予链 owner、Foundation、Recipient 或任意资金权限。页面维护统一归此身份；A2 不授权新增前端/页面维护 CRUD 或 public 用户/密码/钱包管理接口。将这一约定持久化至 `docs/api/ACCOUNT_PREFERENCES.md` 并在本组后续任务/seed/runbook引用。
+`admin` 仅为应用账号名，`human_approver` 角色及其与独立 `manifest.humanApprover` 钱包的绑定保持不变；不能因此赋予链 owner、Foundation、Recipient 或任意资金权限。A2 不提供页面维护 CRUD 或通用用户、密码、钱包管理接口。账号约定见 [ACCOUNT_PREFERENCES.md](ACCOUNT_PREFERENCES.md)。
 
-更新 A2 seed/provision、登录示例、配置示例、测试与当前操作文档。既有同组 demo 账号可通过显式、受控、幂等 rename 迁移为标准用户名，保留 user ID、密码hash、role-wallet、项目/文件/审批/audit 关联；不静默重写角色/钱包/密码，不覆盖或合并已存在目标用户，冲突即拒绝并报告。A1 accepted tag/冻结历史任务书保持不变；当前文档标注新偏好 supersede 历史账号例子。AI fixture/第二 Donor 如验收测试所需仍是明确技术账号，不替代四个标准入口。
+既有 demo 账号只能通过显式、受控、幂等 rename 迁移为标准用户名，保留 user ID、密码 hash、role-wallet、项目/文件/审批/audit 关联；不静默重写角色、钱包或密码，不覆盖或合并目标用户，冲突即拒绝。AI fixture 和第二 Donor 是明确的技术账号，不替代四个标准入口。历史发布标签中的示例保持不变。
 
-## 1. 接受基线、分支和停点
+## 1. 版本基线
 
-- A1 PR #7 已普通 merge：`1844186df10854cd49ccc0886f5622e71e572d8e`；验收候选 `6b7739448219e969ad402d6028ad952ba7e88e33`；正式 annotated tag `api-v0.1.0-a1`。合并 tree 与验收候选一致；main 和 tag-ref 的 API/Blockchain/Local-chain 验证均通过。
-- 从最新已接受 origin/main 建立 `codex/api-db-a2-chain-integration`，复用 Coder 的独立 worktree。共享 checkout 是其他组的 `codex/blockchain-booth-mock-preparation`，不可切换、编辑或暂存。
-- 先阅读根 AGENTS、docs/api/A0_REQUIREMENTS.md、A1_TASK.md、docs/STATUS.md、MILESTONES.md、M2_V2_SPEC.md、M2_V2_INTERFACE_IMPLEMENTED.md、M2_V2_INTEGRATION.md、M3_1_SPEC.md、M3_1_RUNBOOK.md、FOUNDATION_SETTLEMENT_FLOW.md、VERSION_CONTROL.md 和真实 ABI/源码。本轮用户授权仅 supersede 旧文档的 API onboarding/read-only/M3.2 未授权停点，不改变资金规则。
-- 将本任务书逐字纳入 `docs/api/A2_TASK.md`。新增 API A2 interface/runbook/status 文档，记录 A1 验收及本轮授权，不改写历史冻结文档、ABI、合约、vendor、接受标签或 M1/M2/M3.1 技术快照。
-- 交付 verified feature branch、Draft PR、精确 SHA、测试与 CI，附 PR 后 STOP 等用户验收。不得 merge A2、打 A2 accepted tag、启动 A3/A4、直接 push main、force-push、amend 已发布提交、删历史 branch/tag 或弱化 gates。
+- A1：`api-v0.1.0-a1`，commit `1844186df10854cd49ccc0886f5622e71e572d8e`，源候选 `6b7739448219e969ad402d6028ad952ba7e88e33`。
+- A2：`api-v0.2.0-a2`，commit `4c9f1a40ac225d684d00b5abcf8081c43594bfcc`。数据库迁移 head 为 `c31003a20004`；已发布 `c31003a20003` 保持原样，后续迁移必须追加。
+- 业务与资金规则以已发布 V2 Solidity、ABI 和对应规范为准；文档清理不改变这些工件。
 
 ## 2. 本轮范围和明确不实现项
 
@@ -106,11 +104,11 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 8. 隔离实例 reset/替换，复用 chainId/address 时旧pending/签名禁止发送或API重放、query隔离；不自动删除audit。manifest/code/ABI/binding/role/instance/chainId错误及RPC unavailable门禁失败，无 mutation。
 9. `bash scripts/check-blockchain.sh` 与既有 local-chain检查回归；全 tracked diff `git diff --check <accepted-base> HEAD`，无 secrets/private state/硬编码测试 privatekeys；PR上 API/Blockchain/Local-chain CI 在 exact candidate SHA通过。
 
-## 7. 交付与沟通
+## 7. 实现与验证边界
 
-尽早在 Coder chat 给 branch/worktree/模块计划及任何真正阻塞；PM只读跟进与修正审查，不写产品代码。需要其他组业务信息只报告给PM/用户，不主动发送其他chat。现有 ABI、角色、签名、hash、manifest足够A2；实际 AI report schema/bytes交付和 Payment operation/ledger协议属于A3，不凭猜测声明冻结。
+既有 ABI、角色、签名、hash 和 manifest 是 A2 链接入依据。实际 AI report schema/bytes 对接及 Payment operation/ledger 接口需要各自版本的实现和验证，不能根据本地 synthetic 演示推断已接入。
 
-最终交付：commit/PR/base/rollback、接口表与 OpenAPI、migration、typed vectors、worker/indexer手册、真实测试结果、CI、所启动/停止的本组进程、未实现/EOA/unlocked/mock限制。verified不是用户验收。A2候选完成即报告并STOP。
+验证记录应绑定具体 commit、接口/OpenAPI、迁移、命令、passed/skipped、隔离目标、CI 及已知限制。技术验证不等于用户里程碑验收、生产可用或全链验收；运行与恢复说明见 [A2_RUNBOOK.md](A2_RUNBOOK.md)。
 
 技术参考（主规范仍以本仓库冻结版本为准）：
 

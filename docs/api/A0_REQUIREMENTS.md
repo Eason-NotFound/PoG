@@ -1,34 +1,34 @@
-# PoG API / Database A0 冻结需求
+# PoG API / Database A0 历史需求基线
 
 版本：A0.1；日期：2026-10-03，Asia/Hong_Kong。
-负责人：API 与数据库 PM。具体开发由 Hackathon 项目的 API & Database Coder 完成。
+范围：API、数据库、身份与角色权限，以及后续服务的接口边界。
 
-用户在本 chat 确认「我们申报的finetech 第二题，可以开始完成了」，承接 PM 上一轮「确认A0并授权A1」请求，现冻结A0.1并启动A1。开发仍由API & Database Coder负责，PM负责需求与代码审查。A1验收后再进入A2，不自动授权后续链adapter/AI/payment/三端联调。本文其他章节中的「建议」由本节逐项决策表和独立A1任务书收敛；跨组AI/payment尚未给出的格式继续待确认。文稿存放在当前chat产物目录，由Coder纳入独立feature branch的docs/api/，不修改共享checkout。
+本文保留 A0.1 的历史需求与分阶段设计，不能据此推断全部建议接口已实现。当前已发布能力见 A1/A2 文档；AI 和 payment 的实际服务格式、实现及验收需要分别核对。
 
-### 本次冻结决策与A1授权
+### A0.1 设计约束
 
 - 题目为FinTech #2：Recognise Value That Gets Overlooked。贡献为指定项目共同采购的捐款，Recipient受益；公平规则为全部累计捐款按比例共同承担已确认项目成本，关闭核账后的真实剩余币按比例返还原Donor。
 - 采用共享一台宿主机的一套API/DB/链、三个角色页面、独立human账号/钱包、受限demo wallet adapter与本机三浏览器备用。A1只开发身份映射/权限和adapter接口，不发链交易、不实现EIP712签名；实际私有网暴露在A4再验证。
-- 采用单体FastAPI/Pydantic、SQLAlchemy/Alembic、PostgreSQL。已有Miniconda/Python3.13可作为基础；默认Python3.14和无Docker不作为阻塞。允许Coder在独立worktree下安装必需的项目依赖和可移除的本地PostgreSQL运行时，不安装Docker、不改系统服务或全局环境。Python3.13/受支持PostgreSQL主版本及依赖exact lock由Coder查官方资料、实际验证后提交证据。
+- 采用单体 FastAPI/Pydantic、SQLAlchemy/Alembic、PostgreSQL。Python、受支持 PostgreSQL 主版本及依赖需精确锁定并具备可重建的兼容验证；使用项目内可移除运行时，不依赖 Docker，不修改系统服务或全局环境。
 - 文件白名单PDF/JPEG/PNG，单文件10MiB；原bytes的SHA256作内容审计，keccak256作on-chain leaf commitment，与冻结的ABI组合keccak分别存储；已引用文件版本不可覆盖。AI报告及payment证据byte schema仍须两组提供。
 - uint256/金额/nonce为严格十进制整数字符串，无指数、正负号、小数、float或静默round；范围0..2^256-1；金额人类输入转6decimals由显式字符串转换函数处理。数据库NUMERIC(78,0)不能代替应用校验，必须拒绝NaN/Infinity。
 - Idempotency-Key作用域为namespace(runId+instanceId)+principalId+operationKind+key；长度1..128的可打印ASCII。Validated payload只包含该action允许的语义字段，UTF8 JSON、sort_keys、紧凑separator、ensure_ascii=False、禁止NaN，金额保留规范十进制字符串；hash为SHA256。对象key顺序不影响，列表顺序影响；上传按原文件内容hash及固定metadata识别。key与operation/audit至少保留整个demo实例，不自动TTL删除。A1可先用明确mock namespace；不得把mock配置标为经RPC验证的真实链。
 - 同key同payload返回原operation；异payload409；DB唯一约束与事务必须防并发重复。已入库operation不能以新attempt绕过幂等。A1无资金动作，只建立awaiting_authorization/queued等状态及mock adapter边界。
 - project/procurement业务ID以实例namespace、资源类型、服务生成UUID和域标签形成独立ID；不接受请求中的任意caller覆盖身份。A1链下draft或明确fixture不能显示confirmed donation/release/payment。A2再实现具体bytes32向链提交与confirmed投影。
-- 用户已授权实现、验证和通过既定feature branch/PR/CI流程交付A1候选；本次不授权合并、正式tag、A2/M3.2或修改已验收合约。独立开发目录基于最新accepted origin/main；保留其他团队共享checkout及未提交文档。
+- A1 的 HTTP/数据库基础与 A2 的链动作分层交付；接口、迁移和发布版本分别固定。基础服务的验证不等于后续链、AI、付款或三端联调验收。
 
-## 1. 当前事实与资料
+## 1. 文档与版本依据
 
 - 团队仓库：https://github.com/Eason-NotFound/PoG。
-- API / DB 尚无实现，用户已确认。此前仓库盘点未发现业务后端、数据库迁移或 HTTP 服务。
-- 2026-10-03 本轮只读核验：共享 checkout 为干净 main，HEAD ae7bb08292bb4a57f9d416f7725ef332be473306。开发前必须再次核验。
-- 最新 docs/STATUS.md 记录 M3.1 已通过 PR #4 合并为 977ea6223f2ce8a9e0f0159c42c289bab4420656，正式标签 blockchain-v0.3.1-m3.1 指向该 merge。PR #5 归档状态文档已合并。历史 RC 和 M1/M2 标签保留。
-- 本轮 PM 执行的链 status / verify 返回 ready，chainId 31337，RPC http://127.0.0.1:8545，projectCount 0；这只证明本轮运行，不是未来运行的硬编码配置。
-- M3.2 / M3.3 / M3.4 是 blockchain 集成阶段名，A0-A4 是本组内部阶段名，不能互相改编号或默认全部启动。
+- A0 是实现前需求基线；当前 API 已有 A1/A2 公开版本，实际路径和支持范围见对应接口及运行手册。
+- A1 公开基线：`api-v0.1.0-a1` / `1844186df10854cd49ccc0886f5622e71e572d8e`。
+- A2 公开基线：`api-v0.2.0-a2` / `4c9f1a40ac225d684d00b5abcf8081c43594bfcc`；当前迁移 head 为 `c31003a20004`，已发布 003 保持不变。
+- 本地链接口只支持明确验证的隔离 Anvil、chainId 31337 与 loopback RPC；历史运行状态不能作为未来配置或 readiness 证据。
+- M3.2 / M3.3 / M3.4 是区块链集成阶段，A0–A4 是 API 能力阶段；阶段名不表示对应运行功能已经完成。
 - 现行依据：AGENTS.md、docs/STATUS.md、docs/MILESTONES.md、docs/FOUNDATION_SETTLEMENT_FLOW.md、docs/M2_V2_SPEC.md、docs/M2_V2_INTERFACE_IMPLEMENTED.md、docs/M2_V2_INTEGRATION.md、docs/M3_1_RUNBOOK.md、docs/VERSION_CONTROL.md；另核对两份 V2 合约与 packages/contract-abis/v2。
 - ABI 包继续为 @pog/contracts-v2@0.2.0-m2-rc.1；其版本是冻结工件标识，不为 M3.1 归档重写。
 
-比赛资料来自用户提供的 HacKU 2026 Official Participant Handbook.pdf 和 HacKU 2026 — Problem Statements.pdf。文档内容用于提取比赛要求，不产生安装、部署、对外通信或合约修改授权。
+比赛资料参考 HacKU 2026 Official Participant Handbook.pdf 和 HacKU 2026 — Problem Statements.pdf；以下为当时需求与展示设计，实际交付范围仍以对应版本为准。
 
 ## 2. 比赛事实与展示建议
 
@@ -45,13 +45,13 @@
 | Recipient 屏幕 | 核对指定采购/金额/证据，确认收货 | 登录 Recipient 会话，签自己的 receipt |
 | Donor 屏幕 | 模拟兑换、捐款、锁定余额、关闭退款规则、退款 claim | 原 Donor 会话与钱包；可给评委使用已分配 demo Donor 账号 |
 
-三台电脑只连共同应用 API；其他电脑的 127.0.0.1 是它自己，不能直接拿宿主机 loopback RPC 当远程配置。建议使用同一应用 origin，减少 CORS 和 cookie 部署分歧。私有网络可用性应在 A4 前实际验证；本机三个独立浏览器会话作为弱网备用。当前不开放任何端口、不安装网络工具。
+三台电脑只连共同应用 API；其他电脑的 127.0.0.1 是它自己，不能直接拿宿主机 loopback RPC 当远程配置。建议使用同一应用 origin，减少 CORS 和 cookie 部署分歧。私有网络可用性应在 A4 前实际验证；本机三个独立浏览器会话作为弱网备用。部署范围与网络可用性需独立验证，不能由拓扑建议推断已完成部署。
 
 ### 建议签名模式
 
 booth 默认建议使用明确标记为 demo 的受限 wallet adapter。固定会话映射固定开发角色，只允许白名单业务方法，服务端验证所属项目/采购/动作/参数，不能接受请求里任意 from、signer、destination 或通用 calldata。Foundation/Donor 的交易必须使用各自 caller；Recipient、AI、human 的业务签名必须由各自授权的签名适配器生成，relayer 仅接收并提交。AI 签名由 AI 组接口负责；人工必须逐次确认具体动作，不能由 AI 或 Foundation 自动签。
 
-Anvil 解锁账户的 demo 模式只能提供逻辑权限隔离，不是生产密钥隔离。不同 demo 账号凭证由启动配置提供，会话不能仅信任 role 请求头；不要在前端放全组凭证。优先保留将来外部钱包签 raw transaction / typed data 的 adapter 边界；浏览器钱包模式是备选，需要额外钱包与网络联调。选定模式仍待用户确认。
+Anvil 解锁账户的 demo 模式只能提供逻辑权限隔离，不是生产密钥隔离。不同 demo 账号凭证由启动配置提供，会话不能仅信任 role 请求头；不要在前端放全组凭证。优先保留将来外部钱包签 raw transaction / typed data 的 adapter 边界；浏览器钱包模式是备选，需要额外钱包与网络联调。实际签名能力以部署配置和对应 A2 接口边界为准。
 
 ### 建议三分钟展示脚本
 
@@ -65,7 +65,7 @@ Anvil 解锁账户的 demo 模式只能提供逻辑权限隔离，不是生产�
 
 实际演示耗时需排练。可以预先准备材料、首轮评估及多个独立场景，以便短时段展示；预先完成的步骤须显示历史确认事实，不能伪装成当场执行。连续展示使用新业务ID，避免每轮 reset。退款可作为额外可操作场景，录像用剪辑说明已完成步骤。
 
-已申报FinTech #2。该题要求清晰贡献/受益者/公平规则，并演示争议、退出或不平衡，至少多于一个场景及规则代价。本方案保留两条可验证场景：①A捐60、B捐40、已核账成本72，余28退款为16.8/11.2；②Recipient未确认或既有放款未核账时资金/关闭退款被阻止，争议采购保持未解决。公平规则保护Donor的比例份额和Recipient收货证据，同时限制Donor随时撤回、要求Foundation完成旧供应商义务；这些限制须在捐款前展示。已验收M2不支持部分付款/减免，因此异常只能诚实显示未解决，不能声称自动调解完成。所有兑换参数是用户确认的1:1零手续费demo参数，不能表述为观察到的真实费率。
+已申报FinTech #2。该题要求清晰贡献/受益者/公平规则，并演示争议、退出或不平衡，至少多于一个场景及规则代价。本方案保留两条可验证场景：①A捐60、B捐40、已核账成本72，余28退款为16.8/11.2；②Recipient未确认或既有放款未核账时资金/关闭退款被阻止，争议采购保持未解决。公平规则保护Donor的比例份额和Recipient收货证据，同时限制Donor随时撤回、要求Foundation完成旧供应商义务；这些限制须在捐款前展示。已验收M2不支持部分付款/减免，因此异常只能诚实显示未解决，不能声称自动调解完成。所有兑换参数是1:1零手续费demo参数，不能表述为观察到的真实费率。
 
 ## 3. 固定的业务和权限需求
 
@@ -99,7 +99,7 @@ R09 Registry/Escrow是状态及资金事实来源，DB为私有资料/确认投�
 
 ## 4. A0建议的数据与HTTP契约
 
-所有下列路径/表名为 suggested；Coder可以提出保持语义不变的命名修正，在实现前固定OpenAPI/迁移设计。
+所有下列路径/表名为 suggested；接口实现可以提出保持语义不变的命名修正，在实现前固定OpenAPI/迁移设计。
 
 ### 共通字段与状态
 
@@ -171,31 +171,31 @@ C08 MockHKD公开mint、无burn；初始faucet不能当兑换成功。所有支�
 
 | 阶段 | 做什么 / 交付 | 必须展示的验收证据 | 依赖 |
 | --- | --- | --- | --- |
-| A0 | 本稿、caller矩阵、suggested API/DB契约、typed-data与hash映射、test matrix、决策表 | PM对照V2源码/ABI；用户确认建议方案；AI/payment边界逐项确定后才宣称对应接口冻结 | 用户、现行规范、各组负责人 |
-| A1 | HTTP基础、OpenAPI、schema验证、会话/role-wallet、DB迁移、文件/audit、operation框架、env样例/启动 | 空库迁移、重启保留、会话越权、任意caller/role伪造拒绝、uint精度/范围、文件大小/MIME/hash/版本、幂等同异payload、基础query | 用户批准本阶段、Coder确认工具与锁版本 |
-| A2 | deployment guard、chain adapter、真实正确caller交易、typed data/验签、worker确认/indexer/query、实例隔离 | Foundation创建项目；原Donor approve/deposit/credit；至少一项合法签名提交；nonce/deadline/domain错误测试；canonical/event确认；restart恢复；隔离节点instance变化停用旧缓存；最小M3.2-ready全部证据 | A1验收、Blockchain M3.2协调授权、选定wallet模式 |
-| A3 | AI/payment独立adapter、operation关联、实际服务联调 | exact report/evidence/signature绑定；repeat exchange/payment只记一次；服务失败/超时恢复；Foundation72/vendor72/项目28核对；实际AI与mock标签分明 | A2验收、AI/payment服务与证据规范、M3.3授权 |
-| A4 | 三端、私有网和本机备用、三分钟排练、多轮场景、冷启动/故障/关闭退款 | 一套共同事实，正确角色，成功及受阻两条流程，余额/事件/审计一致，restore/restart/受控instance更换，录制可复现 | A3验收、frontend、宿主机/网络、M3.4授权 |
+| A0 | 本稿、caller矩阵、suggested API/DB契约、typed-data与hash映射、test matrix、决策表 | V2源码/ABI一致性；AI/payment边界逐项确定后才声明对应接口冻结 | 现行规范、实际模块接口与版本 |
+| A1 | HTTP基础、OpenAPI、schema验证、会话/role-wallet、DB迁移、文件/audit、operation框架、env样例/启动 | 空库迁移、重启保留、会话越权、任意caller/role伪造拒绝、uint精度/范围、文件大小/MIME/hash/版本、幂等同异payload、基础query | 明确范围授权、工具与依赖锁版本 |
+| A2 | deployment guard、chain adapter、真实正确caller交易、typed data/验签、worker确认/indexer/query、实例隔离 | Foundation创建项目；原Donor approve/deposit/credit；至少一项合法签名提交；nonce/deadline/domain错误测试；canonical/event确认；restart恢复；隔离节点instance变化停用旧缓存；最小M3.2-ready全部证据 | 已验收A1、本阶段范围授权、已固定V2接口及wallet能力 |
+| A3 | AI/payment独立adapter、operation关联、实际服务联调 | exact report/evidence/signature绑定；repeat exchange/payment只记一次；服务失败/超时恢复；Foundation72/vendor72/项目28核对；实际AI与mock标签分明 | 已验收A2、本阶段范围授权、实际AI/payment服务与证据规范 |
+| A4 | 三端、私有网和本机备用、三分钟排练、多轮场景、冷启动/故障/关闭退款 | 一套共同事实，正确角色，成功及受阻两条流程，余额/事件/审计一致，restore/restart/受控instance更换，录制可复现 | 已验收A3、本阶段范围授权、frontend及隔离部署/网络条件 |
 
-PM职责为冻结范围、解释代码、审查diff/测试/结果并提出有依据的修正；Coder负责实现和修正。每次Coder交付须给commit/branch、变更范围、运行命令、测试实际结果/时长/skip、未实现项和rollback参考。PM必要时独立复验；不接受口头test passed。
+验证应给出准确 commit、变更范围、运行命令、passed/skipped、隔离条件、未实现项和回退版本；声明 test passed 不能替代对应证据或独立验收。
 
 最小M3.2-ready不等待完整AI/payment/UI：可复现API启动、health/readiness/config实例校验、已迁移DB、正确Foundation创建和Donor approve/deposit、nonce/deadline typed data及合法提交、持久化幂等operation、canonical预期事件query/错误映射、restart恢复和reset-instance隔离测试。
 
-建议单体Python HTTP服务 + SQLAlchemy/Alembic + PostgreSQL + web3.py + pytest，持久化operations驱动轻量worker/indexer，私有本地文件目录。FastAPI提供OpenAPI与security集成；PostgreSQL numeric支持精确数值，但应用要拒绝scale coercion。依赖具体版本、Python版本、PostgreSQL获取方式由Coder提出兼容证据后固定；无授权不安装Docker或系统服务。参考官方文档：https://fastapi.tiangolo.com/tutorial/security/ ，https://www.postgresql.org/docs/current/datatype-numeric.html ，https://web3py.readthedocs.io/en/stable/transactions.html 。
+建议单体Python HTTP服务 + SQLAlchemy/Alembic + PostgreSQL + web3.py + pytest，持久化operations驱动轻量worker/indexer，私有本地文件目录。FastAPI提供OpenAPI与security集成；PostgreSQL numeric支持精确数值，但应用要拒绝scale coercion。依赖具体版本、Python版本、PostgreSQL获取方式按可重建的兼容验证固定；项目运行方式不依赖Docker或全局系统服务。参考官方文档：https://fastapi.tiangolo.com/tutorial/security/ ，https://www.postgresql.org/docs/current/datatype-numeric.html ，https://web3py.readthedocs.io/en/stable/transactions.html 。
 
-未来实现需独立开发目录/feature branch，基于最新accepted origin/main，tests→PR/CI→用户验收→新不可变版本；保留所有accepted Solidity/ABI/标签，不改vendor，不提交私有材料、DB、钱包或keys。共享main不作开发区。
+已发布 Solidity、ABI 和标签保持不可变版本身份。私有材料、数据库、钱包文件和密钥不属于公开仓库内容；公开接口示例不能包含真实凭证或敏感证据。
 
-## 7. 决策与停止点
+## 7. 设计选择与实现边界
 
 | 项 | 状态 / 本稿建议 |
 | --- | --- |
-| PM审查、Coder开发；API/DB从零开始 | 用户已确认 |
+| API/数据库需求基线 | A0历史设计；当前实现范围见A1/A2公开文档 |
 | 现行业务/合约/假钱边界 | 已确定，按本稿R/C条款保持 |
 | 一台host共享API/DB/Anvil，三角色页面，本机三会话备用 | 采用；A1 localhost，私有网络在A4实测 |
 | 受限demo wallet adapter；独立human会话/签名；外部钱包为备选 | 采用；A1只建立权限/接口，签名和交易在A2 |
-| 单体Python FastAPI/PostgreSQL；确切依赖/运行方式 | 采用；允许项目内必需运行时，exact lock及兼容证据由Coder交付 |
+| 单体Python FastAPI/PostgreSQL；确切依赖/运行方式 | 采用；使用项目内运行时、exact lock及可重建的兼容验证 |
 | PDF/JPEG/PNG，10MiB；leaf keccak原bytes+audit SHA256 | 固定；AI/payment报告bytes规范仍单独确认 |
-| 题目/申报情况 | 用户确认FinTech第二题 |
-| AI/payment联系人与实际接口 | 待团队提供；不阻碍A1基础与A2链集成设计 |
-| 本轮 | A0.1已冻结，Coder实现A1，PM审查与独立复验后报告 |
-| 停止点 | A1候选通过测试/PR/CI后等待用户验收；不自动合并或进入A2/M3.2 |
+| 题目/申报情况 | FinTech第二题 |
+| AI/payment实际接口 | 按模块具体版本单独对接，不根据A1基础或A2链演示推断已完成 |
+| 文档状态 | A0.1为历史需求基线；A1/A2具体能力见对应版本文档 |
+| 验证边界 | 每阶段需要准确版本的验证，历史计划或基础接口通过不代表后续功能或生产验收 |

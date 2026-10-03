@@ -87,8 +87,8 @@ baselines. RPC is loopback only, chain ID 31337. Test balances are a faucet,
 not fiat conversion. Exit: local/live isolated tests and full regression pass;
 verified feature PR/CI is reported to the user, then STOP for acceptance.
 
-Acceptance recorded on 2026-10-03: the user confirmed "3.1没问题" and requested
-GitHub upload. PR #4 merged as `977ea62`; new annotated formal version
+M3.1 received user acceptance and GitHub upload authorization on 2026-10-03.
+PR #4 merged as `977ea62`; new annotated formal version
 `blockchain-v0.3.1-m3.1` points to that merge. Its tree equals accepted head
 `e6aebae`; RC `6295409` and all previous versions remain unchanged. Archival
 recheck: 32/32 local unit/live cases (36.843 seconds), 81/81 Solidity regression,

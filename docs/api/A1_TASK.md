@@ -1,15 +1,13 @@
-# PoG API / Database A1 任务书
+# PoG API / Database A1 范围与验证要求
 
-版本A1.1，2026-10-03香港时间。用户已确认FinTech第二题并授权开始，承接上一轮A0确认/A1授权请求。本任务负责HTTP/DB/文件/会话及角色基础，实际开发由API & Database Coder完成，PM负责冻结和review。
+版本 A1.1，2026-10-03。A1 定义 HTTP、数据库、私有文件、会话及角色基础；不签 EIP-712、不发送链交易、不提供真实 AI 或付款。
 
-## 工作区与交付方式
+## 版本与运行范围
 
-- 重新核验origin/main，当前已接受归档基线ae7bb08292bb4a57f9d416f7725ef332be473306。
-- 共享checkout已被另一组切到codex/blockchain-booth-mock-preparation，并有未提交docs/BOOTH_MOCK_RUN.md和docs/booth/。不要修改、暂存或切换该checkout。
-- 先检查自己chat的artifacts，复用合适独立worktree；没有则用create_worktree从origin/main创建。只在该目录创建codex/api-db-a1-foundation feature branch。不得初始化新repo或复制团队仓库。
-- 新增services/api/和docs/api/。把PM的A0冻结文件和本任务书用正常文件编辑方式纳入docs/api/，记录用户本轮授权；无需改写根AGENTS历史授权记录。保持M1/M2/M3.1技术文件/ABI/tag不变。
-- 允许必需project-local Python与PostgreSQL运行时/依赖安装、创建本组私有local/test DB及迁移、loopback API/Postgres启动测试。具体版本查官方来源，exact lock，记录安装方式；没有Docker不阻塞，不安装Docker、不注册系统服务、不修改全局环境。
-- 交付verified feature branch、draft PR和CI；PR包含基线、接口/DB变化、实际tests、未实现项、回退点。调用attach_artifact附PR。不要merge/tag或开A2。
+- 公开基线：`api-v0.1.0-a1`，commit `1844186df10854cd49ccc0886f5622e71e572d8e`。
+- 服务源码和文档位于 `services/api/` 与 `docs/api/`；已发布 Solidity、ABI 和标签保持各自版本身份。
+- Python、PostgreSQL 与依赖须精确锁定并可重建，运行资源为专用 local/test 数据库和 loopback 服务；安装不应修改系统服务或全局环境。
+- API/数据库变更的验证需绑定具体版本、迁移和接口，不根据 A1 基础接口推断 A2 或后续服务已实现。
 
 ## 必须完成
 
@@ -20,7 +18,7 @@
 5. 私有文件上传/读取：PDF/JPEG/PNG，10MiB，流式大小上限，MIME/内容检查，随机storage key、防目录穿越、归属与权限、不可覆盖旧证据版本、原bytes SHA256与keccak分栏，事务失败/重复请求的文件清理。只写本组storage目录，不接受任意服务器路径。测试真实格式的合成文件，原始测试文件不能含私人资料。
 6. 持久化Idempotency-Key：namespace+principal+kind+key，1..128可打印ASCII；validated payload用固定UTF8排序紧凑JSON/SHA256。每个创建/上传业务mutation有幂等保护；登录/退出的幂等语义也在OpenAPI说明。并发唯一约束、相同key返回原结果、异payload409、restart之后保留。operation状态/Audit和原请求错误持久化；无资金操作的mock adapter不可生成真实confirmed交易。
 7. Chain/AI/payment adapter的Protocol/DTO和显式Unavailable/Mock边界；A1不签EIP712、不发交易、不建AI模型、不写模拟HKD账本。配置或调用缺少服务时给出准确状态/503而非虚构成功。
-8. pytest/HTTP/Postgres integration测试、seed命令、运行手册及交接。seed须显式opt-in/幂等、生成本实例业务ID、展示假资料；restart不自动重seed或修改密码；密码/会话/token脱敏。依赖和CI actions固定版本/commit；自动测试无需外部AI/payment或现有8545。
+8. pytest/HTTP/Postgres integration测试、seed命令、运行手册。seed须显式opt-in/幂等、生成本实例业务ID、展示假资料；restart不自动重seed或修改密码；密码/会话/token脱敏。依赖和CI actions固定版本/commit；自动测试无需外部AI/payment或现有8545。
 
 ## 最低验收测试
 
@@ -33,8 +31,6 @@
 - OpenAPI路径/schema与实际HTTP一致，测试/文档有可运行例子与稳定错误code。
 - 精确依赖锁可重建，真实Postgres tests无skip；tracked变更只在本组服务/docs/必要CI及ignore，no secrets/private DB/artifacts。
 
-## 交付给PM
+## 验证记录
 
-尽早在自己chat commentary给worktree路径、feature branch和依赖/DB方案，PM会只读跟进。完成后在自己chat报告：commit/PR、运行命令、test数量/耗时/skip、Postgres实际版本、数据约束、endpoint与不支持路径、已知限制、回退基线。若PM提出review修正，在同一A1候选分支修正并复验；仍不merge/tag或进A2。不需主动向CEO或其他chat发送消息，PM读取状态/结果。
-
-本任务书固定业务与验收；常规内部文件名、实现结构、确切兼容依赖选择由Coder判断并提供证据，不为这些常规选择暂停问用户。只有新的业务决定、破坏性动作或超出本组范围时报告具体阻塞。
+记录具体 commit、接口/OpenAPI、迁移、可复现命令、passed/skipped、隔离数据库条件、已知限制和回退版本。接口与约束以实际源码、依赖锁及测试结果为准；记录存在不等于独立产品验收。

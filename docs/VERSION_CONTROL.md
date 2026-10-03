@@ -8,7 +8,7 @@ https://github.com/Eason-NotFound/PoG.git。
 - 最新阶段：用户于2026-10-03在M2归档后授权无阻塞选择时完成M3.1；本地默认
   配置无阻塞决策。分支 `codex/blockchain-m3-1-anvil` 已完成技术验证：32/32
   新测试（13unit＋19真实隔离Anvil）、原81/81回归、M1 15/15／M2 18/18基线。
-  用户随后确认“3.1没问题”并要求上传GitHub，本次按既定流程完成M3.1
+  M3.1 随后获得用户验收及 GitHub 上传授权，本次按既定流程完成M3.1
   合并、正式标签和归档汇报；不授权M3.2及以后实施。
 - M3.1源码 `6295409` 最初发布为草稿PR #4，push／PR的blockchain与local-chain
   CI均通过；新RC `blockchain-v0.3.1-m3.1-rc.1` 固定指向该源码，不移动。
@@ -46,7 +46,6 @@ https://github.com/Eason-NotFound/PoG.git。
   `blockchain-v*` 标签可新建、不可改写或删除。
 - 自动合并、squash/rebase 和合并后自动删分支已关闭，使用 merge commit 保留历史。
 - 本地推送 hook 已启用且 12/12 用例通过；其他成员 clone 后仍须自行启用。
-- 当前提交作者为用户指定的 Eason-NotFound，邮箱 23260068@life.hkbu.edu.hk。
 
 ## 日常流程
 
@@ -60,7 +59,7 @@ https://github.com/Eason-NotFound/PoG.git。
    force push 或删掉通过的版本。可以在新版本修改代码，但要解释变更并回归验证。
 
 “已验证”是测试结论，“已验收”是用户决定。两者不得混为一谈。
-线下队友审批由用户确认记录，CEO chat 的报告不等于 GitHub approving review。
+线下队友审批由用户确认记录，技术检查报告不等于 GitHub approving review。
 取消线上 review 要求不取消用户的阶段验收门槛；不得自动合并未验收的 M2。
 合并前可用 `blockchain-v0.1.0-m1-rc.1` 保存已验证候选版本；`rc` 不代表用户验收。
 

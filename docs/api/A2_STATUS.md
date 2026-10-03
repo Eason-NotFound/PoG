@@ -1,49 +1,36 @@
-# PoG API A2 candidate status
+# PoG API A2 implementation scope
 
-## Local review hold — 2026-10-03
+## Published baseline
 
-The latest user direction authorizes local M3.2 integration with CEO, while
-retaining review before any GitHub update. All R1–R12 work on `9189d8c` is saved
-as local recovery commit `f1b7c92`; integration uses the separate local branch
-`codex/api-db-a2-local-review-integration`. No main merge/tag/push was made.
-See `A2_REVIEW_FIXES.md` for actual results: 364 full PostgreSQL tests, 31 later
-manifest/fallback cases, isolated live path 1 + renewal 4 + nonzero vectors 1,
-and accepted blockchain 81/local-chain 32, all with 0 skip. The newer supplemental
-cases have not been represented as one latest full-suite run.
+- API A1: `api-v0.1.0-a1`, commit `1844186df10854cd49ccc0886f5622e71e572d8e`.
+- API A2: `api-v0.2.0-a2`, commit `4c9f1a40ac225d684d00b5abcf8081c43594bfcc`.
+- Database migration head: `c31003a20004`. Published `c31003a20003` is unchanged;
+  successor 004 adds guards and is forward-only. Backup/restore rehearsal remains
+  **PENDING**; see [A2_REVIEW_FIXES.md](A2_REVIEW_FIXES.md).
 
-Remote PR #9 independently advanced through Hank's `194ae3e`/`bcd5de4`, including
-published migration 003. It is NOT this local draft or its verification. Both
-histories are preserved. The local merge retains the remote commits and unchanged
-published 003, with additive guards in successor 004. Historical hash/error/audit
-formats and both test sets are retained. The stable local candidate is the clean
-HEAD of the named local branch; integrated exact-tree regression results and its
-full SHA are recorded in `.local/A2_LOCAL_REVIEW_HANDOFF.md`. New exact-candidate
-GitHub CI remains on hold. No A2 user acceptance or A3/A4 authority is inferred.
+## Supported local demonstration
 
-## Original candidate record (superseded verification scope)
-
-- Base: accepted `origin/main` merge `1844186df10854cd49ccc0886f5622e71e572d8e`
-  (`api-v0.1.0-a1`).
-- Scope: local-only deployment gate, restricted V2 actions, EIP-712 signing,
+- Local-only deployment gate, restricted V2 actions, EIP-712 signing,
   durable transaction worker, canonical receipt/event confirmation, ledger read
   model and reorg rebuild.
-- Stop point: Recipient `ReceiptConfirmed` only.
-- Explicitly absent: real AI/payment/conversion, release, settlement, closing,
-  refund execution, frontend and LAN/public deployment.
-- Account preference: `foundation`, `recipient`, `donor`, `admin`; `admin` remains
-  only the human approver role.
-- Original candidate `9189d8c286af2314e136d1de843da5cb5be6d407` verification:
-  97 API/PostgreSQL tests passed with skip=0; the isolated
-  Anvil/PostgreSQL ReceiptConfirmed path, all three typed families, five human
-  terms vectors and snapshot/revert canonical rebuild passed with skip=0. The
-  accepted blockchain suite passed 81/81 and local-chain lifecycle passed 32/32,
-  both with skip=0.
+- HTTP stop point: Recipient `ReceiptConfirmed`.
+- Real AI/payment/conversion, release, settlement, closing, refund execution,
+  frontend and LAN/public deployment are outside this API scope.
+- Standard usernames: `foundation`, `recipient`, `donor`, `admin`; `admin` maps
+  only to the independent human-approver role.
 - Confirmation requires exact caller/target/resource/amount event matching plus
   the relevant canonical getter or ledger state. Multi-worker sends use a
   recoverable 15-second persisted `sending` lease and exact-envelope recovery.
-- Subsequent integration fixes add resource-bound idempotency, audited expiry
-  of never-submitted signatures, Recipient evidence ownership, destructive-test
-  target validation, canonical state references and complete deployment proofs.
-  Migration head is `c31003a20003`. Verification of the original candidate does
-  not verify these changes; use the exact current PR head and its CI checks.
-- This local demonstration does not establish production or full-chain acceptance.
+- Resource-bound idempotency, audited retirement of eligible never-submitted
+  signatures, Recipient evidence ownership, destructive-test target validation,
+  canonical state references and complete deployment proofs protect recovery.
+
+## Verification limits
+
+Reproducible test entry points and protected local commands are documented in
+[A2_REVIEW_FIXES.md](A2_REVIEW_FIXES.md). Historical test counts do not establish
+the result of a new version: use the exact commit and its
+[GitHub Actions checks](https://github.com/Eason-NotFound/PoG/actions).
+This document does not claim new test execution or independent acceptance.
+The local synthetic demonstration does not establish real-model, production,
+payment or full-chain acceptance.
