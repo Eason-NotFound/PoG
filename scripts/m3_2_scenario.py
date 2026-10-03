@@ -4,8 +4,6 @@ Only the owning runner starts/seeds/resets its isolated official API/PG/chain.
 This client submits synthetic evidence and stops at ReceiptConfirmed. Passwords,
 tokens and signatures stay in memory. No files, migrations or processes are
 created here. Public evidence and the non-serializable ResetContext are separate.
-Local implementation authorized by the human message '跟ceo联合完成m3.2吧'
-in PM turn 01a100da-9c41-72c1-af99-79be064b395b; no GitHub publication.
 """
 from __future__ import annotations
 
