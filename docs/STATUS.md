@@ -9,8 +9,12 @@ product choice was needed. None is needed for the local-only defaults frozen in
 `M3_1_SPEC.md`. Implementation and independent verification are complete:
 Python startup/deploy/status/verify/stop/confirmed-reset, pinned Anvil, three
 unchanged accepted contracts, separate roles and instance-bound manifest.
-This is a technically verified candidate, not user acceptance or authority to
-merge it, issue an accepted tag or begin M3.2.
+The user subsequently confirmed "3.1没问题" and requested GitHub upload on
+2026-10-03. Under the established workflow, M3.1 has been accepted and merged
+through PR #4 as `977ea6223f2ce8a9e0f0159c42c289bab4420656`. New annotated formal
+tag `blockchain-v0.3.1-m3.1` points to that exact merge. This authorizes archival
+and a report only, not M3.2. The separate API/database PM chat is onboarding
+read-only and proposing its own stage plan; no backend implementation is implied.
 
 CEO independently ran `python3 scripts/test-local-chain.py --live`: 32/32 passed
 (13 unit and 19 actual isolated-node cases, 40.443 seconds, no skips). A separate
@@ -28,12 +32,20 @@ receipts including all immutable fields and EIP-712 domains were verified.
 without an allow-origin header. The current run's manifest/state/logs are local,
 ignored records, not a deployment that a GitHub reader may assume is running.
 
+CEO repeated the archival verification on 2026-10-03: 32/32 unit/live tests
+passed in 36.843 seconds without skips, and 81/81 unchanged Solidity regression,
+five ABI checks, M1 15/15, M2 18/18 and push guard 12/12 passed. A read-only
+independent archival review found no blocker. This fresh regression uses the
+default 256-run fuzz profile; it is not a new 2,000-run campaign. Tests only
+managed isolated temporary nodes, not the existing default demo instance.
+
 Read `M3_1_RUNBOOK.md` for commands and the deliberate reset/signature limits.
-The feature branch is `codex/blockchain-m3-1-anvil`; publish through PR/CI, report
-and STOP. All later M3 sub-gates are still unauthorized.
+The original feature branch is preserved. Archive-status updates use
+`codex/blockchain-m3-1-archive-status` with normal PR/CI. Report and STOP;
+all later M3 sub-gates remain unauthorized.
 
 The verified implementation was published as
-`62954094c3c08bf584b4ccc60384ff2f6578c1e2` in draft/open PR #4:
+`62954094c3c08bf584b4ccc60384ff2f6578c1e2` in the original candidate PR #4:
 <https://github.com/Eason-NotFound/PoG/pull/4>.
 New annotated technical snapshot `blockchain-v0.3.1-m3.1-rc.1` points to that
 source commit; it is not user acceptance, a merge or a formal accepted version.
@@ -43,9 +55,21 @@ Source push CI passed: blockchain
 Source PR CI passed: blockchain
 <https://github.com/Eason-NotFound/PoG/actions/runs/37054943891> and local chain
 <https://github.com/Eason-NotFound/PoG/actions/runs/37054943848>.
-Main remains the accepted M2 archival checkpoint `d6c2863`. Existing four M1/M2
-tags retain their original objects/targets. Later publication-status checkpoints
-do not move the M3.1 RC or modify its deployment script/tests/CI/spec/runbook.
+Accepted PR head `e6aebae4aeaf11bf62c3d30e8740b6bf35612070` passed both push/PR
+workflows before merge; its tree is identical to merge `977ea62`. Merged-main
+CI passed: blockchain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37087340180> and local chain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37087340149>.
+Formal tag object `45d50e963db32c233f7b1a4e502034c8facb55cb` was read back from
+origin and resolves to that merge. Formal-tag CI is checked before the final
+archival report: blockchain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37087387097> and local chain
+<https://github.com/Eason-NotFound/PoG/actions/runs/37087387110> both passed.
+Existing five M1/M2/M3.1 RC tags retain their original
+objects/targets. Later status checkpoints do not move either M3.1 tag or modify
+its deployment script/tests/CI/spec/runbook/review. Historical frozen documents
+retain their candidate-gate wording; this current record supersedes only that
+acceptance status, not their specifications or limitations.
 
 ## Accepted M2 archival checkpoint
 
@@ -242,10 +266,11 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 
 ## Next gate
 
-M2 is accepted and archived. M3.1 is authorized, technically verified and
-published as a draft candidate; report and stop for the user's acceptance. Do not automatically
-merge M3.1 or begin M3.2. Do not resume direct-vendor implementation. Status-only
-publication checkpoints also use normal PR/CI and never move existing tags.
+M2 is accepted and archived. M3.1 is user accepted, merged and formally tagged;
+status-only records follow their own PR/CI, then report and stop. Do not begin M3.2 or resume the
+direct-vendor implementation. API/database guidance is a separate planning
+task, not authority to implement M3.2. Status-only publication checkpoints use
+normal PR/CI and never move existing tags.
 
 M1 technical review has passed, including an independent full-suite rerun,
 strict source lint, ABI comparison and 2,000 runs of each of three fuzz tests.

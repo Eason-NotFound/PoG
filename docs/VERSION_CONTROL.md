@@ -8,10 +8,19 @@ https://github.com/Eason-NotFound/PoG.git。
 - 最新阶段：用户于2026-10-03在M2归档后授权无阻塞选择时完成M3.1；本地默认
   配置无阻塞决策。分支 `codex/blockchain-m3-1-anvil` 已完成技术验证：32/32
   新测试（13unit＋19真实隔离Anvil）、原81/81回归、M1 15/15／M2 18/18基线。
-  只允许发布候选PR并汇报，尚未用户验收／合并，不授权M3.2及以后阶段。
-- M3.1源码 `6295409` 已发布草稿PR #4，push／PR的blockchain与local-chain
+  用户随后确认“3.1没问题”并要求上传GitHub，本次按既定流程完成M3.1
+  合并、正式标签和归档汇报；不授权M3.2及以后实施。
+- M3.1源码 `6295409` 最初发布为草稿PR #4，push／PR的blockchain与local-chain
   CI均通过；新RC `blockchain-v0.3.1-m3.1-rc.1` 固定指向该源码，不移动。
   后续仅发布状态文档的commit不得修改源码／测试／CI／spec／runbook快照。
+- M3.1验收评论记录在PR #4；仅在所有原有CI通过、独立归档检查与本机
+  32/32（36.843秒）／81/81复验通过后，用普通merge合并为
+  `977ea6223f2ce8a9e0f0159c42c289bab4420656`，tree与验收head `e6aebae`一致。
+  新annotated正式标签 `blockchain-v0.3.1-m3.1` 指向该merge，远端标签对象为
+  `45d50e963db32c233f7b1a4e502034c8facb55cb`。原五个标签未变。
+  归档文档使用 `codex/blockchain-m3-1-archive-status` 和独立PR/CI，不重写
+  已验收技术文件。合并main与正式tag的两个workflow均已实际通过。
+  新API／数据库PM目前只有只读接任／任务方案权限，不代表后端编码授权。
 - 远端最初是空仓库；现已创建 main 空根提交 `03368f7`，作为 PR 的目标分支。
 - 本地已接入 origin；M2实施分支 `codex/blockchain-m2-escrow` 保留，归档状态文档
   使用新分支 `codex/blockchain-m2-archive-status`，仍走 PR／CI。
@@ -123,5 +132,5 @@ gh api repos/Eason-NotFound/PoG/rulesets
 | M0.1 规范 | build + smoke test 通过 | 架构作为当前实施规范 | 随 M1 候选发布 |
 | M1 token + Registry | 44/44；3 个 fuzz 用例各 2,000 次；lint/ABI 通过 | 用户于 2026-10-02 验收，确认 Hank 线下通过 | PR #1 已合并；正式标签 blockchain-v0.1.0-m1；旧 rc 永久保留 |
 | M2 V2 | CEO独立81/81，5个fuzz各2000次；归档前复检、M1基线15/15、M2快照18/18；PR、合并main及正式标签CI通过 | 用户于2026-10-03明确验收，仅授权合并、归档、汇报 | PR #2已合并61aa673；正式blockchain-v0.2.0-m2；RC固定810a54e；该次验收本身不授权M3 |
-| M3.1 本地部署 | CEO独立32/32（13unit＋19live）；原81/81回归与既有基线保留；实际8545部署verify；源码push／PR双workflow CI通过 | 条件启动授权已满足；等待本阶段验收 | 草稿PR #4；RC blockchain-v0.3.1-m3.1-rc.1固定6295409；M1/M2 tags不变；M3.2未授权 |
+| M3.1 本地部署 | CEO独立32/32（13unit＋19live）；归档前再次32/32与81/81通过，M1 15/15、M2 18/18；push／PR、合并main与正式tag双workflow通过 | 用户于2026-10-03确认并要求上传，仅授权归档汇报 | PR #4已合并977ea62；正式blockchain-v0.3.1-m3.1；RC固定6295409；旧tags不变；M3.2未授权 |
 | 版本配置 | remote/branch/hook 12/12，CI 配置、服务端规则 API 验证 | 本次用户授权配置 | main 和版本标签保护已 active |
