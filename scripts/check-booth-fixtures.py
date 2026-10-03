@@ -8,7 +8,7 @@ from pathlib import Path
 
 def main():
     root = Path(__file__).resolve().parents[1]
-    data = json.loads((root / "docs/booth/scenarios.json").read_text())
+    data = json.loads((root / "docs/booth/scenarios.json").read_text(encoding="utf-8"))
     checks = 0
 
     def require(condition, message):
