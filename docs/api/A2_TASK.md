@@ -15,6 +15,7 @@ Foundation=`foundation`；Recipient=`recipient`；Donor=`donor`；Human Approver
 - A1：`api-v0.1.0-a1`，commit `1844186df10854cd49ccc0886f5622e71e572d8e`，源候选 `6b7739448219e969ad402d6028ad952ba7e88e33`。
 - A2：`api-v0.2.0-a2`，commit `4c9f1a40ac225d684d00b5abcf8081c43594bfcc`。数据库迁移 head 为 `c31003a20004`；已发布 `c31003a20003` 保持原样，后续迁移必须追加。
 - 业务与资金规则以已发布 V2 Solidity、ABI 和对应规范为准；文档清理不改变这些工件。
+- 已发布 A2 的本地链接入范围已获单独授权，替代早期 API onboarding/read-only/M3.2 未授权停点；不授权 A3/A4、真实 R2 服务、公开部署或后续资金动作。
 
 ## 2. 本轮范围和明确不实现项
 
@@ -33,7 +34,7 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 
 ## 3. 最小 HTTP 接口与兼容性
 
-保留 A1 原 `POST /v2/projects`、`POST /v2/procurements` 和文件接口：只建 off_chain_draft，不自动发送旧 draft。新增显式 chain operation kind，HTTP 202 仅 queued。
+保留 A1 原 `POST /v2/projects`、`POST /v2/procurements` 和文件接口：只建 off_chain_draft，不自动发送旧 draft。新增显式 chain operation kind；这些 A2 链动作与签名路径的成功 POST（包括原 operation 已终态的同键同输入重放）均返回 HTTP 202，表示接受或恢复原 operation，不保证其状态为 queued，也不代表签名、链确认或付款。失败请求保留实际错误 HTTP 状态。
 
 | 接口 | 会话身份 / 固定业务输入 | 行为 |
 | --- | --- | --- |
@@ -52,7 +53,9 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 
 新增 schema extra=forbid。每项 mutation 包括签名请求/签名/提交均有持久化 Idempotency-Key；客户端不能传 from/caller/role/rpc/contract/chainId/nonce/typed-message 来改变授权。现有文档类别可作兼容增补，但只在明确必要时添加，不能删/改旧类别解释。
 
-签名请求：ai_pre 仅新 dev-only `service_ai_fixture` 独立会话身份；reserve 仅项目确认 policy 内该 human；receipt 仅原 Recipient，receiptEvidenceDocumentVersionId 必须由其上传且属于本采购。reserve 输入 reserveAmountAtomic；ai_pre 固定可复现 fixture 版本和 report bytes/hash，报告显式 synthetic；receipt 从链上当前 PO/invoice/goods/金额/parties 及其版本引用构造。默认 deadline 使用链 timestamp+300秒，允许 TTL 60..3600 秒，deadline uint64 严格检查。
+签名请求：ai_pre 仅 dev-only `service_ai_fixture` 独立会话身份；reserve 仅项目确认 policy 内该 human；receipt 仅原 Recipient，receiptEvidenceDocumentVersionId 必须由其上传且属于本采购。reserve 输入 reserveAmountAtomic；receipt 从链上当前 PO/invoice/goods/金额/parties 及其版本引用构造。默认 deadline 使用链 timestamp+300秒，允许 TTL 60..3600 秒，deadline uint64 严格检查。
+
+ai_pre 是 local-only synthetic PRE fixture：stage=0、outcome=Pass、riskScoreBps=100；reportHash 为 Ethereum Keccak-256(UTF-8(`"POG_A2_SYNTHETIC_PRE_FIXTURE_V1:" + procurement.business_id`))。没有 canonical ReportBody；该 marker hash 不能冒充 R2 规范报告正文的哈希。正式 A2 尚无真实 R2 AI 报告 HTTP、ReportBody 存储、独立 AI signing component 对接或 FinalRelease 报告路径。
 
 默认 A1 模式 chain disabled，不伪造 readiness。A2 启用需明确 opt-in、核验 manifest、wallet 模式及运行路径；真实 RPC 不可由 HTTP 输入指定。缺依赖/失配时准确 503；A1 登录、文件及 draft 行为仍可用且未发送资金动作。
 
@@ -69,6 +72,7 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 - 两个域名称 `PoGRegistryV2` / `ProcurementEscrowV2`，version `2`、chainId、verifyingContract 严格。字段顺序/uint宽度/enum ordinals 按 accepted ABI/interface 原样，无新增 runId 域字段。
 - 完整实现 AI Assessment、HumanIntent、RecipientReceipt 编码与 digest；assessmentId/evidence/所有五类 Human termsHash 的 cross-language vector 与现有 helper 一致。A2 HTTP 只启用 PRE/Reserve/Receipt；其他 action 的 helper 单元向量不构成执行授权。
 - 三种业务 nonce family 为 Registry aiNonces、Registry recipientNonces、Escrow humanNonces；各自 contract+signer 全局，不能按采购递增。与 Ethereum txnonce 分表/约束。policyEpoch 全 uint32，deadline 全 uint64，nonce 全 uint256，不能用 signed32/signed64 或 float 截断。
+- R2 所需的跨采购、跨 stage、跨 ai_pre/ai_final 唯一未决锁仍待实现；当前 A2 的唯一索引包含 nonce 与 kind，advisory lock 也按 kind 切分，不能视为该 R2 全局锁。真实 R2 报告存储及共享未决锁须通过新的 successor migration 追加实现，保留已发布 003/004。
 - runId/instanceId 不在 EIP-712 域中。重置后的防护是 API 业务 namespace/新 businessId/停用旧请求，不宣称链上密码学防重放。已接受 receipt 不因其签名 deadline 过期变为无效历史事实。
 
 ## 5. 持久化 worker、确认及恢复

@@ -1,0 +1,451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:signing-request",
+  "title": "SigningRequest 0.2 候选持久化记录",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "pog.ai.signing-request/0.2-candidate"
+    },
+    "signingRequestId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+    },
+    "operationId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+    },
+    "aiRequestId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+    },
+    "nonceScope": {
+      "type": "object",
+      "properties": {
+        "deployment": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/deployment"
+        },
+        "verifyingContract": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+        },
+        "nonceFamily": {
+          "const": "aiNonces"
+        },
+        "signer": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+        }
+      },
+      "required": [
+        "deployment",
+        "verifyingContract",
+        "nonceFamily",
+        "signer"
+      ],
+      "additionalProperties": false
+    },
+    "status": {
+      "enum": [
+        "prepared",
+        "signed",
+        "submitted",
+        "requires_attention",
+        "recorded",
+        "invalidated"
+      ]
+    },
+    "inputHash": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "reportHash": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "domain": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/domain"
+    },
+    "assessment": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/assessmentInput"
+    },
+    "typedData": {
+      "type": "object",
+      "properties": {
+        "primaryType": {
+          "const": "AIAssessment"
+        },
+        "types": {
+          "type": "object",
+          "properties": {
+            "EIP712Domain": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "name"
+                    },
+                    "type": {
+                      "const": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "version"
+                    },
+                    "type": {
+                      "const": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "chainId"
+                    },
+                    "type": {
+                      "const": "uint256"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "verifyingContract"
+                    },
+                    "type": {
+                      "const": "address"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              ],
+              "items": false,
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "AIAssessment": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "stage"
+                    },
+                    "type": {
+                      "const": "uint8"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "procurementId"
+                    },
+                    "type": {
+                      "const": "bytes32"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "assessmentId"
+                    },
+                    "type": {
+                      "const": "bytes32"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "outcome"
+                    },
+                    "type": {
+                      "const": "uint8"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "riskScoreBps"
+                    },
+                    "type": {
+                      "const": "uint16"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "evidenceHash"
+                    },
+                    "type": {
+                      "const": "bytes32"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "reportHash"
+                    },
+                    "type": {
+                      "const": "bytes32"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "signer"
+                    },
+                    "type": {
+                      "const": "address"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "nonce"
+                    },
+                    "type": {
+                      "const": "uint256"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "deadline"
+                    },
+                    "type": {
+                      "const": "uint64"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              ],
+              "items": false,
+              "minItems": 10,
+              "maxItems": 10
+            }
+          },
+          "required": [
+            "EIP712Domain",
+            "AIAssessment"
+          ],
+          "additionalProperties": false
+        },
+        "domain": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/domain"
+        },
+        "message": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/assessmentInput"
+        }
+      },
+      "required": [
+        "primaryType",
+        "types",
+        "domain",
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "固定 V2 完整 EIP-712 typed data；types 字段顺序和类型宽度不能变更。domain/message 必须逐字段等于请求的 domain/assessment，并以现有 V2 ABI 公式重算 assessmentId 和 digest；相等性校验位于 schema 外。"
+    },
+    "digest": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+          "maxLength": 8192,
+          "description": "非空 bytes hex；EOA/ERC1271 的真实性由独立 signer/验签门禁验证，不以此结构校验替代。"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "txHash": {
+      "anyOf": [
+        {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "signingRequestId",
+    "operationId",
+    "aiRequestId",
+    "nonceScope",
+    "status",
+    "inputHash",
+    "reportHash",
+    "domain",
+    "assessment",
+    "typedData",
+    "digest",
+    "signature",
+    "txHash"
+  ],
+  "additionalProperties": false,
+  "description": "未冻结候选。prepared 前 API 原子持久化本完整请求（包含 assessment.nonce、deadline、typedData、digest）并取得唯一并发保护；operationId 和 aiRequestId 由 API 生成并绑定同一 operation，其重试沿用 aiRequestId。inputHash/reportHash 作为内容索引必须可解析到已保留的完整不可变输入/报告原 bytes，而非仅保留摘要。锁域为 deployment namespace {runId,instanceId,chainId,registry} + verifyingContract + nonceFamily=aiNonces + signer。deployment chainId/registry 必须绑定真实实例并与 domain/nonceScope 相等，规范地址不得因大小写形成多把锁。多个 deployment namespace 指向同一已验证物理链实例的 Registry 状态时，必须通过部署唯一映射归并为同一锁域；禁止通过 namespace 别名并行签署同一 nonce。PoGRegistryV2.aiNonces(signer) 是 EIP-712 AI signer nonce，prepared 只代表链上尚未消耗该 nonce；禁止另一活跃请求取得同一锁域。Relayer EVM transaction nonce 属于独立账户/队列，不能写入该 nonceFamily，也不能以它替代 assessment.nonce。Schema 无法证明已持久化、锁已取得、链状态可信或跨字段相等。",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "prepared"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature": {
+            "type": "null"
+          },
+          "txHash": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "signed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature": {
+            "type": "string",
+            "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+            "maxLength": 8192,
+            "description": "非空 bytes hex；EOA/ERC1271 的真实性由独立 signer/验签门禁验证，不以此结构校验替代。"
+          },
+          "txHash": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "submitted",
+              "recorded"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature": {
+            "type": "string",
+            "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+            "maxLength": 8192,
+            "description": "非空 bytes hex；EOA/ERC1271 的真实性由独立 signer/验签门禁验证，不以此结构校验替代。"
+          },
+          "txHash": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+          }
+        }
+      }
+    }
+  ],
+  "$comment": "独立 AI signing component 由 AI 组控制密钥，必须 fail closed 复核完整可信 input/BODY、reportHash/inputHash、executionMode、资料完整性、有效评分、当前链 domain/evidence/state/allowlist/nonce/deadline、typed data 与 digest。complete 且已评分的 Review/Reject 可生成风险证据，但不决定资金；synthetic 生产请求永不 prepared/signed，协议向量只在独立 fixture/harness 中表示。模型失败不得以 rules_only 自动降级签署。requires_attention 保持并发保护直到核对 receipt、canonical block、accepted assessment 和 aiNonces；recorded/invalidation 仅在明确核对后释放，禁止超时盲目 nonce+1 或重新签名。后续 A3/M3.3 的持久化与 migration 另行授权，本文件不实现数据库。"
+}

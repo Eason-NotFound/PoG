@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:signing-envelope",
+  "title": "SigningEnvelope 0.2 候选",
+  "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "pog.ai.signing-envelope/0.2-candidate"
+    },
+    "status": {
+      "enum": [
+        "blocked",
+        "prepared",
+        "signed"
+      ]
+    },
+    "blockReasons": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+      },
+      "maxItems": 1024,
+      "uniqueItems": true,
+      "description": "ASCII 升序；blocked 非空，prepared/signed 空。"
+    },
+    "domain": {
+      "anyOf": [
+        {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/domain"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assessment": {
+      "anyOf": [
+        {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/assessmentInput"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])",
+          "maxLength": 8192,
+          "description": "非空 bytes hex，长度由 EOA/ERC1271 实际验证；不可对所有签名强制 65 bytes。"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "status",
+    "blockReasons",
+    "domain",
+    "assessment",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "status": {
+          "const": "blocked"
+        },
+        "blockReasons": {
+          "minItems": 1
+        },
+        "domain": {
+          "type": "null"
+        },
+        "assessment": {
+          "type": "null"
+        },
+        "signature": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "status": {
+          "const": "prepared"
+        },
+        "blockReasons": {
+          "maxItems": 0
+        },
+        "domain": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/domain"
+        },
+        "assessment": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/assessmentInput"
+        },
+        "signature": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "status": {
+          "const": "signed"
+        },
+        "blockReasons": {
+          "maxItems": 0
+        },
+        "domain": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/domain"
+        },
+        "assessment": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/assessmentInput"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^0x(?:[0-9a-f]{2})+$(?![\\s\\S])"
+        }
+      }
+    }
+  ],
+  "$comment": "生产 synthetic_fixture 永久禁止 prepared/signed；Schema 本身没有 BODY，无法完成门禁，签名适配器必须绑定完整可信 input、BODY、当前 domain/evidence/state/signer/nonce，复算 ID/digest 并验签。隔离 protocol fixture 不使用生产 SigningEnvelope 例外。prepared 必须已有原子持久化 SigningRequest：EIP-712 nonce、deadline、完整 typed data、digest 与唯一未决锁；链上 aiNonces 此时尚未消耗，relayer EVM tx nonce 独立。"
+}

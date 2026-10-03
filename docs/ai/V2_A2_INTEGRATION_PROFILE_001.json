@@ -1,0 +1,589 @@
+{
+  "schemaVersion": "pog.ai.a2-integration-profile/0.1-candidate",
+  "profileId": "V2_A2_INTEGRATION_PROFILE_001",
+  "status": "APPROVED_INTERFACE_ALIGNMENT_PROFILE",
+  "scope": "Frozen R2 interoperability profile against accepted A2; implementation pending, scoring NOT_APPROVED, runtime NOT_RUN",
+  "baselines": {
+    "r2SourceCommit": "19657f4459186d06b0608d27362e1522db90ea46",
+    "freezeRecordCommit": "567629ecfcb7fa50c46123d3235806390bbb047b",
+    "canonicalProfile": "PoG-CJSON-0.2",
+    "apiA1": "1844186df10854cd49ccc0886f5622e71e572d8e",
+    "contractAbiM2": "61aa673653dd31188d2627d76cbba3f97fed6137",
+    "localDeploymentM3_1": "977ea6223f2ce8a9e0f0159c42c289bab4420656",
+    "apiA2Tag": "api-v0.2.0-a2",
+    "apiA2AcceptedCommit": "4c9f1a40ac225d684d00b5abcf8081c43594bfcc",
+    "apiA2PublicationHead": "7d685af2ff80c608ac54b33f1e46a0f0a0cd6094",
+    "apiA2MigrationHead": "c31003a20004"
+  },
+  "invariants": {
+    "r2WireIdentifiersUnchanged": true,
+    "r2SchemasUnchanged": true,
+    "r2StateEnumsUnchanged": true,
+    "r2ErrorCodeSetUnchanged": true,
+    "r2OpenApiUnchanged": true,
+    "goldenBytesUnchanged": true,
+    "contractSourceAndAbiUnchanged": true,
+    "r2InterfaceFreezeEffective": true,
+    "additionalApiCountersignForR2FreezeRequired": false
+  },
+  "signerRoute": {
+    "firstA2HttpCapability": "EOA",
+    "signatureBytes": 65,
+    "erc1271HttpSupported": false,
+    "inferSignerTypeFromSignatureLength": false,
+    "unsupportedSignerOrSignatureAction": "reject_before_eoa_recovery_and_audit",
+    "erc1271FallbackToEoaAllowed": false,
+    "globalSigningEnvelopeLengthRestrictionChanged": false
+  },
+  "trustedIngress": {
+    "action": "rebuild_expected_input_from_trusted_records_and_strictly_compare_full_received_input",
+    "callerVerifiedOrOwnerFlagsAreProof": false,
+    "checkGroups": [
+      "authorization",
+      "strict_r2_tokens_and_shape",
+      "immutable_snapshot_and_document_versions",
+      "authorized_original_bytes_size_mime_sha256_keccak",
+      "trusted_page_sets",
+      "external_snapshot_original_bytes",
+      "deployment_project_procurement_stage_evidence_version",
+      "registry_commitments_receipt_digest_and_canonical_state",
+      "input_body_canonical_bytes_hashes_and_audit",
+      "fresh_chain_gates_before_sign_and_submit"
+    ],
+    "mismatchAction": "reject_processing_or_signing_using_existing_r2_error_contract",
+    "pageBinding": "original_file_dual_hashes_plus_trusted_1_based_page_set",
+    "independentPageHashDefined": false,
+    "imagePages": null,
+    "independentPageHashChange": "separate_versioned_field_recipe_and_vector_proposal_required"
+  },
+  "nonceCoordination": {
+    "source": "Registry.aiNonces(signer)",
+    "relayerTransactionNonceIndependent": true,
+    "wireNonceScopeKeys": [
+      "deployment",
+      "verifyingContract",
+      "nonceFamily",
+      "signer"
+    ],
+    "wireDeploymentKeys": [
+      "runId",
+      "instanceId",
+      "chainId",
+      "registry"
+    ],
+    "physicalInstanceAliasesMustResolveToOneScope": true,
+    "durableUnresolvedUniqueScope": [
+      "resolved_deployment_namespace",
+      "verifyingContract",
+      "nonceFamily",
+      "signer"
+    ],
+    "nonceFamily": "aiNonces",
+    "maxUnresolvedPerScope": 1,
+    "partitionByProcurementStageKindOrNonceAllowed": false,
+    "preparedRequiresAtomicDurableMaterialAndLock": true,
+    "localNonceIncrementAllowed": false,
+    "frozenStates": [
+      "prepared",
+      "signed",
+      "submitted",
+      "requires_attention",
+      "recorded",
+      "invalidated"
+    ],
+    "holdStates": [
+      "prepared",
+      "signed",
+      "submitted",
+      "requires_attention"
+    ],
+    "releaseOnlyAfterProofStates": [
+      "recorded",
+      "invalidated"
+    ],
+    "activityMappingStatus": "APPROVED_INTERFACE_ALIGNMENT_PROFILE",
+    "activityMappings": [
+      {
+        "activity": "prepared",
+        "r2State": "prepared",
+        "holdLock": true,
+        "signature": null,
+        "txHash": null
+      },
+      {
+        "activity": "signing_call_in_progress",
+        "r2State": "prepared",
+        "holdLock": true,
+        "signature": null,
+        "txHash": null
+      },
+      {
+        "activity": "verified_signature_received",
+        "r2State": "signed",
+        "holdLock": true
+      },
+      {
+        "activity": "signing_call_outcome_unknown",
+        "r2State": "requires_attention",
+        "holdLock": true
+      },
+      {
+        "activity": "transaction_submitted",
+        "r2State": "submitted",
+        "holdLock": true
+      },
+      {
+        "activity": "transaction_timeout_disconnect_reorg_or_inconsistent_facts",
+        "r2State": "requires_attention",
+        "holdLock": true
+      },
+      {
+        "activity": "accepted_and_verified_under_deployment_confirmation_policy",
+        "r2State": "recorded",
+        "releaseAfterProof": true
+      },
+      {
+        "activity": "old_signature_proven_unacceptable_for_same_instance",
+        "r2State": "invalidated",
+        "releaseAfterProof": true
+      }
+    ],
+    "recordedProof": [
+      "success_receipt",
+      "AIAssessmentRecorded",
+      "current_assessment_reference",
+      "canonical_block",
+      "aiNonces_consumption"
+    ],
+    "internalWorkerLease": {
+      "requiredImplementationChoice": false,
+      "r2WireField": false,
+      "leaseExpiryReleasesAiNonceLock": false,
+      "leaseExpiryIssuesNewTypedData": false,
+      "leaseExpiryBlindlyRecallsSigner": false,
+      "lateResultMustBindOriginalRequestAndDigest": true
+    },
+    "expiry": {
+      "r2ExpiredStateAdded": false,
+      "localClockExpiryIsProof": false,
+      "canonicalTimestampComparison": "strictly_greater_than_deadline_equal_remains_valid",
+      "requiredProof": [
+        "fixed_deployment_confirmation_policy",
+        "canonical_timestamp_strictly_after_deadline",
+        "historical_submission_and_acceptance_facts_resolved",
+        "old_signature_unacceptability_proof_retained"
+      ],
+      "unknownTransactionAction": "requires_attention_and_hold_original_lock",
+      "alreadyAcceptedAction": "verify_recorded_never_relabel_from_later_expiry",
+      "confirmationPolicyUnapprovedAction": "hold_lock_no_reclaim",
+      "temporaryBlockExpiryOrNonceChangeTriggersAutomaticResign": false
+    },
+    "a2CurrentImplementation": {
+      "liveUniqueScope": [
+        "namespace_id",
+        "contract_address",
+        "signer_wallet",
+        "nonce_text",
+        "kind"
+      ],
+      "advisoryLockPartitionsByKind": true,
+      "r2CrossStageAiNonceScopeImplemented": false,
+      "legacyStatesAreR2States": false,
+      "migrationHead": "c31003a20004",
+      "publishedMigrationsToPreserve": [
+        "c31003a20003",
+        "c31003a20004"
+      ],
+      "reportStorageAndSharedLockMigration": "new_successor_migration_required"
+    }
+  },
+  "scoringAndSigning": {
+    "businessScoringPolicyApproval": "NOT_APPROVED",
+    "riskFormulaOrWeightsDefinedByThisProfile": false,
+    "exampleScoresAuthorizeProduction": false,
+    "productionSyntheticAllowed": false,
+    "modelFailureFallbackToSignableRulesOnlyAllowed": false,
+    "unapprovedProductionPolicyAction": "SCORING_POLICY_UNCONFIRMED_no_prepared_or_signed",
+    "diagnosticUnscoredReportAction": "blocked",
+    "eligibility": [
+      {
+        "condition": "incomplete_or_null_score",
+        "action": "blocked"
+      },
+      {
+        "condition": "model_failure_timeout_unknown_mode_or_hash_mismatch",
+        "action": "no_signable_report"
+      },
+      {
+        "condition": "complete_and_scored_Pass_Review_Reject",
+        "action": "eligible_only_after_all_trust_approved_policy_and_chain_gates"
+      }
+    ],
+    "fundApprovalByAiSignature": false
+  },
+  "paymentBoundary": {
+    "separateEvidenceSteps": [
+      "MockHKD_token_release_to_Foundation",
+      "simulated_vendor_payment_evidence",
+      "human_reconciliation_settlement_confirmation"
+    ],
+    "realHkdBankTransferClaimed": false
+  },
+  "document": {
+    "path": "docs/ai/V2_A2_INTEGRATION_PROFILE_001.md",
+    "sha256": "1f27639ea53d23984eebf76b36fe4f28ad046a816dd4f6a5a26c29264659befa"
+  },
+  "normativeSourceIdentity": [
+    {
+      "path": "docs/ai/V2_REPORT_FREEZE_RECORD.md",
+      "gitBlob": "4ee7090c809d8497bf8574c45d004d0a1bb73996",
+      "sha256": "555392d3af372020bbe0109529f2025c7df11f29c334343d1e3e799bc35822d0",
+      "byteLength": 6902
+    },
+    {
+      "path": "docs/ai/V2_REPORT_FREEZE_MANIFEST.json",
+      "gitBlob": "b4cf83778e48fa45182b74710cb23459d38f799a",
+      "sha256": "80dcf4775cad87b04a851560ead60e5b81fd992383246e966f274e24d2582e04",
+      "byteLength": 64160
+    },
+    {
+      "path": "docs/ai/V2_REPORT_CANDIDATE.md",
+      "gitBlob": "7ddbb58d0ede88e93054cbd6f78059fc9d2fbab1",
+      "sha256": "e8323a507f39fb6b2f5b72ffe8ef903c48a478345b3bbd4cf8a1c0af96e59fbf",
+      "byteLength": 12779
+    },
+    {
+      "path": "docs/ai/V2_REPORT_TECHNICAL_APPENDIX.md",
+      "gitBlob": "bb516de398a59278b4fe361f4872da63afe76e16",
+      "sha256": "3c5225f9b46a98a0d0d9fecae4ea6716a5eea3c956c7b43f771b6a94a0c23a1a",
+      "byteLength": 31380
+    },
+    {
+      "path": "docs/ai/V2_REPORT_TRANSPORT_CANDIDATE.md",
+      "gitBlob": "963953fb9a951224e85917606804971b6053b37f",
+      "sha256": "3ca0babd55d3d421458eb7253c11f59fffc3fa81845017a94ad772898f45e2ac",
+      "byteLength": 29029
+    },
+    {
+      "path": "docs/ai/V2_SIGNING_COORDINATION_CANDIDATE.md",
+      "gitBlob": "1a49cd6a67e795b59e97f4072621cb352c1ea5e0",
+      "sha256": "0d1f62cc7bf51f949479b47172f024ea0bb0d0e844c83c0a9dd4c7cbda84b54a",
+      "byteLength": 5282
+    },
+    {
+      "path": "docs/ai/schemas/v2/signing-request.schema.json",
+      "gitBlob": "62c3c96a9cdf4968b45d60afa81a5948055ea16e",
+      "sha256": "900932b0f31ac68e92a523757545fa2e4b66c5a1bc39e781e5d1a4f87cb545ab",
+      "byteLength": 14287
+    },
+    {
+      "path": "docs/ai/schemas/v2/signing-envelope.schema.json",
+      "gitBlob": "ccea5c13efa77bc06de3542399e807553b6968dc",
+      "sha256": "e6b5f349db12c306946b8d57ee927bc3eea133b9b998369ce87c02ce841e169b",
+      "byteLength": 3495
+    }
+  ],
+  "implementationAndRuntimeAcceptance": "NOT_RUN_BY_THIS_PROFILE",
+  "runtimeComponents": {
+    "aiModel": {
+      "role": "generate_report_and_evidence_reasoning",
+      "privateKeys": false
+    },
+    "api": {
+      "roles": [
+        "authorization",
+        "trusted_snapshots",
+        "report_validation_and_storage",
+        "EIP712_construction",
+        "durable_operation_nonce_deadline_coordination",
+        "transaction_submission_coordination"
+      ]
+    },
+    "aiSigningComponent": {
+      "keyControl": "AI_group",
+      "roles": [
+        "independent_canonical_bytes_and_hash_recomputation",
+        "execution_mode_policy_and_chain_gates",
+        "AI_signing"
+      ],
+      "failureAction": "fail_closed"
+    },
+    "relayer": {
+      "role": "submit_existing_valid_signature",
+      "transactionNonceIndependent": true,
+      "aiHumanRecipientPrivateKeys": false
+    },
+    "humanApprover": {
+      "role": "fund_authorization"
+    },
+    "recipient": {
+      "role": "receipt_commitment"
+    },
+    "paymentReconciliation": {
+      "roles": [
+        "token_release_evidence",
+        "simulated_vendor_payment_evidence",
+        "human_settlement_confirmation"
+      ]
+    }
+  },
+  "a2HttpInterfaces": [
+    {
+      "name": "create_signing_request",
+      "method": "POST",
+      "path": "/v2/procurements/{procurement_id}/signing-requests",
+      "input": "SigningRequestCreate",
+      "output": "inline {operation, signingRequest}",
+      "successHttpStatus": 202,
+      "terminalReplayHttpStatus": 202,
+      "role": "persist_fixed_signing_material"
+    },
+    {
+      "name": "get_signing_request",
+      "method": "GET",
+      "path": "/v2/signing-requests/{request_id}",
+      "input": "request UUID",
+      "output": "inline signing-request object",
+      "successHttpStatus": 200,
+      "role": "intended_signer_reads_material"
+    },
+    {
+      "name": "sign_demo",
+      "method": "POST",
+      "path": "/v2/signing-requests/{request_id}/sign-demo",
+      "input": "DemoSignRequest",
+      "output": "inline {operation, signingRequest}",
+      "successHttpStatus": 202,
+      "terminalReplayHttpStatus": 202,
+      "role": "local_demo_only_confirm_true"
+    },
+    {
+      "name": "submit_signature",
+      "method": "POST",
+      "path": "/v2/signing-requests/{request_id}/submit",
+      "input": "SignatureSubmit",
+      "output": "inline {operation, signingRequest}",
+      "successHttpStatus": 202,
+      "terminalReplayHttpStatus": 202,
+      "role": "validate_EOA_signature_and_enqueue_submission"
+    },
+    {
+      "name": "get_operation",
+      "method": "GET",
+      "path": "/v2/operations/{operation_id}",
+      "input": "operation UUID",
+      "output": "OperationResponse",
+      "successHttpStatus": 200,
+      "role": "query_operation_steps_and_chain_facts"
+    }
+  ],
+  "a2HttpTypes": {
+    "SigningRequestCreate": {
+      "kind": [
+        "ai_pre",
+        "reserve",
+        "receipt"
+      ],
+      "optionalFields": [
+        "reserveAmountAtomic",
+        "receiptEvidenceDocumentVersionId"
+      ],
+      "deadlineTtlSeconds": {
+        "minimum": 60,
+        "maximum": 3600
+      }
+    },
+    "DemoSignRequest": {
+      "confirm": true
+    },
+    "SignatureSubmit": {
+      "signatureHexDigitsAfter0x": 130,
+      "signatureBytes": 65,
+      "lowSRequired": true,
+      "v": [
+        27,
+        28
+      ],
+      "signerType": "EOA"
+    },
+    "inlineSigningRequest": {
+      "namedResponseClassExists": false,
+      "fields": [
+        "id",
+        "procurementId",
+        "kind",
+        "status",
+        "signer",
+        "nonce",
+        "deadline",
+        "policyEpoch",
+        "digest",
+        "typedData",
+        "synthetic"
+      ],
+      "signatureReturned": false,
+      "isR2SigningRequest": false,
+      "isR2SigningEnvelope": false
+    },
+    "legacyOperationResponse": {
+      "isR2OperationEnvelope": false
+    },
+    "legacyErrorBody": {
+      "topLevelField": "error",
+      "fields": [
+        "code",
+        "message",
+        "operationId",
+        "details"
+      ],
+      "isR2ErrorEnvelope": false
+    }
+  },
+  "a2CapabilityBoundary": {
+    "realAiReportHttpImplemented": false,
+    "finalReleaseReportImplemented": false,
+    "independentAiSigningComponentIntegrated": false,
+    "syntheticPre": {
+      "mode": "local_only_synthetic_fixture",
+      "stage": 0,
+      "outcome": 0,
+      "riskScoreBps": 100,
+      "reportHashRecipe": "Ethereum Keccak-256(UTF-8(\"POG_A2_SYNTHETIC_PRE_FIXTURE_V1:\" + procurement.business_id))",
+      "canonicalReportBodyProduced": false
+    },
+    "legacyIdempotency": {
+      "scope": [
+        "namespace",
+        "principal",
+        "operation_kind",
+        "key"
+      ],
+      "payloadHash": "legacy_payload_sha256",
+      "implementsR2SnapshotScopeAndRetention": false
+    }
+  },
+  "r2Interfaces": [
+    {
+      "name": "PrePurchaseInput",
+      "type": "JSON input object",
+      "stage": 0,
+      "http": {
+        "method": "POST",
+        "path": "/v2/ai/assessments"
+      },
+      "role": "complete_trusted_pre_purchase_input",
+      "implementedByAcceptedA2": false
+    },
+    {
+      "name": "FinalReleaseInput",
+      "type": "JSON input object",
+      "stage": 1,
+      "http": {
+        "method": "POST",
+        "path": "/v2/ai/assessments"
+      },
+      "role": "complete_trusted_final_release_input",
+      "implementedByAcceptedA2": false
+    },
+    {
+      "name": "OperationEnvelope",
+      "type": "JSON transport object",
+      "http": [
+        {
+          "method": "POST",
+          "path": "/v2/ai/assessments",
+          "successHttpStatus": 202,
+          "terminalReplayHttpStatus": 202
+        },
+        {
+          "method": "GET",
+          "path": "/v2/ai/operations/{operationId}",
+          "successHttpStatus": 200
+        }
+      ],
+      "role": "stable_operation_identity_status_report_or_error",
+      "implementedByAcceptedA2": false
+    },
+    {
+      "name": "ReportBody",
+      "type": "JSON report body",
+      "role": "completed_operation_report_canonical_bytes_hashed_by_Ethereum_Keccak256",
+      "independentHttpEndpointDefined": false,
+      "implementedByAcceptedA2": false
+    },
+    {
+      "name": "ErrorEnvelope",
+      "type": "JSON error object",
+      "role": "pre_acceptance_HTTP_error_or_post_acceptance_GET_200_error_state",
+      "independentHttpEndpointDefined": false,
+      "implementedByAcceptedA2": false
+    },
+    {
+      "name": "SigningRequest",
+      "type": "internal durable JSON object",
+      "role": "fixed_nonce_deadline_typed_data_digest_report_binding_and_six_state_coordination",
+      "independentHttpEndpointDefined": false,
+      "implementedByAcceptedA2": false
+    },
+    {
+      "name": "SigningEnvelope",
+      "type": "separate JSON signing package",
+      "role": "blocked_prepared_signed_projection_domain_assessment_signature_or_blocking_reasons",
+      "excludedFromReportHash": true,
+      "independentHttpEndpointDefined": false,
+      "implementedByAcceptedA2": false
+    }
+  ],
+  "r2TransportBoundary": {
+    "authentication": "Bearer_service_principal",
+    "operationIdGenerator": "API",
+    "aiRequestIdGenerator": "API",
+    "idsStableAcrossRetries": true,
+    "queryReauthorizesResource": true,
+    "inputBytes": "PoG-CJSON-0.2_complete_trusted_input",
+    "payloadHash": "SHA-256(inputBytes)",
+    "inputHash": "Ethereum_Keccak-256(inputBytes)",
+    "reportHash": "Ethereum_Keccak-256(PoG-CJSON-0.2_ReportBody_bytes)",
+    "postSuccessAndRecoveryStatus": 202,
+    "getAcceptedOperationStatus": 200,
+    "operationFields": [
+      "schemaVersion",
+      "operationId",
+      "aiRequestId",
+      "payloadHash",
+      "status",
+      "report",
+      "error"
+    ],
+    "statuses": {
+      "queued": {
+        "report": null,
+        "error": null
+      },
+      "running": {
+        "report": null,
+        "error": null
+      },
+      "completed": {
+        "report": "ReportBody",
+        "error": null
+      },
+      "error": {
+        "report": null,
+        "error": "ErrorEnvelope"
+      }
+    },
+    "idempotencyScope": [
+      "service_principal",
+      "POST",
+      "/v2/ai/assessments",
+      "deployment"
+    ],
+    "sameKeyDifferentInputStatus": 409,
+    "timeoutRecovery": "same_key_same_input_and_original_operation",
+    "minimumRetentionDaysAfterAllPendingResolved": 7,
+    "keyTombstoneRetention": "deployment_lifetime",
+    "httpAcceptanceOrReportCompletionProvesSigningOrOnChainAcceptance": false
+  },
+  "implementationStatus": "PENDING_REPORT_SERVICE_STORAGE_SHARED_NONCE_AND_SIGNER_INTEGRATION"
+}

@@ -1,0 +1,13 @@
+# Preserve exact bytes used by candidate input/file/report hashes.
+.gitattributes text eol=lf
+*.md text eol=lf
+schemas/v2/*.json text eol=lf
+tools/*.py text eol=lf
+tools/*.cjs text eol=lf
+examples/v2/*.candidate.json text eol=lf
+examples/v2/*.cjson -text
+examples/v2/files/*.pdf binary
+vectors/v2/** -text
+tools/*.ts text eol=lf
+V2_REPORT_OPENAPI_CANDIDATE.json text eol=lf
+V2_REPORT_BASELINES.json text eol=lf

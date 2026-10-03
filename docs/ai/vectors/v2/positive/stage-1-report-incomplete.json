@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "pog.ai.report/0.2-candidate",
+  "stage": 1,
+  "projectId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "procurementId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+  "evidenceVersion": "2",
+  "evidenceHash": "0x4f9db4a8a491975af43a4750526b7ba0de8d10dd085e7baaedbaa653c69d0d66",
+  "executionMode": "synthetic_fixture",
+  "versions": {
+    "serviceVersion": "synthetic-service-v1",
+    "ruleSetVersion": "candidate-rules-v1",
+    "scorePolicyVersion": null,
+    "modelProvider": null,
+    "modelId": null,
+    "modelVersion": null,
+    "promptVersion": null,
+    "extractionSchemaVersion": "candidate-extraction-v1"
+  },
+  "outcome": 1,
+  "riskScoreBps": null,
+  "completeness": "incomplete",
+  "summary": "最终释放前示例：合成 GRN 数量 98、PO 和 Invoice 数量 100；待人工核实差异及补供应商与跨项目查重资料，未评分。",
+  "evidenceRefs": [
+    {
+      "evidenceId": "grn-001",
+      "kind": "GRN",
+      "version": "1",
+      "contentSha256": "0xde135b88d5d08923a46268de4fd88b4b2c5169ac782076f9b7230e5e3d86fedc",
+      "leafKeccak256": "0x8775520f518f06adf1ad96b01b3b10b4d2896b03d1b3659ade05c7030fbca87d",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "invoice-001",
+      "kind": "Invoice",
+      "version": "1",
+      "contentSha256": "0x95228cf045165449bb407a0d745814d192f76cab9d6f86cddc45b1f1ce732f42",
+      "leafKeccak256": "0xa2571d810e8889319d490e066a4ff93d3803cd725123ad6326cfb2ab783aa5f4",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "po-001",
+      "kind": "PO",
+      "version": "1",
+      "contentSha256": "0xb65425d4f7e603bfee5d5ab2887d7fbbe70877058120b5fd8b421b40824d9706",
+      "leafKeccak256": "0x6a9aa88f94db59e6903a5817ae72511750b1255867958b71254b97be91d6d9d5",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "evidenceId": "receipt-001",
+      "kind": "Receipt",
+      "version": "1",
+      "contentSha256": "0x653a9b910b5243c001c907808aadbbb893f78a926d1b10ca6861fbc4bf3a4c10",
+      "leafKeccak256": "0x725e39cbf299bb7e8a36ed5b3f1029d69859075323ecea61fa3af29b0dba30ac",
+      "pages": [
+        1
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "f001",
+      "reasonCode": "DELIVERY_QUANTITY_DIFFERENCE",
+      "severity": "review",
+      "message": "GRN 数量少于 Invoice 数量；这是待核实差异，不能单凭此证明欺诈。",
+      "evidenceLocators": [
+        {
+          "evidenceId": "grn-001",
+          "page": 1,
+          "field": "quantity"
+        },
+        {
+          "evidenceId": "invoice-001",
+          "page": 1,
+          "field": "quantity"
+        },
+        {
+          "evidenceId": "po-001",
+          "page": 1,
+          "field": "quantity"
+        }
+      ]
+    }
+  ],
+  "missingInputs": [
+    {
+      "inputKey": "comparisonContext.crossProjectDuplicateSnapshot",
+      "reasonCode": "DUPLICATE_DATA_MISSING",
+      "requiredForStages": [
+        1
+      ]
+    },
+    {
+      "inputKey": "vendorContext.accountHistorySnapshot",
+      "reasonCode": "VENDOR_HISTORY_MISSING",
+      "requiredForStages": [
+        0,
+        1
+      ]
+    }
+  ],
+  "inputHash": "0x398e0999c5d14c282e2607dcc826003761d4c6a97cef406ef5823d74f2880f3f"
+}

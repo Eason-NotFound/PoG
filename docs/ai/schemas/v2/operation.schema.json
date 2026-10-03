@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:operation",
+  "title": "OperationEnvelope 0.2 候选",
+  "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "pog.ai.operation/0.2-candidate"
+    },
+    "operationId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier"
+    },
+    "aiRequestId": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/identifier",
+      "description": "API 为逻辑审核生成并持久化的 AI 请求 ID；AI 适配器响应必须回显，所有内部 attempt 使用同一 ID。"
+    },
+    "payloadHash": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+    },
+    "status": {
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "error"
+      ]
+    },
+    "report": {
+      "anyOf": [
+        {
+          "$ref": "urn:pog:ai:0.2-candidate:report-body"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "urn:pog:ai:0.2-candidate:error-envelope"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "operationId",
+    "aiRequestId",
+    "payloadHash",
+    "status",
+    "report",
+    "error"
+  ],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "status": {
+          "enum": [
+            "queued",
+            "running"
+          ]
+        },
+        "report": {
+          "type": "null"
+        },
+        "error": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "status": {
+          "const": "completed"
+        },
+        "report": {
+          "$ref": "urn:pog:ai:0.2-candidate:report-body"
+        },
+        "error": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "status": {
+          "const": "error"
+        },
+        "report": {
+          "type": "null"
+        },
+        "error": {
+          "$ref": "urn:pog:ai:0.2-candidate:error-envelope"
+        }
+      }
+    }
+  ],
+  "$comment": "payloadHash=SHA-256(PoG-CJSON-0.2(input) bytes)，带 0x 小写 32-byte hex；区别于 BODY.inputHash 的 Ethereum Keccak-256。operationId/aiRequestId 由 API 生成且不入 BODY。只有 operation.report 进入 reportHash。异步 POST 202 + GET 200 候选待 API 确认；A1 和未验收 A2 均无真实 AI 报告 endpoint。"
+}

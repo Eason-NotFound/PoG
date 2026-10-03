@@ -1,0 +1,708 @@
+{
+  "schemaVersion": "pog.ai.cjson-vectors/0.2-candidate",
+  "profile": "PoG-CJSON-0.2",
+  "status": "CANDIDATE_API_REVIEW_PENDING_NOT_FROZEN",
+  "fixtureSafety": {
+    "classification": "offline_synthetic_byte_hash_fixture_only",
+    "modelExecuted": false,
+    "chainVerified": false,
+    "productionSigningAllowed": false,
+    "signedProtocolPositive": "NOT_RUN",
+    "independentAcceptance": "NOT_RUN",
+    "scoreMeaning": "1000 is a fixed serialization test value, not a model or approved scoring policy"
+  },
+  "positiveVectors": [
+    {
+      "id": "stage-0-input-incomplete",
+      "kind": "input",
+      "source": "positive/stage-0-input-incomplete.json",
+      "canonicalUtf8": "positive/stage-0-input-incomplete.cjson",
+      "canonicalHex": "positive/stage-0-input-incomplete.hex",
+      "canonicalLength": 5358,
+      "expectedKeccak256": "0x909cb440da8a4a4485aa06b0dad2a795e7bb62dd572327d919e0bfa068bb0132",
+      "features": [
+        "full immutable input",
+        "synthetic unverified chain"
+      ]
+    },
+    {
+      "id": "stage-0-report-incomplete",
+      "kind": "report",
+      "source": "positive/stage-0-report-incomplete.json",
+      "canonicalUtf8": "positive/stage-0-report-incomplete.cjson",
+      "canonicalHex": "positive/stage-0-report-incomplete.hex",
+      "canonicalLength": 2602,
+      "expectedKeccak256": "0xdab83f1307d00ed2bde5fbcd78120e12cae6ca701290c1f12a649142f7ea054e",
+      "features": [
+        "Review",
+        "null risk",
+        "explicit missingInputs",
+        "empty model versions"
+      ],
+      "inputSource": "positive/stage-0-input-incomplete.json"
+    },
+    {
+      "id": "stage-0-input-complete",
+      "kind": "input",
+      "source": "positive/stage-0-input-complete.json",
+      "canonicalUtf8": "positive/stage-0-input-complete.cjson",
+      "canonicalHex": "positive/stage-0-input-complete.hex",
+      "canonicalLength": 7038,
+      "expectedKeccak256": "0x31a3857a3ffef45a0f5a5c5a8126932c0f89a92355c660ec2c1ad956117f1584",
+      "features": [
+        "all required dependency snapshots supplied as synthetic presets",
+        "chain verified=false",
+        "no model or production signing"
+      ]
+    },
+    {
+      "id": "stage-0-report-scored",
+      "kind": "report",
+      "source": "positive/stage-0-report-scored.json",
+      "canonicalUtf8": "positive/stage-0-report-scored.cjson",
+      "canonicalHex": "positive/stage-0-report-scored.hex",
+      "canonicalLength": 1953,
+      "expectedKeccak256": "0x8eca901c09c056f93517f374ad6a2b62ccc4b536ed7641feb24e81c4febf50b2",
+      "features": [
+        "complete input and BODY fixture preset",
+        "test risk=1000",
+        "synthetic_fixture",
+        "not a production validated assessment"
+      ],
+      "inputSource": "positive/stage-0-input-complete.json"
+    },
+    {
+      "id": "stage-1-input-incomplete",
+      "kind": "input",
+      "source": "positive/stage-1-input-incomplete.json",
+      "canonicalUtf8": "positive/stage-1-input-incomplete.cjson",
+      "canonicalHex": "positive/stage-1-input-incomplete.hex",
+      "canonicalLength": 5648,
+      "expectedKeccak256": "0x398e0999c5d14c282e2607dcc826003761d4c6a97cef406ef5823d74f2880f3f",
+      "features": [
+        "full immutable input",
+        "synthetic unverified chain"
+      ]
+    },
+    {
+      "id": "stage-1-report-incomplete",
+      "kind": "report",
+      "source": "positive/stage-1-report-incomplete.json",
+      "canonicalUtf8": "positive/stage-1-report-incomplete.cjson",
+      "canonicalHex": "positive/stage-1-report-incomplete.hex",
+      "canonicalLength": 2523,
+      "expectedKeccak256": "0x652a0fc1b63c72b12023857ac1f453e0af2d7a131a42110bb0a981329d129af5",
+      "features": [
+        "Review",
+        "null risk",
+        "explicit missingInputs",
+        "empty model versions"
+      ],
+      "inputSource": "positive/stage-1-input-incomplete.json"
+    },
+    {
+      "id": "stage-1-input-complete",
+      "kind": "input",
+      "source": "positive/stage-1-input-complete.json",
+      "canonicalUtf8": "positive/stage-1-input-complete.cjson",
+      "canonicalHex": "positive/stage-1-input-complete.hex",
+      "canonicalLength": 7326,
+      "expectedKeccak256": "0x5943048721c744fa9528e5b5533bcb0a75c5180846d6b4d010e96aa1a981d634",
+      "features": [
+        "all required dependency snapshots supplied as synthetic presets",
+        "chain verified=false",
+        "no model or production signing"
+      ]
+    },
+    {
+      "id": "stage-1-report-scored",
+      "kind": "report",
+      "source": "positive/stage-1-report-scored.json",
+      "canonicalUtf8": "positive/stage-1-report-scored.cjson",
+      "canonicalHex": "positive/stage-1-report-scored.hex",
+      "canonicalLength": 1921,
+      "expectedKeccak256": "0x6ec4a74cc4a448d2a15fafb8723db1b1fa0db230b75dbb2ce10a1ddb9796d2eb",
+      "features": [
+        "complete input and BODY fixture preset",
+        "test risk=1000",
+        "synthetic_fixture",
+        "not a production validated assessment"
+      ],
+      "inputSource": "positive/stage-1-input-complete.json"
+    },
+    {
+      "id": "unicode-controls-empty-null",
+      "kind": "report",
+      "source": "positive/unicode-controls-empty-null.json",
+      "canonicalUtf8": "positive/unicode-controls-empty-null.cjson",
+      "canonicalHex": "positive/unicode-controls-empty-null.hex",
+      "canonicalLength": 2293,
+      "expectedKeccak256": "0x4c15f18e01ec2662afe528005c4ce7e3171bf84dae8300e55667cc9147521acf",
+      "features": [
+        "Chinese",
+        "emoji",
+        "NFC/NFD in one string",
+        "U+2028",
+        "U+2029",
+        "all controls U+0000..001F",
+        "quotes",
+        "slash",
+        "backslash",
+        "HTML characters",
+        "nonpaged image pages=null",
+        "Locator.page=null",
+        "Locator.field=null"
+      ]
+    },
+    {
+      "id": "unicode-source-escape-equivalent",
+      "kind": "report",
+      "source": "positive/unicode-source-escape-equivalent.json",
+      "canonicalUtf8": "positive/unicode-source-escape-equivalent.cjson",
+      "canonicalHex": "positive/unicode-source-escape-equivalent.hex",
+      "canonicalLength": 2293,
+      "expectedKeccak256": "0x4c15f18e01ec2662afe528005c4ce7e3171bf84dae8300e55667cc9147521acf",
+      "features": [
+        "surrogate pair JSON escape decodes to emoji",
+        "escaped source canonicalizes to same scalars"
+      ]
+    },
+    {
+      "id": "invoice-image-null-pages",
+      "kind": "report",
+      "source": "positive/invoice-image-null-pages.json",
+      "canonicalUtf8": "positive/invoice-image-null-pages.cjson",
+      "canonicalHex": "positive/invoice-image-null-pages.hex",
+      "canonicalLength": 2148,
+      "expectedKeccak256": "0x9238e963e72526305ff79dadb6d3c8c853399789d6f57f1fdef18ec70749a412",
+      "features": [
+        "nonpaged Invoice pages=null",
+        "Locator.page=null",
+        "kind does not imply PDF MIME; trusted input linking separately required"
+      ]
+    },
+    {
+      "id": "invoice-pdf-no-selected-pages",
+      "kind": "report",
+      "source": "positive/invoice-pdf-no-selected-pages.json",
+      "canonicalUtf8": "positive/invoice-pdf-no-selected-pages.cjson",
+      "canonicalHex": "positive/invoice-pdf-no-selected-pages.hex",
+      "canonicalLength": 2146,
+      "expectedKeccak256": "0xc9f0068547cd48b41c2a2f8bf8b08083adb1b765320c10aa73e423b81f5c98c1",
+      "features": [
+        "PDF report pages=[] means no selected page, never nonpaged",
+        "no numeric locator",
+        "trusted input MIME linking separately required"
+      ]
+    },
+    {
+      "id": "unicode-nfc",
+      "kind": "report",
+      "source": "positive/unicode-nfc.json",
+      "canonicalUtf8": "positive/unicode-nfc.cjson",
+      "canonicalHex": "positive/unicode-nfc.hex",
+      "canonicalLength": 1823,
+      "expectedKeccak256": "0x779fa2c3f0d363eb126d39780da28b33e1463187763d65007a851f883fdcc29c",
+      "features": [
+        "no implicit Unicode normalization"
+      ]
+    },
+    {
+      "id": "unicode-nfd",
+      "kind": "report",
+      "source": "positive/unicode-nfd.json",
+      "canonicalUtf8": "positive/unicode-nfd.cjson",
+      "canonicalHex": "positive/unicode-nfd.hex",
+      "canonicalLength": 1824,
+      "expectedKeccak256": "0x701e05d8f51b012f3fe8fe0ca839ea3e081b50e649ac4f431e0129bc8cc68c06",
+      "features": [
+        "no implicit Unicode normalization"
+      ]
+    },
+    {
+      "id": "object-keys-reordered",
+      "kind": "report",
+      "source": "positive/object-keys-reordered.json",
+      "canonicalUtf8": "positive/object-keys-reordered.cjson",
+      "canonicalHex": "positive/object-keys-reordered.hex",
+      "canonicalLength": 1953,
+      "expectedKeccak256": "0x8eca901c09c056f93517f374ad6a2b62ccc4b536ed7641feb24e81c4febf50b2",
+      "features": [
+        "recursive source object order is ignored"
+      ]
+    },
+    {
+      "id": "uint64-maximum",
+      "kind": "report",
+      "source": "positive/uint64-maximum.json",
+      "canonicalUtf8": "positive/uint64-maximum.cjson",
+      "canonicalHex": "positive/uint64-maximum.hex",
+      "canonicalLength": 1990,
+      "expectedKeccak256": "0x50073d2e06f45e64e07ec3fe392a87b3bc7606b01394f0248fc55a0d3ceb9768",
+      "features": [
+        "uint64 max is decimal string, never float"
+      ]
+    },
+    {
+      "id": "keccak-rate-135-bytes",
+      "kind": "generic",
+      "source": "positive/keccak-rate-135-bytes.json",
+      "canonicalUtf8": "positive/keccak-rate-135-bytes.cjson",
+      "canonicalHex": "positive/keccak-rate-135-bytes.hex",
+      "canonicalLength": 135,
+      "expectedKeccak256": "0xae00686d6655b543852909252022447ab18796f2a4a281f00a87a6050cb2439f",
+      "features": [
+        "Keccak rate/padding boundary"
+      ]
+    },
+    {
+      "id": "keccak-rate-136-bytes",
+      "kind": "generic",
+      "source": "positive/keccak-rate-136-bytes.json",
+      "canonicalUtf8": "positive/keccak-rate-136-bytes.cjson",
+      "canonicalHex": "positive/keccak-rate-136-bytes.hex",
+      "canonicalLength": 136,
+      "expectedKeccak256": "0x8f748ca99d991a575c8538ffd22fdb0e612b271d6aa3028d405fadc13bbccb3d",
+      "features": [
+        "Keccak rate/padding boundary"
+      ]
+    },
+    {
+      "id": "keccak-rate-137-bytes",
+      "kind": "generic",
+      "source": "positive/keccak-rate-137-bytes.json",
+      "canonicalUtf8": "positive/keccak-rate-137-bytes.cjson",
+      "canonicalHex": "positive/keccak-rate-137-bytes.hex",
+      "canonicalLength": 137,
+      "expectedKeccak256": "0x5abb87b243dc1d6fe0df5dc8650dee4f85bdda66a1cde04113ecaef9c6860441",
+      "features": [
+        "Keccak rate/padding boundary"
+      ]
+    },
+    {
+      "id": "keccak-rate-271-bytes",
+      "kind": "generic",
+      "source": "positive/keccak-rate-271-bytes.json",
+      "canonicalUtf8": "positive/keccak-rate-271-bytes.cjson",
+      "canonicalHex": "positive/keccak-rate-271-bytes.hex",
+      "canonicalLength": 271,
+      "expectedKeccak256": "0x6f44e89b99ddd6e7b8bae7b136914dbbf9e57d0f9b9c1bff08b92283001c656c",
+      "features": [
+        "Keccak rate/padding boundary"
+      ]
+    },
+    {
+      "id": "array-order-first",
+      "kind": "generic",
+      "source": "positive/array-order-first.json",
+      "canonicalUtf8": "positive/array-order-first.cjson",
+      "canonicalHex": "positive/array-order-first.hex",
+      "canonicalLength": 16,
+      "expectedKeccak256": "0xa0d2b9b78782f1e71608622f5fc9f719aba4307388f477bbbb63702a76ee567c",
+      "features": [
+        "generic arrays preserve source order"
+      ]
+    },
+    {
+      "id": "array-order-second",
+      "kind": "generic",
+      "source": "positive/array-order-second.json",
+      "canonicalUtf8": "positive/array-order-second.cjson",
+      "canonicalHex": "positive/array-order-second.hex",
+      "canonicalLength": 16,
+      "expectedKeccak256": "0x0021e48282369e17855843c34509414028f71b4bfe0003f60dd3f36a01b8138e",
+      "features": [
+        "generic array hash differs; BODY semantic arrays must separately satisfy prescribed order"
+      ]
+    }
+  ],
+  "negativeVectors": [
+    {
+      "id": "raw-duplicate-key",
+      "source": "negative/raw-duplicate-key.json",
+      "kind": "generic",
+      "expectedError": "DUPLICATE_KEY"
+    },
+    {
+      "id": "escaped-duplicate-key",
+      "source": "negative/escaped-duplicate-key.json",
+      "kind": "generic",
+      "expectedError": "DUPLICATE_KEY"
+    },
+    {
+      "id": "utf8-bom",
+      "source": "negative/utf8-bom.json",
+      "kind": "report",
+      "expectedError": "BOM"
+    },
+    {
+      "id": "invalid-utf8",
+      "source": "negative/invalid-utf8.json",
+      "kind": "generic",
+      "expectedError": "INVALID_UTF8"
+    },
+    {
+      "id": "isolated-surrogate",
+      "source": "negative/isolated-surrogate.json",
+      "kind": "generic",
+      "expectedError": "INVALID_UNICODE"
+    },
+    {
+      "id": "negative-zero",
+      "source": "negative/negative-zero.json",
+      "kind": "report",
+      "expectedError": "NUMBER_TOKEN"
+    },
+    {
+      "id": "exponent",
+      "source": "negative/exponent.json",
+      "kind": "report",
+      "expectedError": "NUMBER_TOKEN"
+    },
+    {
+      "id": "float",
+      "source": "negative/float.json",
+      "kind": "report",
+      "expectedError": "NUMBER_TOKEN"
+    },
+    {
+      "id": "nan",
+      "source": "negative/nan.json",
+      "kind": "report",
+      "expectedError": "NUMBER_TOKEN"
+    },
+    {
+      "id": "infinity",
+      "source": "negative/infinity.json",
+      "kind": "report",
+      "expectedError": "NUMBER_TOKEN"
+    },
+    {
+      "id": "small-integer-overflow",
+      "source": "negative/small-integer-overflow.json",
+      "kind": "generic",
+      "expectedError": "INTEGER_RANGE"
+    },
+    {
+      "id": "image-numeric-locator",
+      "source": "negative/image-numeric-locator.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "pdf-unselected-numeric-locator",
+      "source": "negative/pdf-unselected-numeric-locator.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "photo-pages-empty-array",
+      "source": "negative/photo-pages-empty-array.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "photo-pages-numbered",
+      "source": "negative/photo-pages-numbered.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "unknown-evidence-kind",
+      "source": "negative/unknown-evidence-kind.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "unknown-execution-mode",
+      "source": "negative/unknown-execution-mode.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "boolean-as-stage-integer",
+      "source": "negative/boolean-as-stage-integer.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "uint64-overflow",
+      "source": "negative/uint64-overflow.json",
+      "kind": "report",
+      "expectedError": "WIDE_RANGE"
+    },
+    {
+      "id": "uint64-leading-zero",
+      "source": "negative/uint64-leading-zero.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "uint64-plus-sign",
+      "source": "negative/uint64-plus-sign.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "evidence-refs-unsorted",
+      "source": "negative/evidence-refs-unsorted.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "pages-unsorted",
+      "source": "negative/pages-unsorted.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "pages-duplicate",
+      "source": "negative/pages-duplicate.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "boolean-as-page-integer",
+      "source": "negative/boolean-as-page-integer.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "findings-unsorted",
+      "source": "negative/findings-unsorted.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "locators-unsorted",
+      "source": "negative/locators-unsorted.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "missing-inputs-unsorted",
+      "source": "negative/missing-inputs-unsorted.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "required-stages-unsorted",
+      "source": "negative/required-stages-unsorted.json",
+      "kind": "report",
+      "expectedError": "ARRAY_ORDER"
+    },
+    {
+      "id": "unknown-body-key",
+      "source": "negative/unknown-body-key.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "missing-input-hash",
+      "source": "negative/missing-input-hash.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "null-risk-pass",
+      "source": "negative/null-risk-pass.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "incomplete-pass",
+      "source": "negative/incomplete-pass.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "incomplete-scored",
+      "source": "negative/incomplete-scored.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "complete-has-missing",
+      "source": "negative/complete-has-missing.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "model-mode-missing-versions",
+      "source": "negative/model-mode-missing-versions.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "non-model-has-model-version",
+      "source": "negative/non-model-has-model-version.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "uppercase-hash",
+      "source": "negative/uppercase-hash.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "risk-score-out-of-range",
+      "source": "negative/risk-score-out-of-range.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "machine-id-trailing-lf",
+      "source": "negative/machine-id-trailing-lf.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "hash-trailing-lf",
+      "source": "negative/hash-trailing-lf.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "uint-string-trailing-lf",
+      "source": "negative/uint-string-trailing-lf.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "required-stages-empty",
+      "source": "negative/required-stages-empty.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "score-without-policy",
+      "source": "negative/score-without-policy.json",
+      "kind": "report",
+      "expectedError": "BODY_SCHEMA"
+    },
+    {
+      "id": "non-ascii-object-key",
+      "source": "negative/non-ascii-object-key.json",
+      "kind": "generic",
+      "expectedError": "OBJECT_KEY"
+    },
+    {
+      "id": "array-limit",
+      "source": "negative/array-limit.json",
+      "kind": "generic",
+      "expectedError": "ARRAY_LIMIT"
+    },
+    {
+      "id": "string-limit",
+      "source": "negative/string-limit.json",
+      "kind": "generic",
+      "expectedError": "STRING_LIMIT"
+    },
+    {
+      "id": "depth-limit",
+      "source": "negative/depth-limit.json",
+      "kind": "generic",
+      "expectedError": "DEPTH_LIMIT"
+    }
+  ],
+  "hashRelations": [
+    {
+      "left": "unicode-controls-empty-null",
+      "right": "unicode-source-escape-equivalent",
+      "relation": "equal"
+    },
+    {
+      "left": "invoice-image-null-pages",
+      "right": "invoice-pdf-no-selected-pages",
+      "relation": "different"
+    },
+    {
+      "left": "unicode-nfc",
+      "right": "unicode-nfd",
+      "relation": "different"
+    },
+    {
+      "left": "stage-0-report-scored",
+      "right": "object-keys-reordered",
+      "relation": "equal"
+    },
+    {
+      "left": "array-order-first",
+      "right": "array-order-second",
+      "relation": "different"
+    }
+  ],
+  "dependencyFiles": [
+    {
+      "snapshotId": "synthetic-stage-0-accountHistorySnapshot-v1",
+      "source": "dependency-data/synthetic-stage-0-accountHistorySnapshot-v1.json",
+      "contentSha256": "0x444530a20818aa417958cd627837eb7803e7080497e61956f94a7999df092efa",
+      "contentKeccak256": "0x642905aae59ce917c8dc80c1004b4781f1ead094fa59535e3c3baabeb0214ab4",
+      "byteLength": 250
+    },
+    {
+      "snapshotId": "synthetic-stage-0-relatedPartySnapshot-v1",
+      "source": "dependency-data/synthetic-stage-0-relatedPartySnapshot-v1.json",
+      "contentSha256": "0x72c1bea76391f35566880fe9baaed0bc10ccc7c3de5f14448d0b2b78abd64008",
+      "contentKeccak256": "0x3c6c26eb04825c198cc54075fad9c563b10957c71e46ce57ab9f50ed59f924ca",
+      "byteLength": 248
+    },
+    {
+      "snapshotId": "synthetic-stage-0-quoteComparatorsSnapshot-v1",
+      "source": "dependency-data/synthetic-stage-0-quoteComparatorsSnapshot-v1.json",
+      "contentSha256": "0xf11fad3038baf88214cf066181b5301d52e58c485d3ed840a09a5067a1b66c6f",
+      "contentKeccak256": "0x9ba0713b9d7fce74c7d6198a49b509a8430df2f1ee543fb1f8df31e65b7b1c60",
+      "byteLength": 252
+    },
+    {
+      "snapshotId": "synthetic-stage-0-crossProjectDuplicateSnapshot-v1",
+      "source": "dependency-data/synthetic-stage-0-crossProjectDuplicateSnapshot-v1.json",
+      "contentSha256": "0x1977741d3da8ee64a46b1573e7a9f95614d452f4bff50c95879367c997b88eb6",
+      "contentKeccak256": "0x7835f98db94fc2875f67e473ef1b973d623aadac21f562bf6e9ae9a0a8b4948f",
+      "byteLength": 257
+    },
+    {
+      "snapshotId": "synthetic-stage-0-procurementHistorySnapshot-v1",
+      "source": "dependency-data/synthetic-stage-0-procurementHistorySnapshot-v1.json",
+      "contentSha256": "0x0cde741cee1df1d8f4d087e2d8e465931d5b7865fb85d6d1e3c4cf1c574b2896",
+      "contentKeccak256": "0x9016c49f49b263059857e8935af6965607607653a9025e2a450a7479b2afccf0",
+      "byteLength": 254
+    },
+    {
+      "snapshotId": "synthetic-stage-1-accountHistorySnapshot-v1",
+      "source": "dependency-data/synthetic-stage-1-accountHistorySnapshot-v1.json",
+      "contentSha256": "0xf27c7d67bf10cf460986e946997f05a0270b10348438442543ba087301987df3",
+      "contentKeccak256": "0x5c417835746e5e39eae08da4598d5d5f5dc3c3e53111b01722c1ccac53c8d0a2",
+      "byteLength": 250
+    },
+    {
+      "snapshotId": "synthetic-stage-1-relatedPartySnapshot-v1",
+      "source": "dependency-data/synthetic-stage-1-relatedPartySnapshot-v1.json",
+      "contentSha256": "0x46f9ae6f7d614b0e65fe56e05c53bd3790450227b975338eb809179fa3dad4b9",
+      "contentKeccak256": "0xec183c8110955ed98c81f8b4a51e54850bd55869bec120277ac24574e8126c97",
+      "byteLength": 248
+    },
+    {
+      "snapshotId": "synthetic-stage-1-quoteComparatorsSnapshot-v1",
+      "source": "dependency-data/synthetic-stage-1-quoteComparatorsSnapshot-v1.json",
+      "contentSha256": "0x2838cd1bbb62afbaa82494410e09d3a697648be616d6b7357ad5b4a22650eecd",
+      "contentKeccak256": "0x3b0330328daf788c44329fe485e9f2fece78c3dafc095fe4d12ad7302dba5df2",
+      "byteLength": 252
+    },
+    {
+      "snapshotId": "synthetic-stage-1-crossProjectDuplicateSnapshot-v1",
+      "source": "dependency-data/synthetic-stage-1-crossProjectDuplicateSnapshot-v1.json",
+      "contentSha256": "0xc0dbc72a94df9271e2ba15e92acc963b83adebf093c6ec7fce4c1b9053571dd8",
+      "contentKeccak256": "0xcfc2f0859a6e8620d82b2248d3ed6569f44fcb50076364a62c4b13d11653022b",
+      "byteLength": 257
+    },
+    {
+      "snapshotId": "synthetic-stage-1-procurementHistorySnapshot-v1",
+      "source": "dependency-data/synthetic-stage-1-procurementHistorySnapshot-v1.json",
+      "contentSha256": "0xba19f93d431d4170f992397e6c212098dba08d478aff2dae5ec0740de2f3bc96",
+      "contentKeccak256": "0x5c5001d5aee8fd390aa83608371686b27afbcbba53312c671e6f2039a9ca2f8a",
+      "byteLength": 254
+    }
+  ]
+}

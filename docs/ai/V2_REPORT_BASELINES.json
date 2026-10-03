@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "pog.ai.protocol-baselines/0.2-candidate",
+  "revision": 2,
+  "apiFrozen": false,
+  "reviewVerdict": "CHANGE_REQUIRED",
+  "candidateParent": "6a1e34eb8451c7fafb4d68b329b5ffaffa75a289",
+  "formalDependencies": [
+    {
+      "role": "api_a1",
+      "tag": "api-v0.1.0-a1",
+      "commit": "1844186df10854cd49ccc0886f5622e71e572d8e",
+      "sourceFiles": [
+        {
+          "path": "services/api/src/pog_api/adapters.py",
+          "gitBlob": "07ee65b5c55862788cffd5bfea71083d5df7a8ec",
+          "sha256": "7425083f48a97c1fdc4fdb44ed7facd7c237fdf3e414d8672e1c1e3a8c1ed992",
+          "byteLength": 2522
+        },
+        {
+          "path": "services/api/src/pog_api/hashing.py",
+          "gitBlob": "46abeb5b2f64e45f4c200876e79099c8d8d4ec96",
+          "sha256": "4cc5312840dc4a7e9e58d71ed3ae693d8f8b551291829fadf37c72a4099bb805",
+          "byteLength": 667
+        },
+        {
+          "path": "docs/api/A1_RUNBOOK.md",
+          "gitBlob": "5f0c299cb7f89be9833672cb15620042488822ab",
+          "sha256": "843484b58743e1c803abc87fe629186f1e4dcfd9ca51e8b0ef798c16bdd2bfe3",
+          "byteLength": 8297
+        }
+      ]
+    },
+    {
+      "role": "contract_abi_m2",
+      "tag": "blockchain-v0.2.0-m2",
+      "commit": "61aa673653dd31188d2627d76cbba3f97fed6137",
+      "sourceFiles": [
+        {
+          "path": "contracts/src/PoGRegistryV2.sol",
+          "gitBlob": "46dd9818fcdf1204a724cc324f0beea06828ba2f",
+          "sha256": "af2cae7d709ec2de0fc8321a13eabf73a6d63ff4d7149037946483de10dcb769",
+          "byteLength": 36748
+        },
+        {
+          "path": "contracts/src/interfaces/IPoGRegistryV2.sol",
+          "gitBlob": "69d2bae98ccbf9f1eac2d57d629366b64e1f1b15",
+          "sha256": "8fab57beae5ddac323dae14e1c2074e94f9207f81bf51a684637baf64392c8b4",
+          "byteLength": 4167
+        },
+        {
+          "path": "contracts/src/ProcurementEscrowV2.sol",
+          "gitBlob": "51e63b8f58de16c3baa99ff0b1a1fcd671b7a558",
+          "sha256": "45aba553cd9a7717b166b64c9799ed2edf166f95b87ac4fb754804029b73a614",
+          "byteLength": 40921
+        },
+        {
+          "path": "packages/contract-abis/v2/PoGRegistryV2.json",
+          "gitBlob": "c0be91b826ecfedd141a01b76b34daa71615da78",
+          "sha256": "d0842a6ac3bfa175b6a83f56865d81177e525359449139c9bca39eccdfa28750",
+          "byteLength": 46560
+        },
+        {
+          "path": "packages/contract-abis/v2/ProcurementEscrowV2.json",
+          "gitBlob": "caff01e89ad8f6def943d357e5d0ba0abda1f012",
+          "sha256": "9b7d631ecb7465a22f4b9d38ff66aaa53cb0fbd41089c9b799febc260e2dd58b",
+          "byteLength": 35978
+        }
+      ]
+    },
+    {
+      "role": "local_deployment_m3_1",
+      "tag": "blockchain-v0.3.1-m3.1",
+      "commit": "977ea6223f2ce8a9e0f0159c42c289bab4420656",
+      "sourceFiles": [
+        {
+          "path": "docs/M3_1_SPEC.md",
+          "gitBlob": "1c0a4b715e556f8d10c4195b51147c55124cb5b7",
+          "sha256": "f4e223b2a07fc7947821ed341d6c8978272d38c92725e69ed9105a73a6f1e574",
+          "byteLength": 5815
+        },
+        {
+          "path": "docs/M3_1_RUNBOOK.md",
+          "gitBlob": "b6ace0e04071f2c75316af9b414c1a658a70e56d",
+          "sha256": "899c87411ee21451bffed648d334476c4afd706cdd32694819cba4e6b8eff1fb",
+          "byteLength": 5488
+        },
+        {
+          "path": "scripts/local-chain.py",
+          "gitBlob": "f3f40d6c075957a4ff9e48d17a5102919c0a5a1e",
+          "sha256": "e3dbeb6bb92bfc739b1a6582c6d7f5baf08ac05fa1164a683259ac6bc5143586",
+          "byteLength": 35468
+        }
+      ]
+    }
+  ],
+  "unacceptedContext": {
+    "api_a2_commit": "9189d8c286af2314e136d1de843da5cb5be6d407",
+    "formalDependency": false,
+    "realAIReportEndpoint": false,
+    "availableFixture": "local-only synthetic ai_pre"
+  },
+  "originalAI01Candidate": "aacba1e4d4d474aa0e7fdc3d1407186ec6599195"
+}
