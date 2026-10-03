@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pog-api"
+version = "0.1.0"
+description = "PoG A1 API/database foundation; no chain transactions"
+requires-python = "==3.13.*"
+dependencies = [
+  "alembic==1.20.0",
+  "fastapi==0.142.2",
+  "greenlet==3.5.6; platform_machine == 'aarch64' or platform_machine == 'ppc64le' or platform_machine == 'x86_64' or platform_machine == 'amd64' or platform_machine == 'AMD64' or platform_machine == 'win32' or platform_machine == 'WIN32'",
+  "psycopg[binary]==3.3.6",
+  "pillow==12.3.0",
+  "pycryptodome==3.23.0",
+  "pypdf==6.19.0",
+  "pydantic==2.13.5",
+  "python-multipart==0.0.32",
+  "sqlalchemy==2.0.54",
+  "uvicorn==0.53.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "httpx==0.28.1",
+  "pytest==9.1.1",
+]
+
+[project.scripts]
+pog-api = "pog_api.app:run"
+pog-api-admin = "pog_api.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+  "postgres: requires a real PostgreSQL server",
+]

@@ -11,3 +11,7 @@ broadcast/
 contracts/deployments/local/
 __pycache__/
 *.pyc
+.local/
+.pytest_cache/
+.coverage
+htmlcov/
