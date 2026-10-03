@@ -38,13 +38,13 @@
 1. 把 store 替换为 PostgreSQL repository；以数据库事务、唯一约束和 Outbox 实现并发一致性。
 2. 把模拟 AI 状态替换为任务 ID → 真实报告 → Oracle 签名校验；前后两阶段不混用。
 3. 把 approvePurchase/approvePayment 的模拟变更拆为准备 EIP-712 意图、钱包签名、API 验签、Relayer、事件确认。
-4. UI 在签名后显示“处理中”；只有核验 BudgetReserved / PaymentExecuted 事件后才变更已完成资金状态。
+4. UI 在签名后显示“处理中”；现行 V2 的 BudgetReserved 事件表示预算已预留，FundsReleasedToFoundation 事件表示资金已释放给 Foundation，MockPaymentConfirmed 事件才表示后续模拟供应商结算已确认。这三种状态分别处理，Registry 的 FundsReleased 状态不表示 Vendor 已收款；不再使用旧 PaymentExecuted 草案作为 V2 事件。
 5. 文件 Base64 本地存储替换为私有对象存储预签名上传，保留内容 Hash、版本、大小、MIME、所有权和 ACL；补充正式文件扫描。
 6. 跨端事件通过轮询/SSE 读已确认的数据库状态；不要依赖浏览器内模拟状态。
 7. Allocation 以真实付款＋资金映射为依据计算，再锚定 root；不使用当前种子分配冒充真实 proof。
 8. 保留当前权限矩阵与每次请求重新授权，不能仅由前端过滤菜单。
 
-待区块链组提供：ABI、deployment JSON、chainId、RPC、roles、token decimals、EIP-712 domain/types、nonce/有效期、事件和错误码。双方以 design 文档的完整流程校准最终接口。
+当前 V2 ABI 和签名字段已在 packages/contract-abis/v2 及 docs/M2_V2_INTERFACE_IMPLEMENTED.md 发布。接线前仍需核对实际 deployment JSON、chainId、Registry/实例、roles、token decimals、nonce/有效期及证据来源；AI 报告字节规范待各负责人确认。design 文档属于历史 UI 拟案，不能覆盖现行 V2。具体边界见 PORTAL_V2_BOUNDARY.md。
 
 
 ## 人工审计与双方证明 API

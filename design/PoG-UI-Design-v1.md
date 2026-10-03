@@ -1,8 +1,8 @@
-# PoG 四角色 UI 完整设计 · v1（按 CEO 记录修订）
+# PoG 四角色 UI 设计 · v1（门户演示草案）
 
-状态：设计评审稿，等待用户确认后才开发可在 VS Code 运行的应用。本文件已替换读取 CEO 记录前的临时假设。
+状态：门户界面设计参考。当前实现仅为本地演示 API、存储及固定 AI 数据，尚未接入独立后端或链上合约。
 
-依据：[用户提供的 CEO 共享聊天](https://chatgpt.com/s/cx_6abfa12c7d788191aaaafcfe31b116d2)。采用其中较新的 Anvil / MockHKD / ProcurementEscrow 方案，不沿用早期的发票融资或 MockUSDC 方案。共享记录中的部分内容仍是建议，当前未取得区块链组最终 ABI 与接口文档，以下 API 是拟定契约，不能视为已实现。
+现行 V2 接口以仓库内 Solidity、packages/contract-abis/v2 和 docs/M2_V2_INTERFACE_IMPLEMENTED.md 为准。资金先释放给 Foundation，后续供应商结算单独确认；本文件保留的直付、旧函数名和页面 API 是历史 UI 拟案，不是生效的合约协议。具体差异见 docs/PORTAL_V2_BOUNDARY.md。
 
 ## 1. 本版产品边界
 
@@ -243,7 +243,7 @@ Hash 查询包含类型选择：单据内容 / 文件 / 交易 / AI 报告 / 项
 
 ## 10. 核心按钮与接口契约（草案）
 
-以下 API 名称为前端/API 组拟案。合约函数名来自共享记录的较新方案，是否存在、参数和事件字段必须对接最终 ABI。所有金额以字符串表示最小单位，显式附带 currency/asset/decimals；所有写接口都做权限、版本与幂等检查。
+以下 API 名称为历史 UI/API 拟案，不是当前运行端点或 V2 签名协议。合约函数、参数和事件以已发布 V2 ABI 为准。跨模块金额必须使用原子整数的十进制字符串，显式附带 currency/asset/decimals；写接口必须核对权限、版本与幂等。
 
 | UI 操作 | 拟定 API | Input | Output 与 UI 结果 | 后续动作 |
 |---|---|---|---|---|
@@ -304,7 +304,7 @@ Hash 由服务端按固定规范计算；文件 SHA-256、规则/业务 JSON 规
 
 ## 12. 连接与联调设计
 
-沿用共享记录的技术方向：Next.js + TypeScript 前端；FastAPI + PostgreSQL API/数据层；私有文件存储；Anvil；MockHKD、PoGRegistry、ProcurementEscrow；AI 服务、Relayer 与事件索引器由对应模块提供。
+技术方向：Next.js + TypeScript 门户；FastAPI + PostgreSQL API/数据层；私有文件存储；Anvil；MockHKD、PoGRegistry、ProcurementEscrow。独立 AI 服务、Relayer 与事件索引器仍需接线，现行合约接口以 V2 ABI 为准。
 
 建议本地端口：Web 3000、API 8000、Anvil RPC 8545、PostgreSQL 5432；这些是本设计建议，均可配置，以团队部署配置为准。
 
