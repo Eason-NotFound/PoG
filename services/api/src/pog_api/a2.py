@@ -9,6 +9,7 @@ from uuid import UUID
 from eth_utils import keccak
 from fastapi import Depends, Header
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from web3 import Web3
 
@@ -84,7 +85,8 @@ def _queue(
 ) -> tuple[Operation, bool]:
     operation, replayed = begin_operation(
         session, namespace_id=ns.id, principal_id=principal.user_id,
-        operation_kind=kind, idempotency_key=key, validated_payload=payload,
+        operation_kind=kind, idempotency_key=key,
+        validated_payload={"resourceType": resource_type, "resourceId": str(resource_id), "body": payload},
     )
     if not replayed:
         operation.status = "queued"
@@ -125,6 +127,34 @@ def _document_version(session: Session, procurement: Procurement, value: UUID, c
     if document is None or document.procurement_id != procurement.id or document.category != category:
         raise APIError(422, "document_reference_invalid", f"Expected {category} for this procurement")
     return version
+
+
+def _expire_unsubmitted_nonce_requests(
+    session: Session, *, namespace_id: UUID, contract: str, signer: str,
+    nonce: int, kind: str, chain_now: int, principal_id: UUID,
+) -> None:
+    """Release only expired, never-submitted authorizations; retain their audit trail."""
+    requests = session.scalars(select(SigningRequest).where(
+        SigningRequest.namespace_id == namespace_id,
+        SigningRequest.contract_address == contract,
+        SigningRequest.signer_wallet == signer,
+        SigningRequest.nonce_text == str(nonce),
+        SigningRequest.kind == kind,
+        SigningRequest.status != "expired",
+    ).with_for_update()).all()
+    for request in requests:
+        if (
+            request.status not in {"prepared", "signed"}
+            or request.submitted_operation_id is not None
+            or chain_now <= int(request.deadline_text)
+        ):
+            raise APIError(409, "signing_nonce_in_use", "This signer nonce already has an active or submitted request")
+        request.status = "expired"
+        audit(session, principal_id=principal_id, operation_id=request.operation_id,
+              action="signing_request.expire", outcome="expired",
+              resource_type="signing_request", resource_id=request.id,
+              metadata={"deadline": request.deadline_text, "chainTimestamp": str(chain_now)})
+    session.flush()
 
 
 def _validate_signing_fresh(gate, request: SigningRequest, procurement: Procurement, project: Project) -> None:
@@ -405,7 +435,7 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
         with session.begin():
             ns = namespace(session)
             procurement, project = _procurement(session, ns, procurement_id)
-            payload = body.model_dump(mode="json", by_alias=True)
+            payload = {"procurementId": str(procurement_id), "body": body.model_dump(mode="json", by_alias=True)}
             if body.kind == "ai_pre" and (
                 body.reserve_amount_atomic is not None
                 or body.receipt_evidence_document_version_id is not None
@@ -426,7 +456,8 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                     raise APIError(409, "operation_incomplete", "Signing request is incomplete")
             else:
                 ttl = body.deadline_ttl_seconds or settings.signing_ttl_seconds
-                deadline = gate.latest_timestamp() + ttl
+                chain_now = gate.latest_timestamp()
+                deadline = chain_now + ttl
                 registry = gate.contract_address("PoGRegistryV2")
                 escrow = gate.contract_address("ProcurementEscrowV2")
                 signer = Web3.to_checksum_address(principal.wallet_address)
@@ -498,6 +529,8 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                     evidence_version = _document_version(
                         session, procurement, body.receipt_evidence_document_version_id, "receipt_evidence"
                     )
+                    if evidence_version.uploaded_by_user_id != principal.user_id:
+                        raise APIError(403, "receipt_evidence_uploader_mismatch", "Receipt evidence must be uploaded by the original Recipient")
                     view = gate.call("PoGRegistryV2", "getProcurement", procurement.business_id)
                     project_view = gate.call("PoGRegistryV2", "getProject", project.business_id)
                     nonce = int(gate.call("PoGRegistryV2", "recipientNonces", signer))
@@ -518,6 +551,10 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                     epoch = 0
                     evidence_version.referenced = True
                 context = {"reserveAmountAtomic": str(amount)} if body.kind == "reserve" else {}
+                _expire_unsubmitted_nonce_requests(
+                    session, namespace_id=ns.id, contract=contract, signer=signer,
+                    nonce=nonce, kind=body.kind, chain_now=chain_now, principal_id=principal.user_id,
+                )
                 request = SigningRequest(
                     namespace_id=ns.id, operation_id=operation.id, procurement_id=procurement.id,
                     signer_user_id=principal.user_id, kind=body.kind, status="prepared",
@@ -525,8 +562,14 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                     nonce_text=str(nonce), deadline_text=str(deadline), policy_epoch=epoch,
                     typed_data=data, context_json=context, digest=digest(data),
                 )
-                session.add(request)
-                session.flush()
+                try:
+                    with session.begin_nested():
+                        session.add(request)
+                        session.flush()
+                except IntegrityError as exc:
+                    if getattr(getattr(exc.orig, "diag", None), "constraint_name", None) != "uq_signing_request_nonce_family":
+                        raise
+                    raise APIError(409, "signing_nonce_in_use", "A concurrent request already occupies this signer nonce") from exc
                 operation.status = "confirmed"
                 operation.result_resource_type = "signing_request"
                 operation.result_resource_id = request.id
@@ -570,7 +613,7 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
         key = validate_idempotency_key(idempotency_key)
         with session.begin():
             ns = namespace(session)
-            request = session.get(SigningRequest, request_id)
+            request = session.get(SigningRequest, request_id, with_for_update=True)
             if request is None or request.namespace_id != ns.id:
                 raise APIError(404, "signing_request_not_found", "Signing request not found")
             if request.signer_user_id != principal.user_id or request.signer_wallet.lower() != principal.wallet_address.lower():

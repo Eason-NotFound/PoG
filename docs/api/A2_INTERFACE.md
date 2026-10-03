@@ -29,3 +29,16 @@ The operation is confirmed only after a status-1 receipt, canonical block,
 expected event and getter/ledger match. A transaction hash alone is never a
 confirmation. No A2 route releases funds, confirms payment, settles, closes or
 refunds a project.
+
+Signing requests retain their historical bytes after expiry. Only never-submitted
+`prepared`/`signed` requests with chain timestamp strictly greater than deadline
+are marked `expired` when preparing a replacement. Use a new Idempotency-Key;
+replaying the old key returns the historical expired request. Queued, confirmed,
+failed and unknown-outcome reservations are not automatically released.
+`signing_nonce_in_use` is a structured HTTP 409, including concurrent preparation.
+Idempotency hashes bind the path resource and body, so reuse across resources
+returns 409. Receipt evidence must be uploaded by the original Recipient.
+
+Migration `c31003a20003` replaces the permanent nonce uniqueness constraint with
+an index excluding expired requests. Downgrade refuses when expired history
+exists, because the preceding schema cannot retain it safely.

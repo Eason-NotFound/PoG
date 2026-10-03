@@ -139,7 +139,7 @@ def _project_response(project: Project, principal: Principal) -> ProjectResponse
         recipientWallet=project.recipient_wallet if private else None,
         chainState=ChainState(
             status=project.chain_status,
-            verified=project.chain_status not in {"off_chain_draft", "create_queued"}
+            verified=project.chain_status in {"active", "closing", "refundable", "closed"}
             and project.chain_tx_hash is not None,
             transactionHash=project.chain_tx_hash,
             blockNumber=project.chain_block_number,
@@ -158,7 +158,12 @@ def _procurement_response(procurement: Procurement) -> ProcurementResponse:
         budgetCapAtomic=decimal_to_uint_string(procurement.budget_cap_atomic),
         chainState=ChainState(
             status=procurement.chain_status,
-            verified=procurement.chain_status not in {"off_chain_draft", "create_queued"}
+            verified=procurement.chain_status in {
+                "created", "po_recorded", "pre_assessed", "reserve_approval_pending", "reserved",
+                "invoice_recorded", "receipt_confirmed", "final_assessed", "release_approval_pending",
+                "funds_released", "settlement_recorded", "cancelled",
+                "settlement_approval_pending", "payment_confirmed", "cancellation_approval_pending",
+            }
             and procurement.chain_tx_hash is not None,
             transactionHash=procurement.chain_tx_hash,
             blockNumber=procurement.chain_block_number,
@@ -188,7 +193,7 @@ def _document_response(document: Document, version: DocumentVersion) -> Document
 def _operation_response(
     operation: Operation, replayed: bool, steps: list[dict[str, object]] | None = None,
 ) -> OperationResponse:
-    chain_verified = bool(steps) and all(
+    chain_verified = operation.status == "confirmed" and bool(steps) and all(
         step.get("status") == "confirmed"
         and isinstance(step.get("transaction"), dict)
         and step["transaction"].get("status") == "confirmed"
@@ -340,7 +345,7 @@ def create_app(
                     "adapters": adapters.statuses(),
                 },
             )
-        expected_revision = "c31003a20002"
+        expected_revision = "c31003a20003"
         database_ready = revision == expected_revision and required_tables == 11
         chain_ready = not settings.chain_enabled or gateway is not None
         if not database_ready or not storage_ready or not chain_ready:

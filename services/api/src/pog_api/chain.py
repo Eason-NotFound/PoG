@@ -12,6 +12,8 @@ import requests
 from web3 import HTTPProvider, Web3
 from web3.logs import DISCARD
 
+from .deployment_verification import verify_deployment
+
 
 class ChainUnavailable(RuntimeError):
     pass
@@ -81,20 +83,25 @@ class LocalChainGateway:
             self.manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
         except Exception as exc:
             raise ChainUnavailable(f"Cannot read A2 manifest: {exc}") from exc
+        self._manifest_sha256 = _sha256(self.manifest_path)
         chain = self.manifest.get("chain", {})
         rpc_url = chain.get("rpcUrl", "")
         parsed = urlparse(rpc_url)
         if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"}:
             raise ChainMismatch("A2 RPC must be loopback HTTP")
+        if parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in {"", "/"}:
+            raise ChainMismatch("A2 RPC must be a plain loopback endpoint")
         if chain.get("chainId") != 31337:
             raise ChainMismatch("A2 requires chainId 31337")
         rpc_session = requests.Session()
         rpc_session.trust_env = False
         self.w3 = Web3(HTTPProvider(
-            rpc_url, request_kwargs={"timeout": 5}, session=rpc_session,
+            rpc_url, request_kwargs={"timeout": 5, "allow_redirects": False}, session=rpc_session,
         ))
         self.abis: dict[str, list[dict[str, Any]]] = {}
         self.contracts: dict[str, Any] = {}
+        self.artifacts: dict[str, dict] = {}
+        self._fixed_file_hashes: dict[Path, str] = {}
         for name, relative in self.ABI_PATHS.items():
             path = self.repository_root / relative
             record = self.manifest.get("contracts", {}).get(name, {})
@@ -105,6 +112,24 @@ class LocalChainGateway:
             self.abis[name] = json.loads(path.read_text(encoding="utf-8"))
             address = Web3.to_checksum_address(record.get("address", ""))
             self.contracts[name] = self.w3.eth.contract(address=address, abi=self.abis[name])
+            self._fixed_file_hashes[path] = _sha256(path)
+        package_path = self.repository_root / "packages/contract-abis/v2/package.json"
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        self._fixed_file_hashes[package_path] = _sha256(package_path)
+        for name, relative in self.ABI_PATHS.items():
+            path = self.repository_root / f"contracts/out/{name}.sol/{name}.json"
+            try:
+                artifact = json.loads(path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                raise ChainMismatch(f"Missing accepted {name} artifact; build the accepted contracts first") from exc
+            if artifact["abi"] != self.abis[name]:
+                raise ChainMismatch(f"{name} generated artifact ABI mismatch")
+            record = self.manifest["contracts"][name]
+            if record["abi"] != {"path": relative, "sha256": self._fixed_file_hashes[self.repository_root / relative],
+                                 "artifactId": f"{package['name']}@{package['version']}"}:
+                raise ChainMismatch(f"{name} ABI package identity mismatch")
+            self.artifacts[name] = artifact
+            self._fixed_file_hashes[path] = _sha256(path)
         self.verify()
 
     @property
@@ -128,6 +153,11 @@ class LocalChainGateway:
         return {key: Web3.to_checksum_address(value) for key, value in self.manifest["roles"].items()}
 
     def verify(self) -> None:
+        if _sha256(self.manifest_path) != self._manifest_sha256:
+            raise ChainMismatch("Deployment manifest changed; restart and verify explicitly")
+        for path, expected in self._fixed_file_hashes.items():
+            if _sha256(path) != expected:
+                raise ChainMismatch("Accepted artifact or ABI file changed")
         if not self.w3.is_connected():
             raise ChainUnavailable("A2 local RPC is unavailable")
         if self.w3.eth.chain_id != 31337:
@@ -142,6 +172,24 @@ class LocalChainGateway:
         role_values = [value.lower() for value in self.roles.values()]
         if len(role_values) != 10 or len(set(role_values)) != 10:
             raise ChainMismatch("Manifest roles must be ten distinct wallets")
+        role_names = ("deployerOwner", "foundation", "recipient", "aiSigner", "humanApprover",
+                      "donorA", "donorB", "vendor", "relayer", "mockRedemption")
+        accounts = self.w3.eth.accounts
+        if set(self.roles) != set(role_names) or len(accounts) != len(role_names) or any(
+            self.roles[name].lower() != accounts[index].lower() for index, name in enumerate(role_names)
+        ):
+            raise ChainMismatch("Manifest role mapping differs from managed Anvil accounts")
+        if self.manifest.get("schemaVersion") != 1 or self.manifest.get("version") != {
+            "acceptedTag": "blockchain-v0.2.0-m2",
+            "acceptedMerge": "61aa673653dd31188d2627d76cbba3f97fed6137",
+            "technicalSnapshot": "810a54ea9d17c5ac80f1974035f690e49941e1e1",
+        }:
+            raise ChainMismatch("Manifest accepted contract version mismatch")
+        if self.manifest.get("foundry") != {
+            "version": "1.8.4", "commit": "50af4efe189dc64bad2b75ed6990b835de66c4ae",
+            "hardfork": "cancun", "eip170LimitBytes": 24_576,
+        }:
+            raise ChainMismatch("Manifest pinned tooling declaration mismatch")
         registry = self.contracts["PoGRegistryV2"]
         escrow = self.contracts["ProcurementEscrowV2"]
         token = self.contracts["MockHKD"]
@@ -152,6 +200,11 @@ class LocalChainGateway:
             expected = self.manifest["contracts"][name]["runtime"]["keccak256"]
             if "0x" + keccak(code).hex() != expected:
                 raise ChainMismatch(f"{name} runtime digest mismatch")
+            try:
+                verify_deployment(self.w3, name, self.manifest["contracts"][name],
+                                  self.artifacts[name], self.roles, registry.address, contract)
+            except Exception as exc:
+                raise ChainMismatch(f"{name} deployment verification failed: {exc}") from exc
         if registry.functions.escrow().call().lower() != escrow.address.lower():
             raise ChainMismatch("Registry/Escrow binding mismatch")
         if escrow.functions.registry().call().lower() != registry.address.lower():

@@ -6,7 +6,7 @@ draft creation remains off-chain. A2 chain operations are separately queued and
 processed by durable worker/indexer commands. Real AI, payment, conversion,
 release, settlement, closing and refund execution remain unavailable.
 
-The frozen A2 scope is in `docs/api/A2_TASK.md`; account names are fixed by
+The frozen A2 scope is in `docs/api/A2_SPEC.md`; account names are fixed by
 `docs/api/ACCOUNT_PREFERENCES.md`. See `docs/api/A2_RUNBOOK.md` and
 `docs/api/A2_INTERFACE.md` for the operator and HTTP handoff.
 

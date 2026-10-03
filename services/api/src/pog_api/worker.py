@@ -420,7 +420,12 @@ class ChainIndexer:
             next_block = cursor.next_block
             last_hash = cursor.last_block_hash
             namespace_id = namespace.id
-        if next_block > self.gateway.w3.eth.block_number:
+        latest = self.gateway.w3.eth.block_number
+        if last_hash is not None and (next_block - 1 > latest
+                                      or not self.gateway.canonical(next_block - 1, last_hash)):
+            self.rebuild()
+            return True
+        if next_block > latest:
             return False
         block_hash, parent_hash = self.gateway.block_identity(next_block)
         if last_hash is not None and parent_hash.lower() != last_hash.lower():
@@ -518,14 +523,15 @@ class ChainIndexer:
                         Procurement.project_id == project.id
                     )).all():
                         procurement.chain_status = "off_chain_draft"
+                        procurement.chain_tx_hash = None
+                        procurement.chain_block_number = None
                     continue
                 project.chain_status = ("active", "closing", "refundable", "closed")[int(project_view[7])]
                 project_event = next((event for event in reversed(canonical_events)
-                                      if event["event"] == "ProjectCreated"
+                                      if event["event"] == ("ProjectCreated", "ProjectClosingRequested", "ProjectRefundable", "ProjectClosed")[int(project_view[7])]
                                       and str(event["args"].get("projectId", "")).lower() == project.business_id.lower()), None)
-                if project_event:
-                    project.chain_tx_hash = project_event["transactionHash"]
-                    project.chain_block_number = project_event["blockNumber"]
+                project.chain_tx_hash = project_event["transactionHash"] if project_event else None
+                project.chain_block_number = project_event["blockNumber"] if project_event else None
                 session.add(LedgerProjection(
                     namespace_id=namespace.id, project_id=project.id, asset_address=ledger[0],
                     deposits_atomic=Decimal(ledger[1]), reserved_atomic=Decimal(ledger[2]),
@@ -556,6 +562,8 @@ class ChainIndexer:
                         )
                     except Exception:
                         procurement.chain_status = "off_chain_draft"
+                        procurement.chain_tx_hash = None
+                        procurement.chain_block_number = None
                         continue
                     states = (
                         "created", "po_recorded", "pre_assessed", "reserve_approval_pending",
@@ -565,6 +573,15 @@ class ChainIndexer:
                         "cancellation_approval_pending", "cancelled",
                     )
                     procurement.chain_status = states[int(view[-1])]
+                    # Discard orphaned transaction references when rebuilding state.
+                    # A canonical event for this resource is needed as well as its getter.
+                    procurement_event = next((event for event in reversed(canonical_events)
+                                              if str(event["args"].get("procurementId", "")
+                                                     or (event["args"].get("targetId", "")
+                                                         if event["event"] == "HumanApprovalSubmitted" else "")).lower()
+                                              == procurement.business_id.lower()), None)
+                    procurement.chain_tx_hash = procurement_event["transactionHash"] if procurement_event else None
+                    procurement.chain_block_number = procurement_event["blockNumber"] if procurement_event else None
                     procurement.reserved_amount_atomic = Decimal(view[9])
                     procurement.invoice_amount_atomic = Decimal(view[11])
                     procurement.receipt_digest = "0x" + bytes(view[13]).hex()

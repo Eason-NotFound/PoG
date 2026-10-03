@@ -15,6 +15,7 @@ from pog_api.config import Settings
 from pog_api.db import build_engine, build_session_factory
 from pog_api.models import ROLE_NAMES, Role, User, WalletAuthorization
 from pog_api.security import hash_password
+from pog_api.test_db_safety import assert_safe_test_target
 from pog_api.worker import ChainIndexer, ChainWorker
 from pog_api.typed_data import (
     abi_hash, cancellation_terms_hash, close_terms_hash, parties_hash,
@@ -74,6 +75,10 @@ def _upload(client, token, procurement_id, category, key):
 
 
 def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
+    assert_safe_test_target(
+        DATABASE_URL, managed_state=os.getenv("POG_MANAGED_POSTGRES_STATE"),
+        ci=os.getenv("CI"), target_confirmed=os.getenv("POG_TEST_TARGET_CONFIRMED"),
+    )
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     engine = build_engine(DATABASE_URL)
     tables = [
@@ -166,6 +171,11 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
             po = _upload(client, tokens["foundation"], procurement["id"], "purchase_order", "live-po-doc")
             request = _upload(client, tokens["foundation"], procurement["id"], "request", "live-request-doc")
             goods_request = _upload(client, tokens["foundation"], procurement["id"], "goods_request", "live-goods-request-doc")
+            po_snapshot = gateway.w3.provider.make_request("evm_snapshot", [])["result"]
+            po_body = {
+                "poDocumentVersionId": po["versionId"], "requestDocumentVersionId": request["versionId"],
+                "goodsRequestDocumentVersionId": goods_request["versionId"],
+            }
             queued = client.post(
                 f"/v2/procurements/{procurement['id']}/chain/purchase-order",
                 json={
@@ -173,6 +183,28 @@ def test_real_anvil_path_stops_at_receipt_confirmed(tmp_path):
                     "goodsRequestDocumentVersionId": goods_request["versionId"],
                 },
                 headers=_auth(tokens["foundation"], "live-po-chain"),
+            )
+            assert queued.status_code == 202, queued.text
+            pending_po = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"]))
+            assert pending_po.json()["chainState"]["verified"] is False
+            _drain(worker, indexer, factory, queued.json()["operation"]["operationId"])
+            confirmed_po = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"])).json()
+            assert confirmed_po["chainState"]["verified"] is True
+            orphan_po_hash = confirmed_po["chainState"]["transactionHash"]
+            for _ in range(100):
+                if not indexer.sync_one_block():
+                    break
+            else:
+                raise AssertionError("Indexer cursor did not catch up before PO reorg")
+            assert gateway.w3.provider.make_request("evm_revert", [po_snapshot])["result"] is True
+            gateway.w3.provider.make_request("evm_mine", [])
+            assert indexer.sync_one_block() is True  # detects the orphan checkpoint automatically
+            reverted_po = client.get(f"/v2/procurements/{procurement['id']}", headers=_auth(tokens["foundation"])).json()
+            assert reverted_po["chainState"]["status"] == "created"
+            assert reverted_po["chainState"]["transactionHash"] != orphan_po_hash
+            queued = client.post(
+                f"/v2/procurements/{procurement['id']}/chain/purchase-order", json=po_body,
+                headers=_auth(tokens["foundation"], "live-po-chain-restored"),
             )
             assert queued.status_code == 202, queued.text
             _drain(worker, indexer, factory, queued.json()["operation"]["operationId"])

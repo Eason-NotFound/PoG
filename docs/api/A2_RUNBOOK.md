@@ -2,6 +2,10 @@
 
 Start an owned chain on a non-default loopback port and verify it once. The API
 does not create, reset or stop Anvil.
+The gateway also needs the generated accepted artifacts in `contracts/out`;
+build with pinned Foundry before starting the API. Missing artifacts or a changed
+manifest fail closed. The gateway checks canonical deployment receipts and
+reconstructs full runtime at the deployment block, including immutable fields.
 
 ```sh
 python3 scripts/local-chain.py up --port 18545 --state-dir /tmp/pog-local-a2-api

@@ -10,7 +10,8 @@
   refund execution, frontend and LAN/public deployment.
 - Account preference: `foundation`, `recipient`, `donor`, `admin`; `admin` remains
   only the human approver role.
-- Local verification: 97 API/PostgreSQL tests passed with skip=0; the isolated
+- Original candidate `9189d8c286af2314e136d1de843da5cb5be6d407` verification:
+  97 API/PostgreSQL tests passed with skip=0; the isolated
   Anvil/PostgreSQL ReceiptConfirmed path, all three typed families, five human
   terms vectors and snapshot/revert canonical rebuild passed with skip=0. The
   accepted blockchain suite passed 81/81 and local-chain lifecycle passed 32/32,
@@ -18,5 +19,9 @@
 - Confirmation requires exact caller/target/resource/amount event matching plus
   the relevant canonical getter or ledger state. Multi-worker sends use a
   recoverable 15-second persisted `sending` lease and exact-envelope recovery.
-- Candidate verification and CI run links are recorded in the Draft PR. Passing
-  verification is not user acceptance and does not authorize merge or A3/A4.
+- Subsequent integration fixes add resource-bound idempotency, audited expiry
+  of never-submitted signatures, Recipient evidence ownership, destructive-test
+  target validation, canonical state references and complete deployment proofs.
+  Migration head is `c31003a20003`. Verification of the original candidate does
+  not verify these changes; use the exact current PR head and its CI checks.
+- This local demonstration does not establish production or full-chain acceptance.

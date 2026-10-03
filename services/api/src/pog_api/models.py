@@ -11,12 +11,14 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     ForeignKey,
     Integer,
+    Index,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     BigInteger,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -397,13 +399,14 @@ class SigningRequest(TimestampMixin, Base):
     __tablename__ = "signing_requests"
     __table_args__ = (
         UniqueConstraint("operation_id", name="uq_signing_request_operation"),
-        UniqueConstraint(
+        Index(
+            "uq_signing_request_nonce_family",
             "namespace_id", "contract_address", "signer_wallet", "nonce_text", "kind",
-            name="uq_signing_request_nonce_family",
+            unique=True, postgresql_where=text("status <> 'expired'"),
         ),
         CheckConstraint("kind IN ('ai_pre','reserve','receipt')", name="ck_signing_kind"),
         CheckConstraint(
-            "status IN ('prepared','signed','queued','confirmed','failed','requires_attention','invalidated_instance')",
+            "status IN ('prepared','signed','queued','confirmed','failed','requires_attention','invalidated_instance','expired')",
             name="ck_signing_status",
         ),
         CheckConstraint("deadline_text ~ '^[0-9]+$'", name="ck_signing_deadline_text"),

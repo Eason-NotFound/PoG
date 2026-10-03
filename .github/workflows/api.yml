@@ -60,7 +60,7 @@ jobs:
         working-directory: services/api
         run: |
           alembic upgrade head
-          python -m pytest
+          python -m pytest tests unit_tests
 
   a2-live:
     name: api-a2-postgresql-anvil-verify

@@ -1,24 +1,8 @@
-# PoG API / Database A2 任务书
+# PoG API / Database A2 specification
 
-版本 A2.1，2026-10-03，香港时间。用户明确指示：「验收a1，继续a2，如果需要其他项目组信息就跟我说」。PM 冻结需求及代码审查；API & Database Coder 实现。本授权覆盖 API A2 本地链接入，不授权 A3/A4、其他组开发或修改已接受合约。
+Loopback-only development integration using the accepted V2 contracts.
 
-### 最新用户名澄清（2026-10-03，优先于旧 demo 命名）
-
-用户已明确要求并授权修改：Foundation=`foundation`；Recipient=`recipient`；Donor=`donor`；Human Approver 及页面维护等统一使用用户名 `admin`。不再将 `foundation-demo` / `recipient-demo` / `donor-demo` / `human-demo` 作为对外标准账号；不另建一个 Human Approver 登录入口。
-
-`admin` 是应用账号名，内部 Human Approver 角色和独立 manifest.humanApprover 钱包保持不变；不能因此赋予链 owner、Foundation、Recipient 或任意资金权限。页面维护统一归此身份；A2 不授权新增前端/页面维护 CRUD 或 public 用户/密码/钱包管理接口。将这一约定持久化至 `docs/api/ACCOUNT_PREFERENCES.md` 并在本组后续任务/seed/runbook引用。
-
-更新 A2 seed/provision、登录示例、配置示例、测试与当前操作文档。既有同组 demo 账号可通过显式、受控、幂等 rename 迁移为标准用户名，保留 user ID、密码hash、role-wallet、项目/文件/审批/audit 关联；不静默重写角色/钱包/密码，不覆盖或合并已存在目标用户，冲突即拒绝并报告。A1 accepted tag/冻结历史任务书保持不变；当前文档标注新偏好 supersede 历史账号例子。AI fixture/第二 Donor 如验收测试所需仍是明确技术账号，不替代四个标准入口。
-
-## 1. 接受基线、分支和停点
-
-- A1 PR #7 已普通 merge：`1844186df10854cd49ccc0886f5622e71e572d8e`；验收候选 `6b7739448219e969ad402d6028ad952ba7e88e33`；正式 annotated tag `api-v0.1.0-a1`。合并 tree 与验收候选一致；main 和 tag-ref 的 API/Blockchain/Local-chain 验证均通过。
-- 从最新已接受 origin/main 建立 `codex/api-db-a2-chain-integration`，复用 Coder 的独立 worktree。共享 checkout 是其他组的 `codex/blockchain-booth-mock-preparation`，不可切换、编辑或暂存。
-- 先阅读根 AGENTS、docs/api/A0_REQUIREMENTS.md、A1_TASK.md、docs/STATUS.md、MILESTONES.md、M2_V2_SPEC.md、M2_V2_INTERFACE_IMPLEMENTED.md、M2_V2_INTEGRATION.md、M3_1_SPEC.md、M3_1_RUNBOOK.md、FOUNDATION_SETTLEMENT_FLOW.md、VERSION_CONTROL.md 和真实 ABI/源码。本轮用户授权仅 supersede 旧文档的 API onboarding/read-only/M3.2 未授权停点，不改变资金规则。
-- 将本任务书逐字纳入 `docs/api/A2_TASK.md`。新增 API A2 interface/runbook/status 文档，记录 A1 验收及本轮授权，不改写历史冻结文档、ABI、合约、vendor、接受标签或 M1/M2/M3.1 技术快照。
-- 交付 verified feature branch、Draft PR、精确 SHA、测试与 CI，附 PR 后 STOP 等用户验收。不得 merge A2、打 A2 accepted tag、启动 A3/A4、直接 push main、force-push、amend 已发布提交、删历史 branch/tag 或弱化 gates。
-
-## 2. 本轮范围和明确不实现项
+## Scope
 
 A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712 typed data/验签、持久化交易 worker、receipt/event 确认、indexer/read model、重启/重组恢复与实例隔离。
 
@@ -31,9 +15,9 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 5. 独立 human approver 看当前 PRE/terms 后签 Reserve，`submitReserveApproval`；再独立执行 `executeReserve`，仅 `BudgetReserved` 成功确认可投影 reserved。
 6. Foundation `recordInvoiceAndGoods`，invoiceAmount <= reservedAmount；原 Recipient 签并提交 `submitRecipientReceipt`，确认 `RecipientReceiptAccepted` 和 stored receiptDigest。
 
-本轮停止在 Recipient ReceiptConfirmed。不得实现真实/模拟兑换账本、AI 模型/服务、Payment 服务、释放/结算执行接口、Closing/refund 执行接口、前端、LAN/公网部署或真实资产。全部 V2 enum/event 在 read model 可准确解码，但没有 A2 写入口的动作必须明确 unsupported，不能假成功。AI/Payment adapters 继续 Unavailable；不得把 synthetic fixture 宣称实际服务联调。
+A2停止在 Recipient ReceiptConfirmed。不得实现真实/模拟兑换账本、AI 模型/服务、Payment 服务、释放/结算执行接口、Closing/refund 执行接口、前端、LAN/公网部署或真实资产。全部 V2 enum/event 在 read model 可准确解码，但没有 A2 写入口的动作必须明确 unsupported，不能假成功。AI/Payment adapters 继续 Unavailable；不得把 synthetic fixture 宣称实际服务联调。
 
-## 3. 最小 HTTP 接口与兼容性
+## HTTP compatibility
 
 保留 A1 原 `POST /v2/projects`、`POST /v2/procurements` 和文件接口：只建 off_chain_draft，不自动发送旧 draft。新增显式 chain operation kind，HTTP 202 仅 queued。
 
@@ -58,22 +42,22 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 
 默认 A1 模式 chain disabled，不伪造 readiness。A2 启用需明确 opt-in、核验 manifest、wallet 模式及运行路径；真实 RPC 不可由 HTTP 输入指定。缺依赖/失配时准确 503；A1 登录、文件及 draft 行为仍可用且未发送资金动作。
 
-## 4. 本地钱包、部署门禁及签名
+## Deployment and signing
 
 - RPC 仅 http loopback、chainId31337、明确已管理 Anvil。API/Postgres 均 loopback，不自动 reset/up/停用他人进程。生产/公网/真实币完全禁止。
 - 默认操作人员运行一次现有 local-chain.py verify 完整门禁；adapter 还须验证 manifest 指纹、三份 ABI/artifact、canonical 部署 receipts、runtime/immutables、Registry/Escrow 相互绑定、EIP-712 域、MockHKD decimals=6、独立 roles、AI allowlist。不得未经 immutable 处理比较 runtime template hash。可复用现有工具，不修改 accepted M3.1 文件。
 - 每次签名构造/提交及交易发送前，重新核验 chainId/genesis/Anvil instanceId 与 active namespace；排队期间实例变化也须停用。签名 nonce、deadline、epoch、assessment/evidence 在签名前及提交前 fresh 读取。
 - Foundation / Recipient / humanApprover / donorA、donorB / aiSigner / relayer 各自实际 manifest role；不可把账号统一成 owner/relayer。A1 既有 wallet/password 不能静默改写；新的 chain-demo seed 是显式 opt-in，有差异即 fail closed，操作人员可创建新的独立 demo users。AI fixture 密码单独配置，最少12字符且拒绝占位值，不提供 public owner/管理入口。
-- 每次会话授权重新要求唯一 active role-wallet，不能只在 login 检查后取首条 join；已有 token 的映射若变得歧义立即拒绝。AI fixture 只需公开链上 PO commitment，不为本轮授予私有文件/采购浏览权限；当前 A1 只 seed 四角色，新 AI/第二 Donor provision 明示 opt-in。
+- 每次会话授权重新要求唯一 active role-wallet，不能只在 login 检查后取首条 join；已有 token 的映射若变得歧义立即拒绝。AI fixture 只需公开链上 PO commitment，不授予私有文件/采购浏览权限；当前 A1 只 seed 四角色，新 AI/第二 Donor provision 明示 opt-in。
 - `eth_sendTransaction` 仅固定角色的受限业务方法；解锁账户不是安全钱包，只适用同宿主 demo。人和 Recipient 的 demo 签名必须本人会话、confirm=true、记录此次授权；Foundation/AI 不能代签资金票或收货。
 - 不记录/提交 Anvil private keys、mnemonic、wallet 文件、密码或 token。签名是敏感授权资料，只存私有 DB、限制查询/日志；合成 fixture 不含私人资料。
-- 本轮实现 EOA 65-byte signature。ERC1271/external hardware wallet 不冒充支持，返回明确 unsupported 并列为限制；保持合约已有支持不变。eth-account 仅在严格 schema 验证后编码，不能依赖其隐式 coercion 充当输入校验。
+- A2实现 EOA 65-byte signature。ERC1271/external hardware wallet 不冒充支持，返回明确 unsupported 并列为限制；保持合约已有支持不变。eth-account 仅在严格 schema 验证后编码，不能依赖其隐式 coercion 充当输入校验。
 - 两个域名称 `PoGRegistryV2` / `ProcurementEscrowV2`，version `2`、chainId、verifyingContract 严格。字段顺序/uint宽度/enum ordinals 按 accepted ABI/interface 原样，无新增 runId 域字段。
 - 完整实现 AI Assessment、HumanIntent、RecipientReceipt 编码与 digest；assessmentId/evidence/所有五类 Human termsHash 的 cross-language vector 与现有 helper 一致。A2 HTTP 只启用 PRE/Reserve/Receipt；其他 action 的 helper 单元向量不构成执行授权。
 - 三种业务 nonce family 为 Registry aiNonces、Registry recipientNonces、Escrow humanNonces；各自 contract+signer 全局，不能按采购递增。与 Ethereum txnonce 分表/约束。policyEpoch 全 uint32，deadline 全 uint64，nonce 全 uint256，不能用 signed32/signed64 或 float 截断。
 - runId/instanceId 不在 EIP-712 域中。重置后的防护是 API 业务 namespace/新 businessId/停用旧请求，不宣称链上密码学防重放。已接受 receipt 不因其签名 deadline 过期变为无效历史事实。
 
-## 5. 持久化 worker、确认及恢复
+## Persistence and recovery
 
 - 新 Alembic migration，不改 A1 migration；从已有 A1 数据库原位升级、保留数据。扩展 chain状态/schema、operation/steps、chain_transactions、signature records、deployment snapshots、confirmed policy、ledger projection 和 cursor，准确 CHECK/unique/FK；旧 A1 操作永不自动入 queue。
 - chain adapter 用明确 DTO/Protocol，返回 prepared envelope/submission/receipt/events，不保持 submit(dict)->None 假接口。受限 action 映射，绝无通用 calldata endpoint。
@@ -88,7 +72,7 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 - instance/run 改变时原子停用旧 namespace、pending queue/lease/signatures，保留旧 audit/confirmed历史；新实例 fresh businessIds、资源/query/cache 隔离。禁止 API reset endpoint、自动迁移旧钱/业务或删除历史记录。
 - 私有 evidence/typed材料只对必要成员可见；公开 Donor query/events 不能成为绕过 A1 文件/采购权限的侧门。现有文件哈希/不可变版本/Audit/幂等保证必须回归。
 
-## 6. 核验环境及最低测试
+## Verification requirements
 
 使用实际 PostgreSQL + pinned Foundry1.8.4/Anvil、chain31337、自动选择隔离 loopback port 与独立 owned state。不得交易、reset、stop 现有默认8545，不触碰其他组 chain/DB/API；测试自己进程完成后安全清理。不得承诺 stopping 能恢复 Anvil 本身链状态；API/worker重启测试保持同一测试链运行。
 
@@ -106,14 +90,7 @@ A2 实现：部署门禁、受限 chain adapter、正确 caller、三类 EIP-712
 8. 隔离实例 reset/替换，复用 chainId/address 时旧pending/签名禁止发送或API重放、query隔离；不自动删除audit。manifest/code/ABI/binding/role/instance/chainId错误及RPC unavailable门禁失败，无 mutation。
 9. `bash scripts/check-blockchain.sh` 与既有 local-chain检查回归；全 tracked diff `git diff --check <accepted-base> HEAD`，无 secrets/private state/硬编码测试 privatekeys；PR上 API/Blockchain/Local-chain CI 在 exact candidate SHA通过。
 
-## 7. 交付与沟通
 
-尽早在 Coder chat 给 branch/worktree/模块计划及任何真正阻塞；PM只读跟进与修正审查，不写产品代码。需要其他组业务信息只报告给PM/用户，不主动发送其他chat。现有 ABI、角色、签名、hash、manifest足够A2；实际 AI report schema/bytes交付和 Payment operation/ledger协议属于A3，不凭猜测声明冻结。
+## Current limitations
 
-最终交付：commit/PR/base/rollback、接口表与 OpenAPI、migration、typed vectors、worker/indexer手册、真实测试结果、CI、所启动/停止的本组进程、未实现/EOA/unlocked/mock限制。verified不是用户验收。A2候选完成即报告并STOP。
-
-技术参考（主规范仍以本仓库冻结版本为准）：
-
-- https://eips.ethereum.org/EIPS/eip-712
-- https://eth-account.readthedocs.io/en/stable/eth_account.html
-- https://web3py.readthedocs.io/en/stable/web3.eth.html
+The PRE signer submits a fixed synthetic Pass fixture (riskScoreBps=100); this is not a production scoring or approval policy. The real AI report service and portal-to-A2 transaction integration remain separate work.
