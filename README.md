@@ -1,103 +1,173 @@
-# Proof of Giving (PoG)
+# PoG · 四角色门户
 
-HacKU 2026 FinTech MVP. The team repository is
-[Eason-NotFound/PoG](https://github.com/Eason-NotFound/PoG).
+**新增：网站原生 Payment 与透明资金链。** 三方工作台总览和侧栏“透明资金链”共用网站账本，支持冻结兑换、模拟币捐款、验收后拨给基金会、兑付与退款。只需启动原网站，不需要4010服务。操作说明见 [资金链演示指南](docs/PAYMENT-FLOW.md)。原有记录保留为“历史示例”。
 
-Current blockchain milestone: **M3.1 local deployment user accepted and formally tagged**.
-The user confirmed M3.1 and requested GitHub upload on 2026-10-03. Local
-startup/deployment/verification and explicit reset are implemented in Python;
-the archival recheck passed 32/32 new unit/live tests and 81/81 Solidity tests.
-No M3.2 implementation, AI/payment service or three-computer booth work is
-authorized. The API/database PM has read-only onboarding/planning scope only.
+已实现：Next.js + TypeScript 前端、服务端会话、工作区/页面权限、管理员分配维护页面、本地持久化演示 API。适合在 VS Code 内运行并演示四角色协作。
 
-From the repository root:
+**当前是本地演示版**：没有连接 FastAPI/PostgreSQL、真实支付、真实 AI、Anvil 或合约。模拟操作均在 UI 标注；不会生成虚假交易 Hash、钱包签名或 Merkle 验证结果。生产系统必须换用真实身份服务、数据库事务、私有对象存储和团队提供的合约接口。
 
-```sh
-python3 scripts/local-chain.py up
-python3 scripts/local-chain.py verify
-```
 
-Use the generated, ignored `contracts/deployments/local/manifest.json` for the
-actual addresses/instance/receipts/ABI/runtime fingerprints. Default RPC is
-`http://127.0.0.1:8545`, chain ID 31337, loopback-only with no CORS. Read
-[M3.1 runbook](docs/M3_1_RUNBOOK.md) before stopping or resetting: stop retains
-records, not a resumable business chain; a fresh chain requires explicit reset.
-Test Donor balances are a faucet, not HKD collection or conversion.
+## 仓库组件
 
-Verified M3.1 source: `6295409`, published in
-[PR #4](https://github.com/Eason-NotFound/PoG/pull/4), now merged as `977ea62`.
-Immutable technical snapshot:
-[`blockchain-v0.3.1-m3.1-rc.1`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.3.1-m3.1-rc.1).
-New immutable accepted version:
-[`blockchain-v0.3.1-m3.1`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.3.1-m3.1)
-points to that merge, whose tree matches accepted PR head `e6aebae` exactly.
-Both merged-main and accepted-tag verification workflows passed.
-The RC and all M1/M2 tags remain unchanged. Subsequent status-only documentation
-does not change that tag or its deployment scripts/tests/spec/runbook.
+- 根目录 `src/`：当前可运行的四角色网站和原生 Payment，按下方说明启动。
+- [透明资金链与退款演示](docs/PAYMENT-FLOW.md)：本轮完整操作指南。
+- [PoG-payment](PoG-payment/README.md)：独立 Payment 参考包；网站演示只需根目录服务。
+- [区块链组件及版本说明](docs/BLOCKCHAIN-OVERVIEW.md)：保留已归档的 M1/M2/M3.1 合约、工具与版本记录。
+- [API A1 服务](services/api/README.md)：保留现有 FastAPI/PostgreSQL 服务；本轮网站仍使用自己的本地模拟账本。
 
-The accepted implementation is unchanged `MockHKD` plus independent `PoGRegistryV2` and
-`ProcurementEscrowV2`. MockHKD is a freely mintable, valueless 6-decimal demo token.
-The V2 contracts verify project custody, AI/Recipient/human signatures, exact
-Foundation release, separate mock supplier settlement and closure/refunds.
-Accepted M1 source/tests/ABIs and tags remain unchanged; its historical Escrow
-test double and the locally archived obsolete direct-vendor draft are not V2.
+网站及模拟 Payment 是用户单独授权的演示工作，不改变既有区块链里程碑的验收状态。
+本目录不包含本机账本、登录会话、上传凭证、私有环境配置、依赖或构建产物。
 
-The revised [Foundation settlement flow](docs/FOUNDATION_SETTLEMENT_FLOW.md)
-releases approved stablecoins to Foundation after receipt verification, then
-separately tracks platform conversion to HKD and supplier payment. Each Donor first
-converts simulated HKD to MockHKD, then donates directly to a specific project's
-locked Escrow. Recipient signs receipt; release is exactly the approved Invoice
-amount. Active-project remainder stays locked; following termination and human
-reconciliation it is refunded proportionally to original donor wallets.
+## 在 VS Code 运行
 
-M2 adds independent `PoGRegistryV2` / `ProcurementEscrowV2` and tests while keeping
-all accepted M1 source/ABIs unchanged. Scope is frozen in
-[M2 V2 specification](docs/M2_V2_SPEC.md). Independent verification passed 81/81
-tests, with all five fuzz cases repeated at 2,000 runs, strict source lint, ABI
-consistency, runtime-size limits, M1 baseline 15/15 and push-guard 12/12.
-M2 itself did not deploy Anvil. M3.1 now supplies local deployment only; there is
-still no actual AI service, API/database or fiat payment integration.
+用 VS Code 打开整个 PoG 文件夹，打开“终端 → 新建终端”。需要 Node.js 22 或更新版本。
 
-Verified source snapshot: `blockchain-v0.2.0-m2-rc.1` at `810a54e`.
-The user accepted M2 V2 on 2026-10-03, including AI as risk evidence, human
-approval as the final fund decision, and the deliberate mock/no-live-service limits.
-[PR #2](https://github.com/Eason-NotFound/PoG/pull/2) is merged as `61aa673`;
-the new immutable accepted tag is
-[`blockchain-v0.2.0-m2`](https://github.com/Eason-NotFound/PoG/tree/blockchain-v0.2.0-m2).
-Main and accepted-tag CI passed. M1 and the M2 RC remain unchanged.
-The frozen ABI package retains its original `0.2.0-m2-rc.1` artifact identifier;
-acceptance is recorded by the formal Git tag and [current status](docs/STATUS.md),
-not by rewriting verified artifacts. The subsequent M3.1 implementation,
-acceptance and archival authorize local deployment tooling only; M3.2 needs
-a separate user decision.
+推荐按已验证的 pnpm 锁文件安装：
 
-## Build and verify
+    npx pnpm@11.25.0 install --frozen-lockfile
 
-Requires Foundry 1.8.4, Solidity 0.8.24 and Python 3 (standard library only).
-OpenZeppelin Contracts v5.7.0 and forge-std v1.16.2 are vendored under `contracts/lib`.
+首次运行时复制环境配置：
 
-```sh
-bash scripts/check-blockchain.sh
-```
+    cp .env.example .env.local
 
-The booth will have Foundation, Recipient and Donor views. The integration
-plan for frontend, API/database, AI evidence and payment teams is in
-[V2 integration hand-off](docs/M2_V2_INTEGRATION.md). API paths in that file are
-proposed resources, not running endpoints. The
-[exact V2 implementation interface](docs/M2_V2_INTERFACE_IMPLEMENTED.md) includes
-call prototypes, enum ordinals, signing types and hash formulas.
-[Historical M1 integration](docs/INTEGRATION_CONTRACT.md) is preserved for M1;
-do not apply its direct-vendor payment API or version-1 signatures to V2.
+Windows PowerShell 对应命令：
 
-## Project references
+    Copy-Item .env.example .env.local
 
-- [Blockchain status](docs/STATUS.md)
-- [Current V2 specification](docs/M2_V2_SPEC.md)
-- [Historical M1 specification](docs/BLOCKCHAIN_SPEC.md)
-- [Build runbook](docs/BLOCKCHAIN_RUNBOOK.md)
-- [V2 verification and acceptance](docs/M2_V2_RUNBOOK.md)
-- [Milestones](docs/MILESTONES.md)
-- [Version control and user acceptance](docs/VERSION_CONTROL.md)
+启动：
 
-Work proceeds one approved milestone at a time. Preserve accepted versions with
-Git history and annotated tags; submit changes through reviewed feature branches.
+    npx pnpm@11.25.0 dev
+
+浏览器打开 http://localhost:3000 。停止服务按 Ctrl+C。
+
+也可以使用熟悉的 npm 工作流：npm install，然后 npm run dev。跨电脑协作建议统一使用 pnpm-lock.yaml，以保持依赖一致。
+
+本机如果终端尚未安装 node/npm，可直接运行项目内的辅助启动器：
+
+    ./scripts/dev-local.sh
+
+该启动器优先使用终端里的 Node/pnpm，否则使用当前 Codex 已有的 Node 运行时。其他电脑建议正常安装 Node.js 22+。
+
+## 演示账号
+
+默认测试密码均为 **PoG-demo-2026**。这些是公开的本地测试凭据，不可用于生产部署。
+
+| 账号 | 身份 | 可访问页面 |
+|---|---|---|
+| donor | 捐款人 A | 仅捐款人工作区 |
+| donor2 | 捐款人 B | 仅捐款人工作区；只能看自己的捐款 |
+| foundation | 基金会 | 捐款人 + 基金会工作区 |
+| recipient | 受捐机构 | 仅受捐机构工作区 |
+| admin | 管理员 | 四个工作区 + 权限管理 |
+| maintainer | 页面维护人员 | 初始仅“捐款人/探索项目”和“管理员/系统连接” |
+
+管理员查看全部业务页面，但不自动拥有基金会采购/付款批准权。需要演示基金会业务时请登录 foundation。
+
+## 配置维护人员权限
+
+1. 登录 admin，进入“用户与权限”。
+2. 点击“添加维护人员”，填写姓名、账号、初始密码。新账号默认没有页面权限。
+3. 点击对应人员的“分配页面”。
+4. 勾选负责的具体页面，保存。
+5. 维护人员登录后，只显示获授权工作区中的已分配菜单。
+
+可为同一维护人员分配跨工作区的个别页面。不需要把整个工作区授予他。维护人员始终只读，即使获准查看管理员权限页，也不能给自己或别人增加权限。
+
+取消全部授权后，工作人员看到“暂未分配页面”。停用账号后，已有会话也无法继续请求 API。
+
+## 权限如何生效
+
+- 统一权限模型：src/lib/access.ts。
+- 页面由服务端检查，手动输入未授权 URL 只显示访问拒绝页，不返回业务数据。
+- 每次 API 读取与写入都检查当前角色/页面权限；未经登录返回 401，越权 API 返回 403。
+- 权限来自服务端数据，而不是 URL、前端角色选择器或 localStorage。
+- 会话使用随机令牌；服务端保存令牌摘要，Cookie 为 HttpOnly + SameSite=Strict。
+- 维护人员只拥有页面读取权限。文件原件和私密 Hash 查询不随页面维护权限自动开放。
+- 捐款人仅取得本人捐款；基金会/受捐机构的业务写操作校验机构归属。
+- 权限修改、登录与演示业务操作写入审计日志。修改授权后，下一次请求立即使用新权限；当前打开的页面每 15 秒刷新一次。
+- 写 API 校验 Origin 与 Host，并要求业务写入使用幂等键；金额以整数最小单位校验。
+
+## 可以演示什么
+
+- 捐款与编号：donor → 探索项目 → 支持项目 → 下载凭证；使用完整「憑證編號 / Record ID」查询。编号仍是原有哈希编码，只改变用户界面名称。
+- 基金会采购：foundation → 采购与发货证明 → 新建采购；受捐机构原有采购申请入口也保留。
+- 采购前审计：admin → 审计记录 → 待审计项目 → 查看 AI 演示结果、单据和附件，填写通过／不通过／要求补件及意见。基金会可在证明页补充报价并重新提交采购。
+- 预算预留：当前版本通过管理员审计后，foundation → 采购审批 → 确认采购与预留；审计本身不自动变动资金。
+- 基金会证明：foundation → 采购与发货证明 → 选择已预留采购 → 上传采购发票（必需）及发货证明（可选）→ 填写说明并提交。
+- 收货证明：recipient → 收货照片与验收 → 上传 PNG/JPEG 收货照片（必需），可补充验收单 → 填写实际数量及说明。每个文件最多 1 MB。双方可以任意先后提交。
+- 交付审计：双方证明齐全后，完成固定演示 AI 审核，并进入 admin → 审计记录。只有当前版本人工审计通过后，基金会才能确认后续模拟采购付款。
+- 申诉：foundation 或 recipient → 申诉记录 → 对本项目当前未通过／要求补件的审计提交申诉；admin → 申诉记录 → 未处理 → 填写受理／驳回及意见。受理会生成新的待人工审计记录，不自动批准或付款。
+- 历史：审计记录有待审计／已审计；申诉记录有未处理／已处理。处理人、时间、意见和旧凭证编号保留；原操作日志在审计页底部折叠显示。
+- 权限：维护人员仍只读；管理员可审计与处理申诉，但不能代替基金会或受捐机构提交证明或执行资金操作。
+
+为三台演示电脑准备不同账号，共同访问中央主机的 http://中央主机局域网IP:3000。相同浏览器会共享登录 Cookie，单机同时展示多个角色请使用独立浏览器配置文件/浏览器。
+
+## 已实现与待接入
+
+| 模块 | 当前状态 |
+|---|---|
+| 28 个工作区页面、详情弹窗、表单、权限设置 | 可运行 |
+| 登录、会话、页面/API 权限、业务数据隔离 | 服务端实际执行 |
+| 模拟捐款、模拟注资、采购、预留、交付、付款 | 本地演示流程 |
+| 文件上传、SHA-256、授权下载 | 本地演示实现；文件以 Base64 保存在私有演示数据文件 |
+| 小额报销 | 可保存草稿与 Hash；正式审核/付款待接入 |
+| AI 初审/终审 | 固定示例结果，不是真实模型判断 |
+| 捐款分配 | 初始种子数据展示；新支出自动分配、Merkle 验证待接入 |
+| 人工审计与申诉 | 本地持久化、意见留痕、版本绑定和重新审计已实现 |
+| 项目暂停、关闭核账、按比例退款 | 网站原生模拟账本已实现，见资金链演示指南 |
+| 供应商认证、规则版本治理 | 真实写入未接入 |
+| EIP-712、Anvil、Relayer、真实 txHash | 待区块链组 ABI 与接口 |
+| PostgreSQL/FastAPI/私有对象存储 | 后续替换本地演示适配层 |
+
+## 数据与配置
+
+- 本地数据：.data/pog-demo.json，首次访问自动生成并跨重启保存，不提交 Git。
+- 密码采用随机 salt + scrypt 散列；不会把密码散列返回前端。
+- .env.local 被 Git 忽略；POG_DEMO_MODE=true 才启用演示 API。
+- POG_DEMO_PASSWORD 仅用于首次创建种子账号。改变环境变量不会覆盖已存在账号。
+- 数据库适配使用单进程同步写入和原子文件替换，只适合本地演示。不要部署多进程或多副本共写该文件。
+- 当前金额按展示用“分”储存；未来真实 HKD 分与 mHKD token decimals 必须按接口显式映射，不能原样照搬演示整数给合约。
+- 捐款确认不自动增加资金池；真实捐款/注资映射与新分配批次需要 Payment/Allocation 团队接入。
+
+## 检查与生产构建
+
+    npx pnpm@11.25.0 test
+    npx pnpm@11.25.0 typecheck
+    npx pnpm@11.25.0 build
+    npx pnpm@11.25.0 start
+
+测试在系统临时目录生成自己的测试数据，不修改你的演示数据。
+
+## 代码入口
+
+- src/app/[portal]/[page]/page.tsx：服务端页面访问校验。
+- src/components/portal-app.tsx：四工作区、表单、权限配置和交互。
+- src/app/globals.css：响应式界面。
+- src/lib/access.ts：角色、页面目录、读写权限。
+- src/app/api/[...path]/route.ts：演示 API、会话、Hash 和附件端点。
+- src/lib/service.ts：权限过滤、业务状态与幂等校验。
+- src/lib/store.ts：本地演示数据、密码与会话持久化。
+- docs/PERMISSIONS.md：权限规则与验收场景。
+- docs/API-DEMO.md：接口与真实服务对接说明。
+- design/PoG-UI-Design-v1.md：完整 UI 设计及后续范围。
+
+开发参考：[Next.js Cookies](https://nextjs.org/docs/app/api-reference/functions/cookies)、[Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route)、[pnpm 11 配置变更](https://github.com/pnpm/pnpm.io/blob/main/blog/releases/11.0.md)。
+
+## 雙語介面 / Bilingual interface
+
+- 登入頁、四個工作區、彈出表單和存取受限頁均提供「繁體中文 / English」選單。
+- 預設繁體中文；語言選擇以 `pog-language` Cookie 在同一瀏覽器保存一年，重新整理、跨頁及重新登入仍保留。
+- 切換語言不重新載入頁面，保留正在填寫的表單、目前登入身分及權限。介面、狀態、錯誤提示、時間格式會同步切換。
+- 使用者自行填寫的內容及附件保留原文；資料庫內容、API 業務值、Hash 和原始單據匯出不因語言切換而改寫。內建演示資料提供已知文案翻譯。
+- 詞庫：`src/lib/i18n/messages.json`；語言狀態與選單：`src/components/language-provider.tsx`。詞庫已隨程式保存，執行時不需要翻譯 API。
+
+
+## 2026-10-03 更新与数据兼容
+
+业务展示采用「捐款拨付基金会 → 基金会采购并发送物资 → 受捐机构确认收货 → 双方证明审计」。现有金额仍是模拟账本，不会执行银行拨款、真实付款或合约转账；真实链上拨付至基金会的资金路径需要后续与合约组确认对接。
+
+首次读取旧版数据会自动迁移并保存 `.data/pog-demo.json.v1-backup`，不会清空账号、余额、文件及历史凭证编码。旧版已预留／已付款记录明确标为历史演示记录；旧版待付款但缺少双方证明的采购退回待补齐证明阶段，金额不变。新提交和新审计按新流程处理。无需删除 `.data` 或重建数据库。
+
+界面翻译在 `src/lib/i18n/messages.json`；内部 `hash` 字段及 `/api/records/by-hash` 地址保留，避免破坏数据库及未来 API 对接。原始凭证 JSON 保留技术字段和原文。
+
+本次工作區已另存當前資料快照 `.data/pog-demo.json.v2-backup`，便於本機回復。

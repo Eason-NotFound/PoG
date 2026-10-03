@@ -1,0 +1,8 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {"label":"Payment: setup","type":"shell","command":"npm run setup","problemMatcher":[]},
+    {"label":"Payment: test","type":"shell","command":"npm test","group":"test","problemMatcher":[]},
+    {"label":"Payment: connect frontend","type":"shell","command":"npm run connect-frontend","problemMatcher":[]}
+  ]
+}

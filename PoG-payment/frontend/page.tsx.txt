@@ -1,0 +1,12 @@
+import { redirect } from "next/navigation";
+import { currentUser } from "@/lib/auth";
+export const dynamic = "force-dynamic";
+export default async function PaymentPage() {
+  const user = await currentUser();
+  if (!user) redirect("/login");
+  if (!["donor", "foundation", "admin"].includes(user.role)) return <main><h1>此身份没有 Payment 权限</h1><a href="/">返回工作区</a></main>;
+  return <main style={{ minHeight: "100vh", background: "#f3f6f2" }}>
+    <div style={{ padding: "14px 24px" }}><a href="/">← 返回 PoG 工作区</a></div>
+    <iframe title="PoG Payment 模拟兑换与退款" src="/api/payment/ui" style={{ width: "100%", height: "calc(100vh - 55px)", border: 0 }} />
+  </main>;
+}

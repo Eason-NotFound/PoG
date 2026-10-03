@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE } from "@/lib/auth";
+import { getUserByToken } from "@/lib/store";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+const profiles: Record<string, [string, string]> = {
+  donor: ["donor", "personal-a"], donor2: ["donor", "personal-b"],
+  foundation: ["foundation", "org-foundation"], admin: ["admin", "platform"],
+};
+async function handler(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  const error = (message: string, status: number) => NextResponse.json({ error: message }, { status });
+  const user = getUserByToken(req.cookies.get(SESSION_COOKIE)?.value);
+  if (!user) return error("请先登录原前端", 401);
+  const profile = profiles[user.id];
+  if (!profile || user.role !== profile[0] || user.orgId !== profile[1]) return error("此账号尚未配置 Payment 权限", 403);
+  const route = (await context.params).path.join("/");
+  const secret = process.env.PAYMENT_PROXY_SECRET;
+  if (!secret || secret.length < 32) return error("请在 PoG-payment 运行 npm run connect-frontend，再重启前端", 503);
+  if (req.method === "POST") {
+    const origin = req.headers.get("origin");
+    try {
+      if (!origin || !["http:", "https:"].includes(new URL(origin).protocol) || new URL(origin).host !== req.headers.get("host")) return error("请求来源不匹配", 403);
+    } catch { return error("请求来源不匹配", 403); }
+  }
+  const asset = { ui: "/", "app.js": "/app.js", "style.css": "/style.css" }[route as "ui" | "app.js" | "style.css"];
+  if (!(req.method === "GET" && (asset || route === "state")) && !(req.method === "POST" && /^(operations\/[a-z-]+|reconcile\/[a-f0-9-]+)$/.test(route))) return error("接口不存在", 404);
+  try {
+    let body: string | undefined;
+    if (req.method === "POST") {
+      if (!req.headers.get("content-type")?.startsWith("application/json")) return error("需要 JSON", 415);
+      const reader = req.body?.getReader();
+      if (!reader) return error("请求为空", 400);
+      const chunks: Uint8Array[] = []; let size = 0;
+      while (true) { const part = await reader.read(); if (part.done) break; size += part.value.length; if (size > 16384) { await reader.cancel(); return error("请求过大", 413); } chunks.push(part.value); }
+      body = Buffer.concat(chunks).toString("utf8");
+    }
+    const origin = new URL(process.env.PAYMENT_API_URL || "http://127.0.0.1:4010");
+    if (origin.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(origin.hostname)) return error("Payment 地址必须为本机服务", 503);
+    const response = await fetch(new URL(asset || "/api/" + route, origin), { method: req.method, cache: "no-store", signal: AbortSignal.timeout(25000),
+      headers: { "Content-Type": "application/json", "X-Payment-Secret": secret, "X-Payment-User": user.id,
+        "Idempotency-Key": req.headers.get("idempotency-key") || "" }, body });
+    let content = await response.text();
+    if (route === "ui") content = content.replace('href="/style.css"', 'href="/api/payment/style.css"').replace('src="/app.js"', 'src="/api/payment/app.js"');
+    return new Response(content, { status: response.status, headers: {
+      "Content-Type": response.headers.get("content-type") || "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'self'",
+    }});
+  } catch {
+    return error("Payment 服务连接失败或请求超时。请启动 4010 服务；保留同一幂等键重试或查询原操作，不要重新建单。", 503);
+  }
+}
+export const GET = handler;
+export const POST = handler;

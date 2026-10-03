@@ -15,3 +15,18 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Website and local Payment demo
+node_modules/
+.pnpm-store/
+.next/
+.data/
+.env.local
+*.tsbuildinfo
+.DS_Store
+test-results/
+
+.next-funds-check/
+
+upload-ready/
+PoG-payment.zip
