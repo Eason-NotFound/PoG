@@ -15,3 +15,12 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# PoG portal local artifacts
+node_modules/
+.pnpm-store/
+.next/
+.data/
+.env.local
+*.tsbuildinfo
+test-results/
