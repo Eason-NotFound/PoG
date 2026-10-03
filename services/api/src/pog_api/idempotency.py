@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import re
+import hashlib
+import json
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -126,6 +130,48 @@ def ensure_verified_namespace(session: Session, gateway) -> DeploymentInstance:
     if not current.active:
         raise APIError(409, "deployment_instance_inactive", "Deployment namespace is inactive")
     return current
+
+
+def persisted_verified_namespace(session: Session, manifest_path: Path | None) -> DeploymentInstance | None:
+    """Only an exact, previously verified snapshot may support offline DB replay.
+
+    This does not establish current chain availability or authorize new sends.
+    A changed/missing/unverified manifest never selects an old namespace.
+    """
+    if manifest_path is None or manifest_path.is_symlink():
+        return None
+    try:
+        raw = manifest_path.read_bytes()
+        manifest = json.loads(raw)
+        if not isinstance(manifest, dict) or not isinstance(manifest.get("chain"), dict):
+            return None
+        run_id, instance_id = manifest["runId"], manifest["chain"]["instanceId"]
+        if not isinstance(run_id, str) or not isinstance(instance_id, str) or not run_id or not instance_id:
+            return None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    current = session.scalar(select(DeploymentInstance).where(
+        DeploymentInstance.run_id == run_id, DeploymentInstance.instance_id == instance_id,
+        DeploymentInstance.mode == "verified", DeploymentInstance.verified.is_(True),
+        DeploymentInstance.manifest_sha256 == hashlib.sha256(raw).hexdigest(),
+    ))
+    if current is not None and not current.active:
+        raise APIError(409, "deployment_instance_inactive", "Deployment namespace is inactive")
+    return current
+
+
+def lock_operation_key(session: Session, namespace_id: UUID, principal_id: UUID, kind: str, key: str) -> None:
+    token = f"a2-operation:{namespace_id}:{principal_id}:{kind}:{key}".encode()
+    lock = int.from_bytes(hashlib.sha256(token).digest()[:8], "big", signed=True)
+    session.execute(text("SELECT pg_advisory_xact_lock(:lock)"), {"lock": lock})
+
+
+def find_operation(session: Session, *, namespace_id: UUID, principal_id: UUID,
+                   operation_kind: str, idempotency_key: str) -> Operation | None:
+    return session.scalar(select(Operation).where(
+        Operation.namespace_id == namespace_id, Operation.principal_id == principal_id,
+        Operation.operation_kind == operation_kind, Operation.idempotency_key == idempotency_key,
+    ))
 
 
 def begin_operation(

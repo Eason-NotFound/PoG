@@ -1,5 +1,11 @@
 # PoG API A2 local runbook
 
+Local review only: Hank's published signing-expiry 003 is preserved unchanged;
+the additional review guards use successor 004. The original local review work
+is recoverable at `f1b7c92`. Local integration is authorized, but GitHub updates,
+main merge and acceptance tags remain on hold for user review.
+See `A2_REVIEW_FIXES.md` for tested boundaries and known pending work.
+
 Start an owned chain on a non-default loopback port and verify it once. The API
 does not create, reset or stop Anvil.
 The gateway also needs the generated accepted artifacts in `contracts/out`;
@@ -28,7 +34,9 @@ PYTHONPATH=services/api/src .local/runtime/bin/python -m pog_api.cli chain-worke
 PYTHONPATH=services/api/src .local/runtime/bin/python -m pog_api.cli chain-indexer
 ```
 
-Use `--once` for one worker/indexer cycle. Use `chain-indexer --rebuild` after an
+Use `--once` for one worker/indexer cycle. Regular indexing now automatically
+checks quiet/shorter/same-height canonical drift and rebuilds projections.
+Use `chain-indexer --rebuild` after an
 operator-confirmed reorg investigation; it only rereads the owned chain and
 rebuilds this service's canonical projections. It never sends a transaction or
 resets Anvil.
@@ -40,11 +48,34 @@ caller/nonce/to/data/value envelope before it sends or binds anything. An
 unprovable outcome becomes `requires_attention`; it is never retried with a new
 nonce.
 
+Definite preflight rejection is retained as `not_broadcast`, releasing only the
+unconsumed EVM nonce reservation. Unknown or pending sends continue protecting
+their caller lane. Historical receipt/getter RPC failures remain submitted and
+retryable; a timeout is never evidence of a reorg. Continuous services retry
+dependency outages at the configured interval; `--once` reports the error.
+
+Signing renewal uses a new explicit key and fresh deadline/bundle. Retire only
+unsubmitted expired/stale authorization, or failed authorization with persisted
+positive no-broadcast proof. Preserve consumed/unknown history. PRE renewal is
+permitted in accepted states 1/2/3; human Reserve renewal in 2/3. AI Review/Reject
+is risk evidence, not an automatic veto; independent human votes remain required.
+Receipt evidence must be uploaded by the original requesting Recipient.
+
+Receipt requests bind their original immutable evidence version in saved
+context. Legacy requests without that binding fail closed for new signing or
+submission; a later same-hash Recipient upload is not their original source.
+Never-submitted invalid history may be retired with an audit and new key.
+Queued/prepared-envelope source failures are held as `requires_attention` with
+`chain.receipt_source_blocked`, preserving nonce, submitted pointer and history.
+Do not delete or silently release them. An exact previously broadcast envelope
+may still be reconciled without a new send; its chain facts are not rewritten.
+
 After a reorg, a caller nonce already present in durable transaction history is
 held for investigation. A newly queued operation that encounters it becomes
 `requires_attention` with `chain_nonce_history_conflict` (409); it sends nothing
-and keeps the original transaction and audit records. A2 has no automatic nonce
-release or manual-resolution HTTP endpoint. Inspect canonical and pending facts
+and keeps the original transaction and audit records. A2 never releases an
+unproven or possibly broadcast reservation automatically and has no
+manual-resolution HTTP endpoint. Inspect canonical and pending facts
 before coordinating recovery; do not delete records or start a fresh namespace
 on the same running chain to bypass the hold.
 

@@ -216,6 +216,19 @@ class DemoSignRequest(StrictModel):
 class SignatureSubmit(StrictModel):
     signature: SafeStrictStr = Field(min_length=132, max_length=132)
 
+    @field_validator("signature")
+    @classmethod
+    def valid_eoa_signature(cls, value: str) -> str:
+        from .errors import APIError
+        if not re.fullmatch(r"0x[0-9a-fA-F]{130}", value):
+            raise APIError(422, "signature_invalid", "Expected a 65-byte hexadecimal EOA signature")
+        raw = bytes.fromhex(value[2:])
+        order = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+        r, s, v = int.from_bytes(raw[:32]), int.from_bytes(raw[32:64]), raw[64]
+        if not 0 < r < order or not 0 < s <= order // 2 or v not in {27, 28}:
+            raise APIError(422, "signature_invalid", "Invalid ECDSA r/s/v values")
+        return value
+
 
 class ReserveCreate(StrictModel):
     reserve_amount_atomic: UInt256String = Field(alias="reserveAmountAtomic")

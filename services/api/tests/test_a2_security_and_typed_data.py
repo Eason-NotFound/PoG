@@ -168,7 +168,7 @@ def test_demo_signing_disabled_fails_before_request_lookup(
 def test_manifest_abi_tamper_fails_before_rpc_use(tmp_path):
     repository_root = Path(__file__).resolve().parents[3]
     manifest = {
-        "chain": {"rpcUrl": "http://127.0.0.1:1", "chainId": 31337},
+        "chain": {"rpcUrl": "http://127.0.0.1:18545", "chainId": 31337},
         "contracts": {
             "MockHKD": {
                 "abi": {

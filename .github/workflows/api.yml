@@ -113,7 +113,7 @@ jobs:
           python3 scripts/local-chain.py up --port 18545 --state-dir /tmp/pog-local-a2-api
           python3 scripts/local-chain.py verify --port 18545 --state-dir /tmp/pog-local-a2-api
       - name: Run A2 path, typed vectors, and reorg recovery
-        run: python -m pytest services/api/live_tests/test_a2_receipt_confirmed.py
+        run: python -m pytest services/api/live_tests
       - name: Stop isolated A2 chain
         if: always()
         run: python3 scripts/local-chain.py stop --port 18545 --state-dir /tmp/pog-local-a2-api

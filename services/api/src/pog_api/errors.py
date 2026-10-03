@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .adapters import DependencyUnavailable
+from .chain import ChainUnavailable
 
 
 class APIError(Exception):
@@ -63,6 +64,10 @@ def install_error_handlers(app: FastAPI) -> None:
             status_code=503,
             content=error_body("dependency_unavailable", str(exc)),
         )
+
+    @app.exception_handler(ChainUnavailable)
+    async def chain_error_handler(request: Request, exc: ChainUnavailable):
+        return JSONResponse(status_code=503, content=error_body("chain_unavailable", str(exc)))
 
     @app.exception_handler(StarletteHTTPException)
     async def framework_http_error_handler(request: Request, exc: StarletteHTTPException):
