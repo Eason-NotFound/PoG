@@ -15,6 +15,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    BigInteger,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
@@ -107,6 +108,9 @@ class DeploymentInstance(TimestampMixin, Base):
     verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rpc_url: Mapped[str | None] = mapped_column(String(255))
+    manifest_sha256: Mapped[str | None] = mapped_column(String(64))
+    manifest_json: Mapped[dict | None] = mapped_column(JSONB)
 
 
 class Project(TimestampMixin, Base):
@@ -114,7 +118,10 @@ class Project(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("namespace_id", "business_id", name="uq_project_namespace_business"),
         UniqueConstraint("id", "namespace_id", name="uq_project_id_namespace"),
-        CheckConstraint("chain_status = 'off_chain_draft'", name="ck_a1_project_chain_status"),
+        CheckConstraint(
+            "chain_status IN ('off_chain_draft','create_queued','active','closing','refundable','closed')",
+            name="ck_a2_project_chain_status",
+        ),
         CheckConstraint("business_id ~ '^0x[0-9a-f]{64}$'", name="ck_project_business_id"),
     )
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -136,6 +143,8 @@ class Project(TimestampMixin, Base):
     chain_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="off_chain_draft"
     )
+    chain_tx_hash: Mapped[str | None] = mapped_column(String(66))
+    chain_block_number: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class Procurement(TimestampMixin, Base):
@@ -149,7 +158,15 @@ class Procurement(TimestampMixin, Base):
             ondelete="CASCADE",
             name="fk_proc_project_namespace",
         ),
-        CheckConstraint("chain_status = 'off_chain_draft'", name="ck_a1_proc_chain_status"),
+        CheckConstraint(
+            "chain_status IN ('off_chain_draft','create_queued','created','po_queued','po_recorded',"
+            "'ai_pre_queued','pre_assessed','reserve_vote_queued','reserve_approval_pending',"
+            "'reserve_queued','reserved','invoice_queued','invoice_recorded','receipt_queued',"
+            "'receipt_confirmed','final_assessed','release_approval_pending','funds_released',"
+            "'settlement_recorded','settlement_approval_pending','payment_confirmed',"
+            "'cancellation_approval_pending','cancelled')",
+            name="ck_a2_proc_chain_status",
+        ),
         CheckConstraint("business_id ~ '^0x[0-9a-f]{64}$'", name="ck_proc_business_id"),
         CheckConstraint(
             f"budget_cap_atomic >= 0 AND budget_cap_atomic <= {UINT256_MAX}",
@@ -169,6 +186,18 @@ class Procurement(TimestampMixin, Base):
     chain_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="off_chain_draft"
     )
+    po_hash: Mapped[str | None] = mapped_column(String(66))
+    request_hash: Mapped[str | None] = mapped_column(String(66))
+    goods_request_hash: Mapped[str | None] = mapped_column(String(66))
+    pre_evidence_hash: Mapped[str | None] = mapped_column(String(66))
+    pre_assessment_id: Mapped[str | None] = mapped_column(String(66))
+    reserved_amount_atomic: Mapped[Decimal | None] = mapped_column(Numeric(78, 0))
+    invoice_hash: Mapped[str | None] = mapped_column(String(66))
+    invoice_amount_atomic: Mapped[Decimal | None] = mapped_column(Numeric(78, 0))
+    goods_hash: Mapped[str | None] = mapped_column(String(66))
+    receipt_digest: Mapped[str | None] = mapped_column(String(66))
+    chain_tx_hash: Mapped[str | None] = mapped_column(String(66))
+    chain_block_number: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class Operation(TimestampMixin, Base):
@@ -328,13 +357,136 @@ class ApprovalRecord(TimestampMixin, Base):
 
 class ChainTransaction(TimestampMixin, Base):
     __tablename__ = "chain_transactions"
+    __table_args__ = (
+        UniqueConstraint("step_id", name="uq_chain_tx_step"),
+        UniqueConstraint(
+            "namespace_id", "caller_address", "evm_nonce_text",
+            name="uq_chain_tx_caller_nonce",
+        ),
+        CheckConstraint(
+            "status IN ('prepared','sending','submitted','confirmed','failed','requires_attention','invalidated_instance')",
+            name="ck_chain_tx_status",
+        ),
+    )
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     operation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("operations.id"))
+    step_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("operation_steps.id", ondelete="CASCADE")
+    )
+    namespace_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("deployment_instances.id")
+    )
+    caller_address: Mapped[str | None] = mapped_column(String(42))
+    to_address: Mapped[str | None] = mapped_column(String(42))
+    chain_id: Mapped[int | None] = mapped_column(BigInteger)
+    evm_nonce_text: Mapped[str | None] = mapped_column(String(78))
+    calldata: Mapped[str | None] = mapped_column(Text)
+    value_text: Mapped[str | None] = mapped_column(String(78))
+    envelope_hash: Mapped[str | None] = mapped_column(String(66))
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="prepared")
     tx_hash: Mapped[str | None] = mapped_column(String(66))
     calldata_hash: Mapped[str | None] = mapped_column(String(66))
     receipt_json: Mapped[dict | None] = mapped_column(JSONB)
     block_hash: Mapped[str | None] = mapped_column(String(66))
     canonical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SigningRequest(TimestampMixin, Base):
+    __tablename__ = "signing_requests"
+    __table_args__ = (
+        UniqueConstraint("operation_id", name="uq_signing_request_operation"),
+        UniqueConstraint(
+            "namespace_id", "contract_address", "signer_wallet", "nonce_text", "kind",
+            name="uq_signing_request_nonce_family",
+        ),
+        CheckConstraint("kind IN ('ai_pre','reserve','receipt')", name="ck_signing_kind"),
+        CheckConstraint(
+            "status IN ('prepared','signed','queued','confirmed','failed','requires_attention','invalidated_instance')",
+            name="ck_signing_status",
+        ),
+        CheckConstraint("deadline_text ~ '^[0-9]+$'", name="ck_signing_deadline_text"),
+        CheckConstraint("nonce_text ~ '^[0-9]+$'", name="ck_signing_nonce_text"),
+        CheckConstraint(
+            "policy_epoch BETWEEN 0 AND 4294967295", name="ck_signing_policy_epoch"
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    namespace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("deployment_instances.id"), nullable=False
+    )
+    operation_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("operations.id", ondelete="CASCADE"), nullable=False
+    )
+    procurement_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("procurements.id", ondelete="CASCADE"), nullable=False
+    )
+    signer_user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="prepared")
+    contract_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    signer_wallet: Mapped[str] = mapped_column(String(42), nullable=False)
+    nonce_text: Mapped[str] = mapped_column(String(78), nullable=False)
+    deadline_text: Mapped[str] = mapped_column(String(20), nullable=False)
+    policy_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    typed_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    context_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    digest: Mapped[str] = mapped_column(String(66), nullable=False)
+    signature: Mapped[str | None] = mapped_column(Text)
+    submitted_operation_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("operations.id")
+    )
+    authorized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LedgerProjection(TimestampMixin, Base):
+    __tablename__ = "ledger_projections"
+    __table_args__ = (
+        UniqueConstraint("namespace_id", "project_id", name="uq_ledger_projection_project"),
+        CheckConstraint(
+            "deposits_atomic >= 0 AND reserved_atomic >= 0 AND released_atomic >= 0 "
+            "AND returned_atomic >= 0",
+            name="ck_ledger_amounts_nonnegative",
+        ),
+        CheckConstraint(
+            "policy_epoch BETWEEN 0 AND 4294967295", name="ck_ledger_policy_epoch"
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    namespace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("deployment_instances.id"), nullable=False
+    )
+    project_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    asset_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    deposits_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0)
+    reserved_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0)
+    released_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0)
+    returned_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0)
+    policy_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1)
+    threshold: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    block_number: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    block_hash: Mapped[str | None] = mapped_column(String(66))
+
+
+class DonorCreditProjection(TimestampMixin, Base):
+    __tablename__ = "donor_credit_projections"
+    __table_args__ = (
+        UniqueConstraint("namespace_id", "project_id", "donor_wallet", name="uq_donor_credit"),
+        CheckConstraint("credit_atomic >= 0", name="ck_donor_credit_nonnegative"),
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    namespace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("deployment_instances.id"), nullable=False
+    )
+    project_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    donor_wallet: Mapped[str] = mapped_column(String(42), nullable=False)
+    credit_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0)
+    block_number: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
 
 
 class ChainEvent(TimestampMixin, Base):

@@ -1,12 +1,14 @@
-# PoG API A1
+# PoG API A2
 
-This is the A1 HTTP/database/file/session foundation for PoG FinTech #2. It is a
-loopback-only demo service. Project and procurement mutations create off-chain
-drafts only. Chain submission, EIP-712 signing, AI assessment, payment execution,
-and confirmed donation/release/settlement states are deliberately unavailable.
+This keeps the accepted A1 HTTP/database/file/session foundation and adds an
+explicitly enabled, loopback-only A2 adapter for the accepted V2 contracts. A1
+draft creation remains off-chain. A2 chain operations are separately queued and
+processed by durable worker/indexer commands. Real AI, payment, conversion,
+release, settlement, closing and refund execution remain unavailable.
 
-The frozen scope is in `docs/api/A0_REQUIREMENTS.md` and `docs/api/A1_TASK.md`.
-The operator and interface handoff is `docs/api/A1_RUNBOOK.md`.
+The frozen A2 scope is in `docs/api/A2_TASK.md`; account names are fixed by
+`docs/api/ACCOUNT_PREFERENCES.md`. See `docs/api/A2_RUNBOOK.md` and
+`docs/api/A2_INTERFACE.md` for the operator and HTTP handoff.
 
 ## Reproducible local runtime (macOS arm64)
 
@@ -40,7 +42,7 @@ The test runner recreates only the managed loopback database named
 non-loopback hosts, other users, other database names, and an invalid managed
 marker before executing any SQL. It never falls back to SQLite.
 
-## Demo fixture seed
+## Demo fixture seed and accepted username migration
 
 Copy `services/api/.env.example` to an ignored environment file, replace every
 password and wallet placeholder, export it, then run:
@@ -50,10 +52,21 @@ PYTHONPATH=services/api/src .local/runtime/bin/python -m pog_api.cli \
   seed-demo --confirm-demo-fixtures
 ```
 
-Seed is opt-in and idempotent. It creates separate Foundation, Recipient, Donor,
-and human approver identities. It never rotates an existing password or rewrites
-an existing role-wallet mapping. Do not commit the environment file, credentials,
-database, sessions, or uploaded evidence.
+Seed is opt-in and idempotent. Its standard usernames are `foundation`,
+`recipient`, `donor`, and `admin`; `admin` has only the internal
+`human_approver` role. It never rotates an existing password or rewrites an
+existing role-wallet mapping. Before seeding a database containing the old A1
+demo names, run the explicit transactional rename:
+
+```sh
+PYTHONPATH=services/api/src .local/runtime/bin/python -m pog_api.cli \
+  migrate-standard-usernames --confirm-standard-usernames
+```
+
+The rename preserves IDs, password hashes, sessions, role-wallets and all
+foreign-key relationships. Any target-name conflict aborts the entire rename.
+Do not commit the environment file, credentials, database, sessions, signatures,
+or uploaded evidence.
 
 ## Stop local PostgreSQL
 
@@ -61,4 +74,5 @@ database, sessions, or uploaded evidence.
 services/api/scripts/postgres-local.sh stop
 ```
 
-Stopping the A1 PostgreSQL process does not touch the existing Anvil process.
+Stopping PostgreSQL does not touch any Anvil process. A2 never starts, resets or
+stops the default chain automatically.

@@ -58,6 +58,9 @@ def engine():
 @pytest.fixture(autouse=True)
 def clean_database(engine):
     tables = [
+        "signing_requests",
+        "donor_credit_projections",
+        "ledger_projections",
         "receipt_proofs",
         "document_versions",
         "risk_reports",

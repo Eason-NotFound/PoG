@@ -4,11 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pog-api"
-version = "0.1.0"
-description = "PoG A1 API/database foundation; no chain transactions"
+version = "0.2.0"
+description = "PoG A2 loopback-only local-chain API/database integration"
 requires-python = "==3.13.*"
 dependencies = [
   "alembic==1.20.0",
+  "eth-abi==5.2.0",
+  "eth-account==0.13.7",
   "fastapi==0.142.2",
   "greenlet==3.5.6; platform_machine == 'aarch64' or platform_machine == 'ppc64le' or platform_machine == 'x86_64' or platform_machine == 'amd64' or platform_machine == 'AMD64' or platform_machine == 'win32' or platform_machine == 'WIN32'",
   "psycopg[binary]==3.3.6",
@@ -19,6 +21,7 @@ dependencies = [
   "python-multipart==0.0.32",
   "sqlalchemy==2.0.54",
   "uvicorn==0.53.0",
+  "web3==7.16.0",
 ]
 
 [project.optional-dependencies]

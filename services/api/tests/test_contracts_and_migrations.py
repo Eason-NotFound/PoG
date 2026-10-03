@@ -110,8 +110,30 @@ def test_empty_migration_downgrade_reupgrade_and_ready_gate(tmp_path, monkeypatc
             assert "users" not in set(inspect(target_engine).get_table_names())
             with TestClient(create_app(settings)) as downgraded_client:
                 assert downgraded_client.get("/ready").status_code == 503
+            command.upgrade(config, "84fcc48891be")
+            namespace_id = uuid4()
+            user_id = uuid4()
+            with target_engine.begin() as connection:
+                connection.execute(text(
+                    "INSERT INTO deployment_instances "
+                    "(id,schema_version,run_id,instance_id,mode,verified,active) "
+                    "VALUES (:id,'a1','populated-run','populated-instance','mock',false,true)"
+                ), {"id": namespace_id})
+                connection.execute(text(
+                    "INSERT INTO users (id,username,password_hash,display_name,active) "
+                    "VALUES (:id,'preserved-a1-user','hash','Preserved A1 User',true)"
+                ), {"id": user_id})
             command.upgrade(config, "head")
-            assert "users" in set(inspect(target_engine).get_table_names())
+            with target_engine.connect() as connection:
+                assert connection.scalar(text(
+                    "SELECT username FROM users WHERE id=:id"
+                ), {"id": user_id}) == "preserved-a1-user"
+                assert connection.scalar(text(
+                    "SELECT run_id FROM deployment_instances WHERE id=:id"
+                ), {"id": namespace_id}) == "populated-run"
+            assert {"signing_requests", "ledger_projections", "donor_credit_projections"} <= set(
+                inspect(target_engine).get_table_names()
+            )
         finally:
             target_engine.dispose()
     finally:
@@ -133,7 +155,7 @@ def test_seed_is_opt_in_idempotent_and_never_rotates_passwords(
         "FOUNDATION": ("foundation password 12345", "0x" + "1" * 40),
         "RECIPIENT": ("recipient password 12345", "0x" + "2" * 40),
         "DONOR": ("donor password value 123", "0x" + "3" * 40),
-        "HUMAN": ("human password value 123", "0x" + "4" * 40),
+        "ADMIN": ("human password value 123", "0x" + "4" * 40),
     }
     for key, (password, wallet) in values.items():
         monkeypatch.setenv(f"POG_SEED_{key}_PASSWORD", password)
@@ -153,14 +175,14 @@ def test_seed_is_opt_in_idempotent_and_never_rotates_passwords(
 def test_seed_rejects_zero_duplicate_and_placeholder(monkeypatch):
     monkeypatch.setenv("POG_DATABASE_URL", os.environ["POG_TEST_DATABASE_URL"])
     monkeypatch.setenv("POG_STORAGE_ROOT", "/tmp/pog-a1-seed-test-storage")
-    for key in ("FOUNDATION", "RECIPIENT", "DONOR", "HUMAN"):
+    for key in ("FOUNDATION", "RECIPIENT", "DONOR", "ADMIN"):
         monkeypatch.setenv(f"POG_SEED_{key}_PASSWORD", "valid long password")
         monkeypatch.setenv(f"POG_SEED_{key}_WALLET", "0x" + "1" * 40)
     assert seed_demo(True) == 2
     monkeypatch.setenv("POG_SEED_FOUNDATION_WALLET", "0x" + "0" * 40)
     monkeypatch.setenv("POG_SEED_RECIPIENT_WALLET", "0x" + "2" * 40)
     monkeypatch.setenv("POG_SEED_DONOR_WALLET", "0x" + "3" * 40)
-    monkeypatch.setenv("POG_SEED_HUMAN_WALLET", "0x" + "4" * 40)
+    monkeypatch.setenv("POG_SEED_ADMIN_WALLET", "0x" + "4" * 40)
     assert seed_demo(True) == 2
     monkeypatch.setenv("POG_SEED_FOUNDATION_WALLET", "0x" + "1" * 40)
     monkeypatch.setenv("POG_SEED_FOUNDATION_PASSWORD", "CHANGE_ME_please")
