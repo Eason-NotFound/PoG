@@ -1,0 +1,115 @@
+{
+  "schema_version": "1",
+  "purpose": "Synthetic booth rehearsal inputs and expected project/session deltas; not executable transactions or deployed services",
+  "preparation_status": "tabletop_only_not_end_to_end_passed",
+  "track": "FinTech #2",
+  "currency": "HKD",
+  "token_label": "mHKD (valueless MockHKD)",
+  "token_decimals": 6,
+  "exchange": {
+    "mode": "mock_not_implemented_in_current_checkout",
+    "hkd_to_token_ratio": "1.00",
+    "token_to_hkd_ratio": "1.00",
+    "fee_atomic": "0",
+    "real_rate_or_bank_quote": false,
+    "redemption_mechanism_proposal": "confirmed token transfer to mock redemption wallet, followed by separate mock HKD ledger credit; no burn API"
+  },
+  "identity_and_signing": {
+    "business_ids": "allocate fresh per run and case; fill bytes32 IDs from approved API implementation",
+    "deployment": "read actual current M3.1 manifest; no hard-coded sample addresses",
+    "roles": ["foundation", "recipient", "approver", "donor_a", "donor_b", "vendor", "ai_signer", "mock_redemption"],
+    "domain_and_nonces": "use current chain/address/domain/epoch and fresh global signer nonces and live deadlines",
+    "fixture_contains_live_signatures": false
+  },
+  "cases": [
+    {
+      "case_key": "A_live",
+      "label": "社区应急物资共同采购 · 主场",
+      "all_documents_synthetic": true,
+      "live_target": true,
+      "booth_start": {
+        "project_state": "Active",
+        "donor_b_confirmed_deposit_atomic": "40000000",
+        "deposits_atomic": "40000000",
+        "reserved_atomic": "0",
+        "released_atomic": "0"
+      },
+      "donations": [
+        {"role": "donor_b", "order": 1, "amount_atomic": "40000000", "exchange_hkd": "40.00", "preloaded_and_labelled": true},
+        {"role": "donor_a", "order": 2, "amount_atomic": "60000000", "exchange_hkd": "60.00", "preloaded_and_labelled": false}
+      ],
+      "purchase_order": {
+        "document_label": "PO-A",
+        "vendor_label": "DEMO-SUPPLIER-A",
+        "item_label": "应急物资包（合成样例）",
+        "quantity": 10,
+        "unit_price_hkd": "8.00",
+        "gross_atomic": "80000000",
+        "budget_cap_atomic": "80000000",
+        "reserve_atomic": "80000000",
+        "credit_terms": "Mock agreement: delivery and Recipient confirmation precede approved Foundation release and supplier payment",
+        "agreed_invoice_discount_atomic": "8000000"
+      },
+      "invoice": {
+        "document_label": "INV-A-VALID",
+        "po_label": "PO-A",
+        "vendor_label": "DEMO-SUPPLIER-A",
+        "quantity": 10,
+        "unit_price_hkd": "8.00",
+        "gross_atomic": "80000000",
+        "discount_atomic": "8000000",
+        "invoice_amount_atomic": "72000000"
+      },
+      "goods_and_receipt": {"delivered_quantity": 10, "receipt_label": "RECEIPT-A", "requires_independent_recipient_signature": true},
+      "ai_expected_checks_not_model_output": ["same supplier and PO", "10 requested/invoiced/reported delivered", "gross 80 minus agreed discount 8 equals 72", "current immutable evidence and Recipient receipt binding"],
+      "expected_after_reserve": {"deposits_atomic": "100000000", "reserved_atomic": "80000000", "released_atomic": "0", "free_locked_atomic": "20000000", "project_custody_liability_atomic": "100000000"},
+      "expected_after_release": {"deposits_atomic": "100000000", "reserved_atomic": "0", "released_atomic": "72000000", "free_locked_atomic": "28000000", "project_custody_liability_atomic": "28000000", "foundation_token_delta_atomic": "72000000", "unresolved_procurements": 1},
+      "expected_payment": {"mock_redemption_atomic": "72000000", "foundation_mock_hkd_credit": "72.00", "fixed_vendor_mock_hkd_credit": "72.00", "requires_human_settlement_confirmation": true, "vendor_token_delta_atomic": "0", "unresolved_after_confirmation": 0},
+      "expected_refund": {"pool_atomic": "28000000", "donor_a_atomic": "16800000", "donor_b_atomic": "11200000", "state_after_a_claim_only": "Refundable", "remaining_after_a_claim_atomic": "11200000", "state_after_both_claims": "Closed"},
+      "blocked_tests": [
+        {
+          "test_key": "invoice_over_reserve",
+          "when": "Reserved, before recording any invoice",
+          "attempt_invoice_atomic": "82000000",
+          "contract_call": "PoGRegistryV2.recordInvoiceAndGoods",
+          "expected_contract_error": "InvalidAmount(82000000)",
+          "expected_state_after": "Reserved",
+          "must_not_change": ["invoice commitment", "deposits", "reserved", "released", "token balances"],
+          "disclose_rejection_layer": "API validation, eth_call preflight, or broadcast reverted receipt; do not claim the first two produced a failed on-chain transaction"
+        },
+        {
+          "test_key": "close_before_settlement",
+          "when": "FundsReleased, requestClosing confirmed, unresolvedProcurements=1",
+          "contract_calls": ["ProcurementEscrowV2.submitCloseApproval", "ProcurementEscrowV2.executeClose"],
+          "expected_contract_error": "UnresolvedProcurements(1)",
+          "expected_project_state_after": "Closing",
+          "refund_snapshot_exists": false,
+          "existing_procurement_can_still_settle": true
+        },
+        {
+          "test_key": "recipient_not_ready",
+          "when": "InvoiceRecorded and no Recipient receipt",
+          "dispute_record": "off-chain only; no invented dispute contract entrypoint",
+          "expected_state_after": "InvoiceRecorded",
+          "final_assessment_or_release_allowed": false
+        }
+      ]
+    },
+    {
+      "case_key": "B_confirmed_comparison",
+      "label": "社区应急物资共同采购 · 对照项目",
+      "all_documents_synthetic": true,
+      "live_target": false,
+      "booth_presentation": "independent already-executed project replay, labelled with real confirmed evidence when integration exists; not currently preloaded",
+      "donations": [
+        {"role": "donor_a", "order": 1, "amount_atomic": "30000000", "exchange_hkd": "30.00"},
+        {"role": "donor_b", "order": 2, "amount_atomic": "20000000", "exchange_hkd": "20.00"}
+      ],
+      "purchase_order": {"document_label": "PO-B", "vendor_label": "DEMO-SUPPLIER-B", "quantity": 5, "unit_price_hkd": "8.00", "gross_atomic": "40000000", "budget_cap_atomic": "40000000", "reserve_atomic": "40000000", "agreed_invoice_discount_atomic": "5000000"},
+      "invoice": {"document_label": "INV-B-VALID", "po_label": "PO-B", "vendor_label": "DEMO-SUPPLIER-B", "quantity": 5, "unit_price_hkd": "8.00", "gross_atomic": "40000000", "discount_atomic": "5000000", "invoice_amount_atomic": "35000000"},
+      "goods_and_receipt": {"delivered_quantity": 5, "receipt_label": "RECEIPT-B", "requires_independent_recipient_signature": true},
+      "expected_payment": {"mock_redemption_atomic": "35000000", "foundation_mock_hkd_credit": "35.00", "fixed_vendor_mock_hkd_credit": "35.00", "requires_human_settlement_confirmation": true, "unresolved_after_confirmation": 0},
+      "expected_refund": {"pool_atomic": "15000000", "donor_a_atomic": "9000000", "donor_b_atomic": "6000000", "state_before_any_claim": "Refundable", "state_after_both_claims": "Closed"}
+    }
+  ]
+}
