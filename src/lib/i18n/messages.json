@@ -4639,6 +4639,86 @@
     "zh-Hant": "已完成",
     "en": "Completed"
   },
+  "项目查询": {
+    "zh-Hant": "項目查詢",
+    "en": "Project lookup"
+  },
+  "项目 UUID 或链上项目 ID": {
+    "zh-Hant": "項目 UUID 或鏈上項目 ID",
+    "en": "Project UUID or on-chain project ID"
+  },
+  "粘贴完整项目 UUID 或 0x 开头的链上项目 ID": {
+    "zh-Hant": "貼上完整項目 UUID 或 0x 開頭的鏈上項目 ID",
+    "en": "Paste a complete project UUID or 0x-prefixed on-chain project ID"
+  },
+  "查询当前实例的公开项目和链上资金账本，不提供私有发票或收货附件。": {
+    "zh-Hant": "查詢當前實例的公開項目和鏈上資金賬本，不提供私有發票或收貨附件。",
+    "en": "Look up public projects and on-chain fund records in this instance. Private invoices and receipt attachments are not exposed."
+  },
+  "链上已核验": {
+    "zh-Hant": "鏈上已核驗",
+    "en": "Verified on-chain"
+  },
+  "项目 UUID": {
+    "zh-Hant": "項目 UUID",
+    "en": "Project UUID"
+  },
+  "链上项目 ID": {
+    "zh-Hant": "鏈上項目 ID",
+    "en": "On-chain project ID"
+  },
+  "复制项目 UUID": {
+    "zh-Hant": "複製項目 UUID",
+    "en": "Copy project UUID"
+  },
+  "复制链上项目 ID": {
+    "zh-Hant": "複製鏈上項目 ID",
+    "en": "Copy on-chain project ID"
+  },
+  "累计链上捐入": {
+    "zh-Hant": "累計鏈上捐入",
+    "en": "Cumulative on-chain donations"
+  },
+  "本项目已确认的捐款": {
+    "zh-Hant": "本項目已確認的捐款",
+    "en": "Confirmed donations to this project"
+  },
+  "项目池仍冻结": {
+    "zh-Hant": "項目池仍凍結",
+    "en": "Still locked in project pool"
+  },
+  "包括采购预留，尚未拨出或退款": {
+    "zh-Hant": "包括採購預留，尚未撥出或退款",
+    "en": "Includes reservations; not released or refunded"
+  },
+  "采购预留金额": {
+    "zh-Hant": "採購預留金額",
+    "en": "Procurement reservation"
+  },
+  "已包含在冻结资金中，不重复相加": {
+    "zh-Hant": "已包含在凍結資金中，不重複相加",
+    "en": "Included in locked funds; do not add again"
+  },
+  "累计拨给基金会": {
+    "zh-Hant": "累計撥給基金會",
+    "en": "Cumulative Foundation releases"
+  },
+  "累计拨款，不是钱包余额或供应商已收款": {
+    "zh-Hant": "累計撥款，不是錢包餘額或供應商已收款",
+    "en": "Cumulative releases, not a wallet balance or supplier payment"
+  },
+  "本页为查询时的已确认账本快照；资金变化后请再次查询。MockHKD 无真实价值。": {
+    "zh-Hant": "本頁為查詢時的已確認賬本快照；資金變化後請再次查詢。MockHKD 無真實價值。",
+    "en": "This is a confirmed ledger snapshot at lookup time. Search again after funds change. MockHKD has no real value."
+  },
+  "按项目编号查询真实资金": {
+    "zh-Hant": "按項目編號查詢真實資金記錄",
+    "en": "Find projects and fund records by project ID"
+  },
+  "查询已确认的链上项目与资金记录，不公开私有证据。": {
+    "zh-Hant": "查詢已確認的鏈上項目與資金記錄，不公開私有證據。",
+    "en": "Look up confirmed on-chain project and fund records without exposing private evidence."
+  },
   "requires_attention": {
     "zh-Hant": "需要處理",
     "en": "Needs attention"
