@@ -86,7 +86,11 @@ import {
   currentFunding,
   type DemoQuote,
 } from "@/lib/full-demo-ui";
-import { isChainConfirmed } from "@/lib/a2-workbench";
+import { formatAtomic, isChainConfirmed } from "@/lib/a2-workbench";
+import {
+  lookupProjectRecord,
+  type ProjectLookupResult,
+} from "@/lib/project-lookup";
 const icons: Record<string, LucideIcon> = {
   LayoutDashboard,
   Compass,
@@ -390,6 +394,11 @@ export default function PortalApp({
     [matches, setMatches] = useState<RecordSnapshot[] | null>(null),
     [grants, setGrants] = useState<string[]>([]),
     [staffActive, setStaffActive] = useState(true);
+  const [projectMatch, setProjectMatch] = useState<ProjectLookupResult | null>(
+    null,
+  );
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const lookupRevision = useRef(0);
   const [uploadKind, setUploadKind] = useState("invoice"),
     [uploaded, setUploaded] = useState<
       {
@@ -453,6 +462,14 @@ export default function PortalApp({
     setSelectedFunding("");
   }, [a2Scope]);
   const modalRevision = useRef(0);
+  useEffect(() => {
+    lookupRevision.current += 1;
+    setProjectMatch(null);
+    setLookupBusy(false);
+    return () => {
+      lookupRevision.current += 1;
+    };
+  }, [a2Scope, app.pageId]);
   useEffect(() => {
     setApp(initial);
     setModal(null);
@@ -699,7 +716,21 @@ export default function PortalApp({
   async function queryHash(e: React.FormEvent) {
     e.preventDefault();
     if (integration) {
-      setError("Hash 查询适配待接入；请在采购证明页面读取真实不可变文件。");
+      const revision = ++lookupRevision.current;
+      setError("");
+      setProjectMatch(null);
+      setLookupBusy(true);
+      try {
+        const result = await lookupProjectRecord(hash, {
+          expectedState: integration,
+        });
+        if (revision === lookupRevision.current) setProjectMatch(result);
+      } catch (e) {
+        if (revision === lookupRevision.current)
+          setError(e instanceof Error ? e.message : "查询失败");
+      } finally {
+        if (revision === lookupRevision.current) setLookupBusy(false);
+      }
       return;
     }
     setBusy(true);
@@ -1093,7 +1124,7 @@ export default function PortalApp({
       return (
         <>
           <Panel
-            title={t("凭证查询")}
+            title={t(integration ? "项目查询" : "凭证查询")}
             extra={
               <span className="pill">
                 <LockKeyhole size={12} />
@@ -1103,27 +1134,118 @@ export default function PortalApp({
           >
             <form className="hash-search" onSubmit={queryHash}>
               <label>
-                {t("单据 / 文件 SHA-256")}
+                {t(
+                  integration
+                    ? "项目 UUID 或链上项目 ID"
+                    : "单据 / 文件 SHA-256",
+                )}
                 <input
                   value={hash}
-                  onChange={(e) => setHash(e.target.value)}
-                  placeholder={t("0x… 或 64 位十六进制 Hash")}
+                  onChange={(e) => {
+                    setHash(e.target.value);
+                    if (integration) {
+                      lookupRevision.current += 1;
+                      setProjectMatch(null);
+                      setLookupBusy(false);
+                      setError("");
+                    }
+                  }}
+                  placeholder={t(
+                    integration
+                      ? "粘贴完整项目 UUID 或 0x 开头的链上项目 ID"
+                      : "0x… 或 64 位十六进制 Hash",
+                  )}
                   required
                 />
               </label>
-              <button className="primary" disabled={busy}>
+              <button
+                className="primary"
+                disabled={integration ? lookupBusy : busy}
+              >
                 <Search size={17} />
                 {t("查询")}
               </button>
             </form>
             <p className="tiny muted">
               {t(
-                "可从捐款凭证、采购详情或上传结果复制 Hash。交易 Hash、Merkle Root 查询等待区块链接入。",
+                integration
+                  ? "查询当前实例的公开项目和链上资金账本，不提供私有发票或收货附件。"
+                  : "可从捐款凭证、采购详情或上传结果复制 Hash。交易 Hash、Merkle Root 查询等待区块链接入。",
               )}
             </p>
           </Panel>
+          {integration && projectMatch && (
+            <Panel title={t("查询结果")}>
+              <article className="hash-result">
+                <div className="section-line">
+                  <div>
+                    <h3>{projectMatch.title}</h3>
+                    <p className="muted">{projectMatch.publicSummary}</p>
+                  </div>
+                  <span className="status neutral">
+                    {t(projectMatch.status)} · {t("链上已核验")}
+                  </span>
+                </div>
+                <p className="tiny muted">{t("项目 UUID")}</p>
+                <code className="hash-value">{projectMatch.projectId}</code>
+                <p className="tiny muted">{t("链上项目 ID")}</p>
+                <code className="hash-value">{projectMatch.businessId}</code>
+                <div className="button-row">
+                  <button onClick={() => copy(projectMatch.projectId)}>
+                    <Copy size={14} />
+                    {t("复制项目 UUID")}
+                  </button>
+                  <button onClick={() => copy(projectMatch.businessId)}>
+                    <Copy size={14} />
+                    {t("复制链上项目 ID")}
+                  </button>
+                </div>
+                <div className="metrics">
+                  <Metric
+                    label={t("累计链上捐入")}
+                    value={`${formatAtomic(projectMatch.amounts.donatedAtomic)} mHKD`}
+                    foot={t("本项目已确认的捐款")}
+                  />
+                  <Metric
+                    label={t("项目池仍冻结")}
+                    value={`${formatAtomic(projectMatch.amounts.lockedAtomic)} mHKD`}
+                    foot={t("包括采购预留，尚未拨出或退款")}
+                  />
+                  <Metric
+                    label={t("采购预留金额")}
+                    value={`${formatAtomic(projectMatch.amounts.reservedAtomic)} mHKD`}
+                    foot={t("已包含在冻结资金中，不重复相加")}
+                  />
+                  <Metric
+                    label={t("累计拨给基金会")}
+                    value={`${formatAtomic(projectMatch.amounts.releasedAtomic)} mHKD`}
+                    foot={t("累计拨款，不是钱包余额或供应商已收款")}
+                  />
+                </div>
+                <div className="budget-mini">
+                  <div>
+                    <small>{t("累计退回")}</small>
+                    <b>
+                      {formatAtomic(projectMatch.amounts.returnedAtomic)} mHKD
+                    </b>
+                  </div>
+                  <div>
+                    <small>{t("累计退款")}</small>
+                    <b>
+                      {formatAtomic(projectMatch.amounts.refundedAtomic)} mHKD
+                    </b>
+                  </div>
+                </div>
+                <p className="tiny muted">
+                  {t(
+                    "本页为查询时的已确认账本快照；资金变化后请再次查询。MockHKD 无真实价值。",
+                  )}
+                </p>
+              </article>
+            </Panel>
+          )}
           {t(
-            matches !== null && (
+            !integration && matches !== null && (
               <Panel title={t("查询结果")}>
                 {t(
                   matches.length ? (
@@ -3123,8 +3245,20 @@ export default function PortalApp({
               <p className="eyebrow">
                 PROOF OF GIVING / {t(page.portal.toUpperCase())}
               </p>
-              <h1>{t(page.title)}</h1>
-              <p className="muted">{t(page.description)}</p>
+              <h1>
+                {t(
+                  integration && page.slug === "hash"
+                    ? "按项目编号查询真实资金"
+                    : page.title,
+                )}
+              </h1>
+              <p className="muted">
+                {t(
+                  integration && page.slug === "hash"
+                    ? "查询已确认的链上项目与资金记录，不公开私有证据。"
+                    : page.description,
+                )}
+              </p>
             </div>
             {t(primaryAction())}
           </div>
