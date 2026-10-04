@@ -291,7 +291,7 @@ def test_populated_a1_upgrades_to_review_head_without_queueing_or_rewriting_data
             after = {table: connection.execute(text(f"SELECT {fields} FROM {table} ORDER BY id")).all()
                      for table, fields in columns.items()}
             assert after == before
-            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31003a20004"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31004a30006"
             assert connection.scalar(text("SELECT count(*) FROM operations WHERE status='queued'")) == 0
             assert connection.scalar(text("SELECT count(*) FROM chain_transactions")) == 0
             assert connection.scalar(text("SELECT count(*) FROM signing_requests")) == 0

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
+  distDir: process.env.POG_NEXT_DIST_DIR || ".next",
   async headers() {
     return [
       {

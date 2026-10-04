@@ -2498,5 +2498,2149 @@
   "resubmitFoundationProcurement": {
     "zh-Hant": "基金會補充採購資料",
     "en": "Foundation purchase supplemented"
+  },
+  "HKD 已冻结，等待兑换确认": {
+    "zh-Hant": "HKD 已凍結，等待兑換確認",
+    "en": "HKD frozen, awaiting exchange confirmation"
+  },
+  "模拟币已到 Donor 钱包": {
+    "zh-Hant": "模擬幣已到 Donor 錢包",
+    "en": "Demo tokens credited to the Donor wallet"
+  },
+  "兑换取消，HKD 已解冻": {
+    "zh-Hant": "兑換取消，HKD 已解凍",
+    "en": "Exchange cancelled; HKD unfrozen"
+  },
+  "捐款已锁入项目池": {
+    "zh-Hant": "捐款已鎖入項目池",
+    "en": "Donation locked in the project pool"
+  },
+  "采购预算已预留": {
+    "zh-Hant": "採購預算已預留",
+    "en": "Procurement budget reserved"
+  },
+  "模拟币已交付基金会": {
+    "zh-Hant": "模擬幣已交付基金會",
+    "en": "Demo tokens released to the Foundation"
+  },
+  "基金会模拟 HKD 已入账": {
+    "zh-Hant": "基金會模擬 HKD 已入賬",
+    "en": "Simulated HKD credited to the Foundation"
+  },
+  "未兑付拨款已退回项目": {
+    "zh-Hant": "未兑付撥款已退回項目",
+    "en": "Unredeemed funds returned to the project"
+  },
+  "项目已暂停": {
+    "zh-Hant": "項目已暫停",
+    "en": "Project paused"
+  },
+  "项目已恢复": {
+    "zh-Hant": "項目已恢復",
+    "en": "Project resumed"
+  },
+  "项目进入关闭核账": {
+    "zh-Hant": "項目進入關閉核賬",
+    "en": "Project entered closing reconciliation"
+  },
+  "剩余资金可领取退款": {
+    "zh-Hant": "剩餘資金可領取退款",
+    "en": "Remaining funds available for refund"
+  },
+  "退款已回原 Donor 钱包": {
+    "zh-Hant": "退款已回原 Donor 錢包",
+    "en": "Refund returned to the original Donor wallet"
+  },
+  "Donor 模拟 HKD 已入账": {
+    "zh-Hant": "Donor 模擬 HKD 已入賬",
+    "en": "Simulated HKD credited to the Donor"
+  },
+  "外部凭证已核账": {
+    "zh-Hant": "外部憑證已核賬",
+    "en": "External evidence reconciled"
+  },
+  "采购取消，预留已释放": {
+    "zh-Hant": "採購取消，預留已釋放",
+    "en": "Procurement cancelled; reservation released"
+  },
+  "进行中": {
+    "zh-Hant": "進行中",
+    "en": "Active"
+  },
+  "关闭核账中": {
+    "zh-Hant": "關閉核賬中",
+    "en": "Closing reconciliation"
+  },
+  "可领取退款": {
+    "zh-Hant": "可領取退款",
+    "en": "Refundable"
+  },
+  "已关闭": {
+    "zh-Hant": "已關閉",
+    "en": "Closed"
+  },
+  "资金状态已更新": {
+    "zh-Hant": "資金狀態已更新",
+    "en": "Fund status updated"
+  },
+  "已开始新一笔操作": {
+    "zh-Hant": "已開始新一筆操作",
+    "en": "Ready for a new operation"
+  },
+  "透明资金链": {
+    "zh-Hant": "透明資金鍊",
+    "en": "Transparent fund flow"
+  },
+  "正在读取同一份资金账本…": {
+    "zh-Hant": "正在讀取同一份資金賬本…",
+    "en": "Loading the shared fund ledger…"
+  },
+  "Donor 钱包": {
+    "zh-Hant": "Donor 錢包",
+    "en": "Donor wallet"
+  },
+  "全站 Donor 当前持币 · 项目外": {
+    "zh-Hant": "全站 Donor 當前持幣 · 項目外",
+    "en": "All Donors' current tokens · outside projects"
+  },
+  "项目资金池": {
+    "zh-Hant": "項目資金池",
+    "en": "Project pool"
+  },
+  "仍锁在本项目中": {
+    "zh-Hant": "仍鎖在本項目中",
+    "en": "Still locked in this project"
+  },
+  "Foundation 钱包": {
+    "zh-Hant": "Foundation 錢包",
+    "en": "Foundation wallet"
+  },
+  "本项目已拨出、尚未兑付": {
+    "zh-Hant": "本項目已撥出、尚未兑付",
+    "en": "Released from this project, not yet redeemed"
+  },
+  "模拟兑付钱包": {
+    "zh-Hant": "模擬兑付錢包",
+    "en": "Demo redemption wallet"
+  },
+  "对应 HKD 已入基金会账本": {
+    "zh-Hant": "對應 HKD 已入基金會賬本",
+    "en": "Matching HKD credited to the Foundation"
+  },
+  "每一笔善款，现在在哪里？": {
+    "zh-Hant": "每一筆善款，現在在哪裏？",
+    "en": "Where is every donation now?"
+  },
+  "三方共享同一份账本，资金移动后自动更新。": {
+    "zh-Hant": "三方共享同一份賬本，資金移動後自動更新。",
+    "en": "One shared ledger for all three parties, updated as funds move."
+  },
+  "连接中断": {
+    "zh-Hant": "連接中斷",
+    "en": "Connection lost"
+  },
+  "自动更新": {
+    "zh-Hant": "自動更新",
+    "en": "Live updates"
+  },
+  "刷新资金链": {
+    "zh-Hant": "刷新資金鍊",
+    "en": "Refresh fund flow"
+  },
+  "查看项目": {
+    "zh-Hant": "查看項目",
+    "en": "View project"
+  },
+  "已暂停": {
+    "zh-Hant": "已暫停",
+    "en": "Paused"
+  },
+  "本地模拟币 · 无真实资金": {
+    "zh-Hant": "本地模擬幣 · 無真實資金",
+    "en": "Local demo tokens · no real money"
+  },
+  "我的可用模拟 HKD": {
+    "zh-Hant": "我的可用模擬 HKD",
+    "en": "My available simulated HKD"
+  },
+  "我的冻结 HKD": {
+    "zh-Hant": "我的凍結 HKD",
+    "en": "My frozen HKD"
+  },
+  "我的模拟币": {
+    "zh-Hant": "我的模擬幣",
+    "en": "My demo tokens"
+  },
+  "兑换待确认：全站 Donor 冻结 HKD": {
+    "zh-Hant": "兑換待確認：全站 Donor 凍結 HKD",
+    "en": "Pending exchanges: HKD frozen across all Donors"
+  },
+  "仍在 Donor 账户，尚未进入项目池": {
+    "zh-Hant": "仍在 Donor 賬户，尚未進入項目池",
+    "en": "Still in Donor accounts, outside the project pool"
+  },
+  "资金当前位置": {
+    "zh-Hant": "資金當前位置",
+    "en": "Current fund locations"
+  },
+  "资金在这里": {
+    "zh-Hant": "資金在這裏",
+    "en": "Funds are here"
+  },
+  "钱包里的模拟币尚未捐出，可捐入项目。兑换冻结的是 HKD，确认后才发放模拟币。这里展示全站汇总，不计入下方项目守恒公式。": {
+    "zh-Hant": "錢包裏的模擬幣尚未捐出，可捐入項目。兑換凍結的是 HKD，確認後才發放模擬幣。這裏展示全站彙總，不計入下方項目守恆公式。",
+    "en": "Wallet tokens have not been donated yet. Exchanges freeze HKD until confirmed. These site-wide balances are outside the project reconciliation below."
+  },
+  "池内待使用": {
+    "zh-Hant": "池內待使用",
+    "en": "Unreserved in pool"
+  },
+  "采购预留": {
+    "zh-Hant": "採購預留",
+    "en": "Procurement reservation"
+  },
+  "预留只是锁定用途，资金仍在项目池；收货验收和人工审计后才能拨给基金会。": {
+    "zh-Hant": "預留只是鎖定用途，資金仍在項目池；收貨驗收和人工審計後才能撥給基金會。",
+    "en": "A reservation earmarks funds within the pool. Release to the Foundation requires receipt evidence and human review."
+  },
+  "这是基金会收到、仍持有的本项目模拟币。收款人工作台代表物资受捐机构，负责验收，不接收这笔资金。": {
+    "zh-Hant": "這是基金會收到、仍持有的本項目模擬幣。收款人工作台代表物資受捐機構，負責驗收，不接收這筆資金。",
+    "en": "These project tokens are held by the Foundation. The Recipient verifies delivered goods and does not receive this money."
+  },
+  "模拟币转入兑付钱包，同时基金会模拟 HKD 入账。两者是同一次兑换的两面，不重复计算资金，也不代表供应商已收款。": {
+    "zh-Hant": "模擬幣轉入兑付錢包，同時基金會模擬 HKD 入賬。兩者是同一次兑換的兩面，不重複計算資金，也不代表供應商已收款。",
+    "en": "Tokens enter the redemption wallet while simulated HKD is credited to the Foundation. These are two sides of one exchange, not double-counted funds or proof of supplier payment."
+  },
+  "退款 → 原 Donor 钱包": {
+    "zh-Hant": "退款 → 原 Donor 錢包",
+    "en": "Refunds → original Donor wallets"
+  },
+  "累计已退": {
+    "zh-Hant": "累計已退",
+    "en": "Total refunded"
+  },
+  "剩余锁款等待原捐款人领取": {
+    "zh-Hant": "剩餘鎖款等待原捐款人領取",
+    "en": "Remaining funds await original Donor claims"
+  },
+  "累计流向，退款后可再次捐出": {
+    "zh-Hant": "累計流向，退款後可再次捐出",
+    "en": "Cumulative flow; refunded tokens may be donated again"
+  },
+  "我的可退": {
+    "zh-Hant": "我的可退",
+    "en": "My refund available"
+  },
+  "项目累计捐入": {
+    "zh-Hant": "項目累計捐入",
+    "en": "Total project donations"
+  },
+  "池中": {
+    "zh-Hant": "池中",
+    "en": "In pool"
+  },
+  "基金会持币": {
+    "zh-Hant": "基金會持幣",
+    "en": "Foundation tokens"
+  },
+  "已兑付": {
+    "zh-Hant": "已兑付",
+    "en": "Redeemed"
+  },
+  "累计退款": {
+    "zh-Hant": "累計退款",
+    "en": "Total refunds"
+  },
+  "总额一致": {
+    "zh-Hant": "總額一致",
+    "en": "Balanced"
+  },
+  "需要核账": {
+    "zh-Hant": "需要核賬",
+    "en": "Reconciliation required"
+  },
+  "所有角色看到相同的项目资金分布": {
+    "zh-Hant": "所有角色看到相同的項目資金分佈",
+    "en": "All roles see the same project fund distribution"
+  },
+  "查看完整资金流水": {
+    "zh-Hant": "查看完整資金流水",
+    "en": "View full fund history"
+  },
+  "打开资金操作与流水": {
+    "zh-Hant": "打開資金操作與流水",
+    "en": "Open funds and history"
+  },
+  "受捐机构 · 只读资金视图": {
+    "zh-Hant": "受捐機構 · 只讀資金視圖",
+    "en": "Recipient · read-only fund view"
+  },
+  "资金操作": {
+    "zh-Hant": "資金操作",
+    "en": "Fund operations"
+  },
+  "开始新一笔操作": {
+    "zh-Hant": "開始新一筆操作",
+    "en": "Start a new operation"
+  },
+  "你可以查看资金状态与每笔凭证；提交收货验收后，由人工审计决定是否向基金会拨款。": {
+    "zh-Hant": "你可以查看資金狀態與每筆憑證；提交收貨驗收後，由人工審計決定是否向基金會撥款。",
+    "en": "View fund status and receipts. After you confirm delivery, human review determines release to the Foundation."
+  },
+  "前往收货验收": {
+    "zh-Hant": "前往收貨驗收",
+    "en": "Go to receipt verification"
+  },
+  "① 模拟 HKD 换币": {
+    "zh-Hant": "① 模擬 HKD 換幣",
+    "en": "1. Exchange simulated HKD"
+  },
+  "先冻结 HKD，再确认模拟币到账。": {
+    "zh-Hant": "先凍結 HKD，再確認模擬幣到賬。",
+    "en": "Freeze HKD, then confirm demo token receipt."
+  },
+  "金额": {
+    "zh-Hant": "金額",
+    "en": "Amount"
+  },
+  "冻结并创建兑换": {
+    "zh-Hant": "凍結並創建兑換",
+    "en": "Freeze HKD and create exchange"
+  },
+  "② 模拟币捐入项目": {
+    "zh-Hant": "② 模擬幣捐入項目",
+    "en": "2. Donate tokens to the project"
+  },
+  "从你的钱包扣币，进入该项目锁定池。": {
+    "zh-Hant": "從你的錢包扣幣，進入該項目鎖定池。",
+    "en": "Move tokens from your wallet into this project's locked pool."
+  },
+  "捐入项目池": {
+    "zh-Hant": "捐入項目池",
+    "en": "Donate to project pool"
+  },
+  "退款与换回 HKD": {
+    "zh-Hant": "退款與換回 HKD",
+    "en": "Refunds and HKD redemption"
+  },
+  "退款先到原钱包，再按需换回模拟 HKD。": {
+    "zh-Hant": "退款先到原錢包，再按需換回模擬 HKD。",
+    "en": "Refunds return to the original wallet; redeem them for simulated HKD when needed."
+  },
+  "领取我的退款": {
+    "zh-Hant": "領取我的退款",
+    "en": "Claim my refund"
+  },
+  "换回金额": {
+    "zh-Hant": "換回金額",
+    "en": "Redemption amount"
+  },
+  "换回模拟 HKD": {
+    "zh-Hant": "換回模擬 HKD",
+    "en": "Redeem for simulated HKD"
+  },
+  "基金会模拟兑付": {
+    "zh-Hant": "基金會模擬兑付",
+    "en": "Foundation demo redemption"
+  },
+  "收到的模拟币转入兑付钱包，模拟 HKD 到账。": {
+    "zh-Hant": "收到的模擬幣轉入兑付錢包，模擬 HKD 到賬。",
+    "en": "Move received tokens to the redemption wallet and credit simulated HKD."
+  },
+  "选择拨款": {
+    "zh-Hant": "選擇撥款",
+    "en": "Select release"
+  },
+  "确认模拟兑付": {
+    "zh-Hant": "確認模擬兑付",
+    "en": "Confirm demo redemption"
+  },
+  "项目暂停与关闭": {
+    "zh-Hant": "項目暫停與關閉",
+    "en": "Pause and close project"
+  },
+  "暂停阻止新捐款和拨款；关闭核账后才能退款。": {
+    "zh-Hant": "暫停阻止新捐款和撥款；關閉核賬後才能退款。",
+    "en": "Pausing blocks new donations and releases. Refunds require closing reconciliation."
+  },
+  "原因": {
+    "zh-Hant": "原因",
+    "en": "Reason"
+  },
+  "项目资金核查": {
+    "zh-Hant": "項目資金核查",
+    "en": "Project fund review"
+  },
+  "恢复项目": {
+    "zh-Hant": "恢復項目",
+    "en": "Resume project"
+  },
+  "暂停项目": {
+    "zh-Hant": "暫停項目",
+    "en": "Pause project"
+  },
+  "项目结束，申请关闭核账": {
+    "zh-Hant": "項目結束，申請關閉核賬",
+    "en": "Project completed; request closing reconciliation"
+  },
+  "申请关闭核账": {
+    "zh-Hant": "申請關閉核賬",
+    "en": "Request closing reconciliation"
+  },
+  "沿用原采购与验收流程": {
+    "zh-Hant": "沿用原採購與驗收流程",
+    "en": "Continue the existing procurement workflow"
+  },
+  "建立采购 → 管理员初审 → 预算预留 → 双方证明 → 管理员终审 → 拨款给基金会。": {
+    "zh-Hant": "建立採購 → 管理員初審 → 預算預留 → 雙方證明 → 管理員終審 → 撥款給基金會。",
+    "en": "Create procurement → initial review → reserve budget → evidence from both parties → final review → release to Foundation."
+  },
+  "采购与证明": {
+    "zh-Hant": "採購與證明",
+    "en": "Procurement and evidence"
+  },
+  "查看待拨款采购": {
+    "zh-Hant": "查看待撥款採購",
+    "en": "View procurements awaiting release"
+  },
+  "外部凭证核账": {
+    "zh-Hant": "外部憑證核賬",
+    "en": "Reconcile external evidence"
+  },
+  "只登记基金会在系统外处理后的凭证，不执行供应商付款。": {
+    "zh-Hant": "只登記基金會在系統外處理後的憑證，不執行供應商付款。",
+    "en": "Record evidence of the Foundation's external handling; no supplier payment is executed here."
+  },
+  "登记核账结果": {
+    "zh-Hant": "登記核賬結果",
+    "en": "Record reconciliation"
+  },
+  "关闭与退款快照": {
+    "zh-Hant": "關閉與退款快照",
+    "en": "Close and snapshot refunds"
+  },
+  "未结采购": {
+    "zh-Hant": "未結采購",
+    "en": "Unresolved procurements"
+  },
+  "核准关闭并计算退款": {
+    "zh-Hant": "核准關閉並計算退款",
+    "en": "Approve closure and calculate refunds"
+  },
+  "前往人工审计": {
+    "zh-Hant": "前往人工審計",
+    "en": "Go to human review"
+  },
+  "取消未收货采购": {
+    "zh-Hant": "取消未收貨採購",
+    "en": "Cancel procurement before receipt"
+  },
+  "释放预留，保留记录。已经收货的采购不能在此取消。": {
+    "zh-Hant": "釋放預留，保留記錄。已經收貨的採購不能在此取消。",
+    "en": "Release reserved funds and preserve records. Procurements already received cannot be cancelled here."
+  },
+  "取消采购并释放预留": {
+    "zh-Hant": "取消採購並釋放預留",
+    "en": "Cancel procurement and release reservation"
+  },
+  "待确认兑换 · HKD 仍冻结在你的账户": {
+    "zh-Hant": "待確認兑換 · HKD 仍凍結在你的賬户",
+    "en": "Pending exchanges · HKD remains frozen in your account"
+  },
+  "确认模拟币到账": {
+    "zh-Hant": "確認模擬幣到賬",
+    "en": "Confirm demo token receipt"
+  },
+  "取消并解冻": {
+    "zh-Hant": "取消並解凍",
+    "en": "Cancel and unfreeze"
+  },
+  "可追溯资金流水": {
+    "zh-Hant": "可追溯資金流水",
+    "en": "Traceable fund history"
+  },
+  "下载项目流水": {
+    "zh-Hant": "下載項目流水",
+    "en": "Download project history"
+  },
+  "查看关联凭证": {
+    "zh-Hant": "查看關聯憑證",
+    "en": "View linked receipt"
+  },
+  "还没有资金移动。Donor 完成第一笔兑换后，流水会出现在这里。": {
+    "zh-Hant": "還沒有資金移動。Donor 完成第一筆兑換後，流水會出現在這裏。",
+    "en": "No funds have moved yet. History appears after the first Donor exchange."
+  },
+  "资金记录来自网站模拟账本，不生成虚假的链上交易 Hash。": {
+    "zh-Hant": "資金記錄來自網站模擬賬本，不生成虛假的鏈上交易 Hash。",
+    "en": "Records come from the website's demo ledger. No fictitious blockchain transaction hashes are generated."
+  },
+  "暂无可查看的资金链项目": {
+    "zh-Hant": "暫無可查看的資金鍊項目",
+    "en": "No fund-flow projects available"
+  },
+  "基金会已收到模拟币": {
+    "zh-Hant": "基金會已收到模擬幣",
+    "en": "Foundation received demo tokens"
+  },
+  "已取消": {
+    "zh-Hant": "已取消",
+    "en": "Cancelled"
+  },
+  "基金会收到模拟币": {
+    "zh-Hant": "基金會收到模擬幣",
+    "en": "Foundation receives demo tokens"
+  },
+  "模拟币资金链 · 验收后拨给基金会": {
+    "zh-Hant": "模擬幣資金鍊 · 驗收後撥給基金會",
+    "en": "Demo fund flow · release to Foundation after verification"
+  },
+  "历史演示示例 · 独立于当前资金链": {
+    "zh-Hant": "歷史演示示例 · 獨立於當前資金鍊",
+    "en": "Historical example · separate from the current fund flow"
+  },
+  "维护权限不包含个人资金账户与流水": {
+    "zh-Hant": "維護權限不包含個人資金賬户與流水",
+    "en": "Maintenance access does not include private fund accounts or history"
+  },
+  "历史分配（资金链项目）": {
+    "zh-Hant": "歷史分配（資金鍊項目）",
+    "en": "Historical allocations (fund-flow projects)"
+  },
+  "资金当前位置见上方透明资金链": {
+    "zh-Hant": "資金當前位置見上方透明資金鍊",
+    "en": "See current fund locations in the diagram above"
+  },
+  "已拨付基金会 · mHKD": {
+    "zh-Hant": "已撥付基金會 · mHKD",
+    "en": "Released to Foundation · mHKD"
+  },
+  "当前净存入": {
+    "zh-Hant": "當前淨存入",
+    "en": "Current net funding"
+  },
+  "已拨基金会": {
+    "zh-Hant": "已撥基金會",
+    "en": "Released to Foundation"
+  },
+  "历史已付": {
+    "zh-Hant": "歷史已付",
+    "en": "Historical payments"
+  },
+  "由 Donor 模拟币捐款注资": {
+    "zh-Hant": "由 Donor 模擬幣捐款注資",
+    "en": "Funded by Donor token donations"
+  },
+  "历史模拟注资": {
+    "zh-Hant": "歷史模擬注資",
+    "en": "Historical demo funding"
+  },
+  "受捐机构负责申请与验收；通过审计后模拟币拨给基金会，受捐机构不持有这笔资金。": {
+    "zh-Hant": "受捐機構負責申請與驗收；通過審計後模擬幣撥給基金會，受捐機構不持有這筆資金。",
+    "en": "The Recipient requests goods and verifies delivery. Tokens are released to the Foundation after review; the Recipient does not hold these funds."
+  },
+  "从 Donor 模拟币钱包扣款，转入项目锁定池。": {
+    "zh-Hant": "從 Donor 模擬幣錢包扣款，轉入項目鎖定池。",
+    "en": "Debit the Donor's demo token wallet and credit the project's locked pool."
+  },
+  "拨款对象为项目基金会，不代表供应商收款": {
+    "zh-Hant": "撥款對象為項目基金會，不代表供應商收款",
+    "en": "Release goes to the project Foundation, not proof of supplier receipt"
+  },
+  "确认拨付模拟币给基金会": {
+    "zh-Hant": "確認撥付模擬幣給基金會",
+    "en": "Confirm token release to Foundation"
+  },
+  "请填写原因或凭证编号": {
+    "zh-Hant": "請填寫原因或憑證編號",
+    "en": "Enter a reason or evidence reference"
+  },
+  "金额须为最多两位小数的字符串": {
+    "zh-Hant": "金額須為最多兩位小數的字符串",
+    "en": "Amount must be a string with at most two decimal places"
+  },
+  "金额必须大于零": {
+    "zh-Hant": "金額必須大於零",
+    "en": "Amount must be greater than zero"
+  },
+  "没有此资金操作的权限": {
+    "zh-Hant": "沒有此資金操作的權限",
+    "en": "Not authorized for this fund operation"
+  },
+  "不能操作其他基金会项目": {
+    "zh-Hant": "不能操作其他基金會項目",
+    "en": "Cannot operate another Foundation's project"
+  },
+  "项目已暂停或正在关闭，不能发起新资金操作": {
+    "zh-Hant": "項目已暫停或正在關閉，不能發起新資金操作",
+    "en": "Project paused or closing; new fund operations are blocked"
+  },
+  "此用户未配置资金账户": {
+    "zh-Hant": "此用户未配置資金賬户",
+    "en": "No fund account configured for this user"
+  },
+  "资金账户状态不一致": {
+    "zh-Hant": "資金賬户狀態不一致",
+    "en": "Fund account state is inconsistent"
+  },
+  "项目锁款状态不一致": {
+    "zh-Hant": "項目鎖款狀態不一致",
+    "en": "Project custody state is inconsistent"
+  },
+  "拨款总额不一致": {
+    "zh-Hant": "撥款總額不一致",
+    "en": "Release total is inconsistent"
+  },
+  "兑付或退回超过拨款": {
+    "zh-Hant": "兑付或退回超過撥款",
+    "en": "Redemption or return exceeds the release"
+  },
+  "模拟币总量不守恒，操作已取消": {
+    "zh-Hant": "模擬幣總量不守恆，操作已取消",
+    "en": "Token conservation failed; operation cancelled"
+  },
+  "捐款金额不合法": {
+    "zh-Hant": "捐款金額不合法",
+    "en": "Invalid donation amount"
+  },
+  "模拟币余额不足，请先在资金链中兑换": {
+    "zh-Hant": "模擬幣餘額不足，請先在資金鍊中兑換",
+    "en": "Insufficient demo tokens; exchange HKD first"
+  },
+  "最多支持64位捐款人": {
+    "zh-Hant": "最多支持64位捐款人",
+    "en": "Up to 64 Donors are supported"
+  },
+  "项目锁定池": {
+    "zh-Hant": "項目鎖定池",
+    "en": "Project locked pool"
+  },
+  "模拟币已从 Donor 钱包转入项目锁定池": {
+    "zh-Hant": "模擬幣已從 Donor 錢包轉入項目鎖定池",
+    "en": "Tokens moved from the Donor wallet to the project pool"
+  },
+  "项目可预留模拟币不足": {
+    "zh-Hant": "項目可預留模擬幣不足",
+    "en": "Insufficient unreserved project tokens"
+  },
+  "采购预留（仍在池内）": {
+    "zh-Hant": "採購預留（仍在池內）",
+    "en": "Procurement reservation (still in pool)"
+  },
+  "预留不足或此采购已拨款": {
+    "zh-Hant": "預留不足或此採購已撥款",
+    "en": "Insufficient reservation or procurement already released"
+  },
+  "Foundation 模拟币钱包": {
+    "zh-Hant": "Foundation 模擬幣錢包",
+    "en": "Foundation demo token wallet"
+  },
+  "请选择资金链项目": {
+    "zh-Hant": "請選擇資金鍊項目",
+    "en": "Select a fund-flow project"
+  },
+  "模拟 HKD 可用余额不足": {
+    "zh-Hant": "模擬 HKD 可用餘額不足",
+    "en": "Insufficient available simulated HKD"
+  },
+  "Donor 可用 HKD": {
+    "zh-Hant": "Donor 可用 HKD",
+    "en": "Donor available HKD"
+  },
+  "Donor 冻结 HKD": {
+    "zh-Hant": "Donor 凍結 HKD",
+    "en": "Donor frozen HKD"
+  },
+  "模拟 HKD 已冻结，确认到账后才扣账并发放模拟币": {
+    "zh-Hant": "模擬 HKD 已凍結，確認到賬後才扣賬併發放模擬幣",
+    "en": "HKD frozen; debit and token issuance occur only after confirmation"
+  },
+  "只能处理自己的兑换": {
+    "zh-Hant": "只能處理自己的兑換",
+    "en": "You may only manage your own exchanges"
+  },
+  "此兑换已经处理": {
+    "zh-Hant": "此兑換已經處理",
+    "en": "This exchange has already been processed"
+  },
+  "Donor 模拟币钱包": {
+    "zh-Hant": "Donor 模擬幣錢包",
+    "en": "Donor demo token wallet"
+  },
+  "请选择本基金会拨款": {
+    "zh-Hant": "請選擇本基金會撥款",
+    "en": "Select a release to your Foundation"
+  },
+  "超出本笔未兑付的拨款余额": {
+    "zh-Hant": "超出本筆未兑付的撥款餘額",
+    "en": "Amount exceeds this release's unredeemed balance"
+  },
+  "模拟兑付钱包 / HKD 入账": {
+    "zh-Hant": "模擬兑付錢包 / HKD 入賬",
+    "en": "Demo redemption wallet / HKD credit"
+  },
+  "先申请关闭，再退回尚未兑付的拨款": {
+    "zh-Hant": "先申請關閉，再退回尚未兑付的撥款",
+    "en": "Request closing before returning unredeemed funds"
+  },
+  "模拟币余额不足": {
+    "zh-Hant": "模擬幣餘額不足",
+    "en": "Insufficient demo token balance"
+  },
+  "只有进行中项目可暂停/恢复": {
+    "zh-Hant": "只有進行中項目可暫停/恢復",
+    "en": "Only active projects may be paused or resumed"
+  },
+  "项目已申请关闭": {
+    "zh-Hant": "項目已申請關閉",
+    "en": "Project closing already requested"
+  },
+  "请选择拨款": {
+    "zh-Hant": "請選擇撥款",
+    "en": "Select a release"
+  },
+  "兑付未完成、已核账或存在退回，不能确认": {
+    "zh-Hant": "兑付未完成、已核賬或存在退回，不能確認",
+    "en": "Cannot confirm: redemption incomplete, already reconciled, or funds returned"
+  },
+  "外部凭证核对": {
+    "zh-Hant": "外部憑證核對",
+    "en": "External evidence review"
+  },
+  "关闭核账尚未完成：检查预留与未结采购": {
+    "zh-Hant": "關閉核賬尚未完成：檢查預留與未結采購",
+    "en": "Closing reconciliation incomplete: check reservations and unresolved procurements"
+  },
+  "待原 Donor 领取": {
+    "zh-Hant": "待原 Donor 領取",
+    "en": "Awaiting original Donor claims"
+  },
+  "只有原 Donor 可在核账后领取": {
+    "zh-Hant": "只有原 Donor 可在核賬後領取",
+    "en": "Only original Donors may claim after reconciliation"
+  },
+  "已经领取过退款": {
+    "zh-Hant": "已經領取過退款",
+    "en": "Refund already claimed"
+  },
+  "原 Donor 模拟币钱包": {
+    "zh-Hant": "原 Donor 模擬幣錢包",
+    "en": "Original Donor demo token wallet"
+  },
+  "此采购不可取消；收货后必须继续核账": {
+    "zh-Hant": "此採購不可取消；收貨後必須繼續核賬",
+    "en": "Procurement cannot be cancelled; reconciliation must continue after receipt"
+  },
+  "资金操作不存在": {
+    "zh-Hant": "資金操作不存在",
+    "en": "Fund operation not found"
+  },
+  "透明资金链 · 社区学习计划": {
+    "zh-Hant": "透明資金鍊 · 社區學習計劃",
+    "en": "Transparent fund flow · Community learning"
+  },
+  "从模拟 HKD 兑换、捐款锁定，到验收拨款、基金会兑付和剩余资金退款。三方共享同一笔资金记录。": {
+    "zh-Hant": "從模擬 HKD 兑換、捐款鎖定，到驗收撥款、基金會兑付和剩餘資金退款。三方共享同一筆資金記錄。",
+    "en": "From simulated HKD exchange and locked donations to verified releases, Foundation redemption and remaining-fund refunds. All parties share the same records."
+  },
+  "采购已取消或已拨款": {
+    "zh-Hant": "採購已取消或已撥款",
+    "en": "Procurement cancelled or funds already released"
+  },
+  "资金链项目需要由 Donor 使用模拟币捐款注资": {
+    "zh-Hant": "資金鍊項目需要由 Donor 使用模擬幣捐款注資",
+    "en": "Fund-flow projects require Donor token donations"
+  },
+  "项目已暂停或关闭，不能新增采购": {
+    "zh-Hant": "項目已暫停或關閉，不能新增採購",
+    "en": "Project paused or closed; new procurement is blocked"
+  },
+  "模拟币已从项目池拨付 Foundation；可在资金链中兑付 HKD": {
+    "zh-Hant": "模擬幣已從項目池撥付 Foundation；可在資金鍊中兑付 HKD",
+    "en": "Tokens released from the project pool to the Foundation; redeem HKD in the fund-flow workspace"
+  },
+  "看见每一笔善款的去向": {
+    "zh-Hant": "看見每一筆善款的去向",
+    "en": "See where every donation goes"
+  },
+  "同一份账本，展示兑换、锁款、拨付、兑付与退款。": {
+    "zh-Hant": "同一份賬本，展示兑換、鎖款、撥付、兑付與退款。",
+    "en": "One ledger for exchanges, locked funds, releases, redemptions and refunds."
+  },
+  "查看历史示例": {
+    "zh-Hant": "查看歷史示例",
+    "en": "View historical examples"
+  },
+  "以下为原有历史演示记录，与当前模拟币资金链分开保存。": {
+    "zh-Hant": "以下為原有歷史演示記錄，與當前模擬幣資金鍊分開保存。",
+    "en": "Historical demo records are preserved separately from the current demo token fund flow."
+  },
+  "模拟演示": {
+    "zh-Hant": "模擬演示",
+    "en": "Demo simulation"
+  },
+  "模拟资金服务未启用": {
+    "zh-Hant": "模擬資金服務未啓用",
+    "en": "Demo fund service is not enabled"
+  },
+  "需要 JSON": {
+    "zh-Hant": "需要 JSON",
+    "en": "JSON is required"
+  },
+  "无效 JSON": {
+    "zh-Hant": "無效 JSON",
+    "en": "Invalid JSON"
+  },
+  "资金服务异常，请使用原幂等键重试": {
+    "zh-Hant": "資金服務異常，請使用原冪等鍵重試",
+    "en": "Fund service unavailable; retry using the original idempotency key"
+  },
+  "金额超出安全范围": {
+    "zh-Hant": "金額超出安全範圍",
+    "en": "Amount exceeds the safe range"
+  },
+  "AI 待接入": {
+    "zh-Hant": "AI 待接入",
+    "en": "AI integration pending"
+  },
+  "无法读取真实工作区": {
+    "zh-Hant": "無法讀取真實工作區",
+    "en": "Unable to load the connected workspace"
+  },
+  "正在读取本人工作区…": {
+    "zh-Hant": "正在讀取本人工作區…",
+    "en": "Loading your workspace…"
+  },
+  "返回登录": {
+    "zh-Hant": "返回登錄",
+    "en": "Back to sign in"
+  },
+  "上一次请求结果未知；先用同一请求重试或刷新核对，不发起新交易。": {
+    "zh-Hant": "上一次請求結果未知；先用同一請求重試或刷新核對，不發起新交易。",
+    "en": "The previous request outcome is unknown. Retry the same request or refresh to verify it before starting a new transaction."
+  },
+  "预算输入超出安全范围": {
+    "zh-Hant": "預算輸入超出安全範圍",
+    "en": "Budget exceeds the safe range"
+  },
+  "此功能尚未接入真实接口，未执行任何旧演示账本写入。": {
+    "zh-Hant": "此功能尚未接入真實接口，未執行任何舊演示賬本寫入。",
+    "en": "This feature is not connected to the API. No historical demo ledger was modified."
+  },
+  "身份或部署已改变；不能把旧请求转发到新实例，请重新读取原 operation。": {
+    "zh-Hant": "身份或部署已改變；不能把舊請求轉發到新實例，請重新讀取原 operation。",
+    "en": "Identity or deployment changed. Do not forward the old request to the new instance; reload the original operation."
+  },
+  "接口已受理；等待 operation 和链上确认，不代表资金已到账。": {
+    "zh-Hant": "接口已受理；等待 operation 和鏈上確認，不代表資金已到賬。",
+    "en": "Request accepted. Await operation and chain confirmation; this does not mean funds have arrived."
+  },
+  "接口请求失败": {
+    "zh-Hant": "接口請求失敗",
+    "en": "API request failed"
+  },
+  "报价金额或部署绑定不一致": {
+    "zh-Hant": "報價金額或部署綁定不一致",
+    "en": "Quote amount or deployment binding does not match"
+  },
+  "报价失败": {
+    "zh-Hant": "報價失敗",
+    "en": "Unable to get a quote"
+  },
+  "Hash 查询适配待接入；请在采购证明页面读取真实不可变文件。": {
+    "zh-Hant": "Hash 查詢適配待接入；請在採購證明頁面讀取真實不可變文件。",
+    "en": "Hash lookup integration is pending. Open the immutable original files on the procurement evidence page."
+  },
+  "不可变文件版本已保存；尚未登记到链上。": {
+    "zh-Hant": "不可變文件版本已保存；尚未登記到鏈上。",
+    "en": "Immutable file version saved; it has not been recorded on-chain."
+  },
+  "登出失败": {
+    "zh-Hant": "登出失敗",
+    "en": "Unable to sign out"
+  },
+  "本人链上累计捐款；非逐笔凭证": {
+    "zh-Hant": "本人鏈上累計捐款；非逐筆憑證",
+    "en": "Your cumulative on-chain donations; not an individual transaction receipt"
+  },
+  "真实本地链释放；不代表供应商已收款": {
+    "zh-Hant": "真實本地鏈釋放；不代表供應商已收款",
+    "en": "Confirmed local-chain release; this does not mean the supplier has been paid"
+  },
+  "受捐机构负责申请与验收；审计与最终审批后模拟币拨给基金会，受捐机构不持有这笔资金。": {
+    "zh-Hant": "受捐機構負責申請與驗收；審計與最終審批後模擬幣撥給基金會，受捐機構不持有這筆資金。",
+    "en": "The recipient submits requests and confirms delivery. Mock tokens are released to the Foundation after audit and final approval; the recipient does not hold these funds."
+  },
+  "本轮仅显示当前已登录的受控身份；用户与权限管理写入接口未接入，不能跨角色代操作。": {
+    "zh-Hant": "本輪僅顯示當前已登錄的受控身份；用户與權限管理寫入接口未接入，不能跨角色代操作。",
+    "en": "Only the current controlled identity is shown. User and permission management writes are not connected; you cannot act on another role's behalf."
+  },
+  "仅 API 持久化事实，不使用本机演示 JSON": {
+    "zh-Hant": "僅 API 持久化事實，不使用本機演示 JSON",
+    "en": "Persisted API facts only; no local demo JSON"
+  },
+  "已接入": {
+    "zh-Hant": "已接入",
+    "en": "Connected"
+  },
+  "本地受控 FastAPI / 数据库模拟实例": {
+    "zh-Hant": "本地受控 FastAPI / 數據庫模擬實例",
+    "en": "Controlled local FastAPI / database simulation"
+  },
+  "链上事实来自受控实例 canonical receipts": {
+    "zh-Hant": "鏈上事實來自受控實例 canonical receipts",
+    "en": "Chain facts come from canonical receipts in the controlled instance"
+  },
+  "真实 AI 待接入；技术 synthetic 样例不是真实 AI": {
+    "zh-Hant": "真實 AI 待接入；技術 synthetic 樣例不是真實 AI",
+    "en": "Real AI integration is pending; synthetic technical samples are not real AI"
+  },
+  "4 类受控身份": {
+    "zh-Hant": "4 類受控身份",
+    "en": "4 controlled roles"
+  },
+  "各自工作区 · 独立人工 human_approver": {
+    "zh-Hant": "各自工作區 · 獨立人工 human_approver",
+    "en": "Separate workspaces · Independent human_approver"
+  },
+  "无真实资金 · 有本地 Anvil 链上交易": {
+    "zh-Hant": "無真實資金 · 有本地 Anvil 鏈上交易",
+    "en": "No real funds · Local Anvil chain transactions"
+  },
+  "申诉入口 · 未接入": {
+    "zh-Hant": "申訴入口 · 未接入",
+    "en": "Appeals · Not connected"
+  },
+  "写入未接入，仅查看当前受控身份": {
+    "zh-Hant": "寫入未接入，僅查看當前受控身份",
+    "en": "Writes are not connected; current controlled identity is read-only"
+  },
+  "独立本人授权材料与链上状态": {
+    "zh-Hant": "獨立本人授權材料與鏈上狀態",
+    "en": "Your independent authorization materials and chain status"
+  },
+  "仅基金会工作区，不代捐款人": {
+    "zh-Hant": "僅基金會工作區，不代捐款人",
+    "en": "Foundation workspace only; not acting for donors"
+  },
+  "独立人工审批": {
+    "zh-Hant": "獨立人工審批",
+    "en": "Independent human approval"
+  },
+  "仅 human_approver，不代基金会、收货人或 AI": {
+    "zh-Hant": "僅 human_approver，不代基金會、收貨人或 AI",
+    "en": "human_approver only; not acting for Foundation, Recipient or AI"
+  },
+  "本轮未启用 · 页面权限管理未接入": {
+    "zh-Hant": "本輪未啓用 · 頁面權限管理未接入",
+    "en": "Not enabled in this stage · Page permission management is not connected"
+  },
+  "当前采购阶段尚未得到链上确认；请核对后台事实，不根据按钮状态推断审批完成。": {
+    "zh-Hant": "當前採購階段尚未得到鏈上確認；請核對後台事實，不根據按鈕狀態推斷審批完成。",
+    "en": "The current procurement stage is not confirmed on-chain. Check backend facts; button status does not prove approval."
+  },
+  "资金已释放给 Foundation，不代表供应商 Paid；兑换、供应商付款与结算仍是独立事实。": {
+    "zh-Hant": "資金已釋放給 Foundation，不代表供應商 Paid；兑換、供應商付款與結算仍是獨立事實。",
+    "en": "Funds have been released to the Foundation; this alone does not prove supplier payment. Conversion, supplier payment and settlement remain separate facts."
+  },
+  "预留阶段已完成，继续交付证据与收货确认；资金不会因此自动释放。": {
+    "zh-Hant": "預留階段已完成，繼續交付證據與收貨確認；資金不會因此自動釋放。",
+    "en": "Reservation is complete. Continue with delivery evidence and receipt confirmation; this does not automatically release funds."
+  },
+  "此处仅执行后台重新核验后的独立人审票；提交请求不等于预留已确认。": {
+    "zh-Hant": "此處僅執行後台重新核驗後的獨立人審票；提交請求不等於預留已確認。",
+    "en": "This executes only an independent human approval revalidated by the backend. Submitting a request does not confirm the reservation."
+  },
+  "尚未完成预留执行阶段；请核对采购证据与独立人工授权，不能代审批或自动预留。": {
+    "zh-Hant": "尚未完成預留執行階段；請核對採購證據與獨立人工授權，不能代審批或自動預留。",
+    "en": "Reservation execution is not complete. Verify procurement evidence and independent human authorization; no delegated approval or automatic reservation."
+  },
+  "此处仅执行后台重新核验后的独立最终人审票，按发票限额释放给 Foundation。": {
+    "zh-Hant": "此處僅執行後台重新核驗後的獨立最終人審票，按發票限額釋放給 Foundation。",
+    "en": "This executes only a revalidated independent final approval, releasing the invoice-limited amount to the Foundation."
+  },
+  "资金仍在 Escrow；核对交付与收货证据，等待最终风险证据及独立人工放款授权。": {
+    "zh-Hant": "資金仍在 Escrow；核對交付與收貨證據，等待最終風險證據及獨立人工放款授權。",
+    "en": "Funds remain in Escrow. Verify delivery and receipt evidence, then await final risk evidence and independent human release authorization."
+  },
+  "后端链上状态": {
+    "zh-Hant": "後端鏈上狀態",
+    "en": "Backend chain status"
+  },
+  "未提供": {
+    "zh-Hant": "未提供",
+    "en": "Not provided"
+  },
+  "预留、释放给基金会和供应商结算是不同事实": {
+    "zh-Hant": "預留、釋放給基金會和供應商結算是不同事實",
+    "en": "Reservation, Foundation release and supplier settlement are separate facts"
+  },
+  "AI 报告 · 待接入": {
+    "zh-Hant": "AI 報告 · 待接入",
+    "en": "AI report · Integration pending"
+  },
+  "真实 AI 检测尚未交付；没有生成风险分数或自动通过。": {
+    "zh-Hant": "真實 AI 檢測尚未交付；沒有生成風險分數或自動通過。",
+    "en": "Real AI detection is not yet delivered. No risk score or automatic approval has been generated."
+  },
+  "此采购含 synthetic 技术样例，仅证明机械链路，不是真实 AI。": {
+    "zh-Hant": "此採購含 synthetic 技術樣例，僅證明機械鏈路，不是真實 AI。",
+    "en": "This procurement contains synthetic technical samples that verify the mechanical flow only, not real AI."
+  },
+  "等待 AI 项目组接入；此入口不自动签署。": {
+    "zh-Hant": "等待 AI 項目組接入；此入口不自動簽署。",
+    "en": "Awaiting AI team integration; this entry point does not automatically sign."
+  },
+  "模拟 HKD → MockHKD → 捐入当前项目 Escrow 冻结。兑换不等于捐款，不扣取真实资金。": {
+    "zh-Hant": "模擬 HKD → MockHKD → 捐入當前項目 Escrow 凍結。兑換不等於捐款，不扣取真實資金。",
+    "en": "Simulated HKD → MockHKD → donation locked in this project's Escrow. Conversion is not a donation; no real funds are debited."
+  },
+  "查询报价（不执行）": {
+    "zh-Hant": "查詢報價（不執行）",
+    "en": "Get quote (no execution)"
+  },
+  "确认模拟兑换": {
+    "zh-Hant": "確認模擬兑換",
+    "en": "Confirm simulated conversion"
+  },
+  "本人已兑换资金": {
+    "zh-Hant": "本人已兑換資金",
+    "en": "Your converted funds"
+  },
+  "选择已对账资金": {
+    "zh-Hant": "選擇已對賬資金",
+    "en": "Select reconciled funds"
+  },
+  "确认捐入项目并冻结": {
+    "zh-Hant": "確認捐入項目並凍結",
+    "en": "Confirm donation and lock funds"
+  },
+  "待核对链上 / 未全部链上确认": {
+    "zh-Hant": "待核對鏈上 / 未全部鏈上確認",
+    "en": "Awaiting chain verification / Not fully confirmed on-chain"
+  },
+  "受控默认身份未提供": {
+    "zh-Hant": "受控默認身份未提供",
+    "en": "Controlled default identity not provided"
+  },
+  "先建立后端草稿，再在项目详情独立提交 Anvil 链上创建。筹款目标仅是原表单字段，本轮接口不保存或据此释放资金。": {
+    "zh-Hant": "先建立後端草稿，再在項目詳情獨立提交 Anvil 鏈上創建。籌款目標僅是原表單字段，本輪接口不保存或據此釋放資金。",
+    "en": "Create a backend draft, then separately submit creation to Anvil from project details. The fundraising target is an original form field only; this API does not store it or use it to release funds."
+  },
+  "创建项目草稿": {
+    "zh-Hant": "創建項目草稿",
+    "en": "Create project draft"
+  },
+  "模拟固定供应商": {
+    "zh-Hant": "模擬固定供應商",
+    "en": "Fixed mock supplier"
+  },
+  "数量 × 单价仅用于输入预算上限；后端存储精确 atomic 预算，不生成 AI 分数。先创建草稿，再独立提交上链。": {
+    "zh-Hant": "數量 × 單價僅用於輸入預算上限；後端存儲精確 atomic 預算，不生成 AI 分數。先創建草稿，再獨立提交上鍊。",
+    "en": "Quantity × unit price sets the budget cap only. The backend stores the exact atomic budget without generating an AI score. Create a draft, then separately submit it on-chain."
+  },
+  "。资金先冻结；收货和最终人工审批后仅释放发票金额给基金会，再由平台模拟兑换与供应商付款。": {
+    "zh-Hant": "。資金先凍結；收貨和最終人工審批後僅釋放發票金額給基金會，再由平台模擬兑換與供應商付款。",
+    "en": ". Funds are locked first. After receipt and final human approval, only the invoice amount is released to the Foundation, followed by simulated conversion and supplier payment."
+  },
+  "尚未读取": {
+    "zh-Hant": "尚未讀取",
+    "en": "Not loaded"
+  },
+  "提交项目链上创建": {
+    "zh-Hant": "提交項目鏈上創建",
+    "en": "Submit project creation on-chain"
+  },
+  "提交采购链上创建": {
+    "zh-Hant": "提交採購鏈上創建",
+    "en": "Submit procurement creation on-chain"
+  },
+  "核对与登记采购证据": {
+    "zh-Hant": "核對與登記採購證據",
+    "en": "Verify and record procurement evidence"
+  },
+  "核对并执行预留": {
+    "zh-Hant": "核對並執行預留",
+    "en": "Verify and execute reservation"
+  },
+  "此按钮只执行已登记的独立人工预留授权，不签署审批、不调用真实 AI。": {
+    "zh-Hant": "此按鈕只執行已登記的獨立人工預留授權，不簽署審批、不調用真實 AI。",
+    "en": "This button executes an existing independent human reservation authorization only. It does not sign approval or call real AI."
+  },
+  "核对已批准的预留金额 · mHKD": {
+    "zh-Hant": "核對已批准的預留金額 · mHKD",
+    "en": "Verify approved reservation amount · mHKD"
+  },
+  "金额无效": {
+    "zh-Hant": "金額無效",
+    "en": "Invalid amount"
+  },
+  "执行已获独立审批的预算预留": {
+    "zh-Hant": "執行已獲獨立審批的預算預留",
+    "en": "Execute independently approved budget reservation"
+  },
+  "真实 AI 待接入；不自动通过": {
+    "zh-Hant": "真實 AI 待接入；不自動通過",
+    "en": "Real AI integration pending; no automatic approval"
+  },
+  "执行已获独立审批的发票限额释放": {
+    "zh-Hant": "執行已獲獨立審批的發票限額釋放",
+    "en": "Execute independently approved invoice-limited release"
+  },
+  "本地链真实交易 · 法币模拟 · AI 待接入": {
+    "zh-Hant": "本地鏈真實交易 · 法幣模擬 · AI 待接入",
+    "en": "Local-chain transactions · Simulated fiat · AI integration pending"
+  },
+  "本轮只读真实 API，不载入旧 JSON 历史示例": {
+    "zh-Hant": "本輪只讀真實 API，不載入舊 JSON 歷史示例",
+    "en": "This stage reads the connected API only; historical JSON examples are not loaded"
+  },
+  "结果未知：保留同一请求重试": {
+    "zh-Hant": "結果未知：保留同一請求重試",
+    "en": "Outcome unknown: retry the same request"
+  },
+  "身份或部署已改变；旧请求不能提交到新的实例。": {
+    "zh-Hant": "身份或部署已改變；舊請求不能提交到新的實例。",
+    "en": "Identity or deployment changed; the old request cannot be submitted to the new instance."
+  },
+  "接口已受理；签署不广播，提交后须等待 canonical operation 确认。没有自动审批。": {
+    "zh-Hant": "接口已受理；簽署不廣播，提交後須等待 canonical operation 確認。沒有自動審批。",
+    "en": "Request accepted. Signing does not broadcast; after submission, await canonical operation confirmation. No automatic approval."
+  },
+  "原件最多 2 MB": {
+    "zh-Hant": "原件最多 2 MB",
+    "en": "Original files must be no larger than 2 MB"
+  },
+  "原始不可变版本已保存；上传不等于链上登记或收货确认。": {
+    "zh-Hant": "原始不可變版本已保存；上傳不等於鏈上登記或收貨確認。",
+    "en": "Original immutable version saved; uploading is not on-chain registration or receipt confirmation."
+  },
+  "选择真实文件版本": {
+    "zh-Hant": "選擇真實文件版本",
+    "en": "Select an original file version"
+  },
+  "结果未知：同一请求重试，不创建新交易": {
+    "zh-Hant": "結果未知：同一請求重試，不創建新交易",
+    "en": "Outcome unknown: retry the same request without creating a new transaction"
+  },
+  "不可变版本": {
+    "zh-Hant": "不可變版本",
+    "en": "Immutable version"
+  },
+  "输入无效": {
+    "zh-Hant": "輸入無效",
+    "en": "Invalid input"
+  },
+  "人工审计结论 / 收货声明": {
+    "zh-Hant": "人工審計結論 / 收貨聲明",
+    "en": "Human audit conclusion / Receipt declaration"
+  },
+  "本人已核对实际收货证据": {
+    "zh-Hant": "本人已核對實際收貨證據",
+    "en": "I have verified the actual receipt evidence"
+  },
+  "批准预留金额 · mHKD": {
+    "zh-Hant": "批准預留金額 · mHKD",
+    "en": "Approved reservation amount · mHKD"
+  },
+  "审核 / 验收意见": {
+    "zh-Hant": "審核 / 驗收意見",
+    "en": "Audit / Acceptance comments"
+  },
+  "意见仅供本次核对；授权材料使用后台冻结 V2 typed data，有效期 900 秒。AI 未接入；synthetic 样例仅验证机械链路。": {
+    "zh-Hant": "意見僅供本次核對；授權材料使用後台凍結 V2 typed data，有效期 900 秒。AI 未接入；synthetic 樣例僅驗證機械鏈路。",
+    "en": "Comments are for this review only. Authorization uses backend-frozen V2 typed data, valid for 900 seconds. AI is not connected; synthetic samples verify the mechanical flow only."
+  },
+  "1. 准备本身份授权材料": {
+    "zh-Hant": "1. 準備本身份授權材料",
+    "en": "1. Prepare authorization for this identity"
+  },
+  "恢复本人授权": {
+    "zh-Hant": "恢復本人授權",
+    "en": "Restore your authorization"
+  },
+  "核对完整 V2 授权材料": {
+    "zh-Hant": "核對完整 V2 授權材料",
+    "en": "Verify complete V2 authorization"
+  },
+  "我已核对本人 signer、项目、采购、金额、证据、nonce 和有效期，明确确认下一次签署或提交。": {
+    "zh-Hant": "我已核對本人 signer、項目、採購、金額、證據、nonce 和有效期，明確確認下一次簽署或提交。",
+    "en": "I have verified my signer, project, procurement, amount, evidence, nonce and expiry, and explicitly confirm the next signing or submission."
+  },
+  "2. 确认本人测试钱包签署（不广播）": {
+    "zh-Hant": "2. 確認本人測試錢包簽署（不廣播）",
+    "en": "2. Confirm signing with your test wallet (no broadcast)"
+  },
+  "3. 提交已签授权": {
+    "zh-Hant": "3. 提交已籤授權",
+    "en": "3. Submit signed authorization"
+  },
+  "本轮主流程不支持申诉写入；未使用旧演示账本。": {
+    "zh-Hant": "本輪主流程不支持申訴寫入；未使用舊演示賬本。",
+    "en": "Appeal writes are not supported in this stage; the historical demo ledger is not used."
+  },
+  "AI 待接入，风险分数留空。独立人工必须核对原件；prepare、sign、submit 分开点击，不自动执行资金。": {
+    "zh-Hant": "AI 待接入，風險分數留空。獨立人工必須核對原件；prepare、sign、submit 分開點擊，不自動執行資金。",
+    "en": "AI integration is pending; risk scores stay blank. An independent reviewer must verify originals. Prepare, sign and submit are separate actions; funds are not executed automatically."
+  },
+  "资金保持冻结。采购单、发票与收货确认完成，最终独立人工审批后才释放给基金会。": {
+    "zh-Hant": "資金保持凍結。採購單、發票與收貨確認完成，最終獨立人工審批後才釋放給基金會。",
+    "en": "Funds stay locked. They are released to the Foundation only after purchase orders, invoices, receipt confirmation and final independent human approval are complete."
+  },
+  "选择真实 PDF / JPG / PNG 原件，每个最多 2 MB": {
+    "zh-Hant": "選擇真實 PDF / JPG / PNG 原件，每個最多 2 MB",
+    "en": "Select original PDF / JPG / PNG files, up to 2 MB each"
+  },
+  "登记采购 PO 与两份独立需求原件": {
+    "zh-Hant": "登記採購 PO 與兩份獨立需求原件",
+    "en": "Record the purchase order and two independent request originals"
+  },
+  "发票实际金额 · mHKD（不超过预留）": {
+    "zh-Hant": "發票實際金額 · mHKD（不超過預留）",
+    "en": "Actual invoice amount · mHKD (not exceeding reservation)"
+  },
+  "登记发票与货物证据": {
+    "zh-Hant": "登記發票與貨物證據",
+    "en": "Record invoice and goods evidence"
+  },
+  "已连接本地 Anvil 链 · AI 待接入 · 无真实资金": {
+    "zh-Hant": "已連接本地 Anvil 鏈 · AI 待接入 · 無真實資金",
+    "en": "Connected to local Anvil · AI integration pending · No real funds"
+  },
+  "使用本轮受控测试账号密码": {
+    "zh-Hant": "使用本輪受控測試賬號密碼",
+    "en": "Use the controlled test account password for this instance"
+  },
+  "仅独立 human_approver，不代其他角色": {
+    "zh-Hant": "僅獨立 human_approver，不代其他角色",
+    "en": "Independent human_approver only; not acting for other roles"
+  },
+  "仅本人角色工作区": {
+    "zh-Hant": "僅本人角色工作區",
+    "en": "Your role's workspace only"
+  },
+  "語言 / Language": {
+    "zh-Hant": "語言 / Language",
+    "en": "Language"
+  },
+  "繁體中文": {
+    "zh-Hant": "繁體中文",
+    "en": "Traditional Chinese"
+  },
+  "繁体中文": {
+    "zh-Hant": "繁體中文",
+    "en": "Traditional Chinese"
+  },
+  "尚未链上确认": {
+    "zh-Hant": "尚未鏈上確認",
+    "en": "Not yet confirmed on-chain"
+  },
+  "模拟 HKD 换币": {
+    "zh-Hant": "模擬 HKD 換幣",
+    "en": "Simulated HKD-to-token conversion"
+  },
+  "基金会模拟 HKD 兑回": {
+    "zh-Hant": "基金會模擬 HKD 兑回",
+    "en": "Foundation simulated HKD redemption"
+  },
+  "未知状态": {
+    "zh-Hant": "未知狀態",
+    "en": "Unknown status"
+  },
+  "API 未提供角色": {
+    "zh-Hant": "API 未提供角色",
+    "en": "Role not provided by API"
+  },
+  "Donor 模拟 HKD 账户": {
+    "zh-Hant": "Donor 模擬 HKD 賬户",
+    "en": "Donor simulated HKD account"
+  },
+  "API 未提供钱包": {
+    "zh-Hant": "API 未提供錢包",
+    "en": "Wallet not provided by API"
+  },
+  "本项目兑换额度（以对账状态为准）": {
+    "zh-Hant": "本項目兑換額度（以對賬狀態為準）",
+    "en": "This project's conversion allowance (subject to reconciliation)"
+  },
+  "尚未连接实际 API 工作区": {
+    "zh-Hant": "尚未連接實際 API 工作區",
+    "en": "Connected API workspace not yet available"
+  },
+  "请选择采购": {
+    "zh-Hant": "請選擇採購",
+    "en": "Select a procurement"
+  },
+  "上一笔操作结果未知，请先使用相同请求编号与内容重试核对": {
+    "zh-Hant": "上一筆操作結果未知，請先使用相同請求編號與內容重試核對",
+    "en": "The previous operation outcome is unknown. Retry the same request ID and content to verify it first."
+  },
+  "重试必须保留原身份、部署、请求编号与完整内容": {
+    "zh-Hant": "重試必須保留原身份、部署、請求編號與完整內容",
+    "en": "Retries must preserve the original identity, deployment, request ID and complete content"
+  },
+  "此操作本轮尚未接入": {
+    "zh-Hant": "此操作本輪尚未接入",
+    "en": "This action is not connected in this stage"
+  },
+  "兑换报价与当前项目或部署不一致": {
+    "zh-Hant": "兑換報價與當前項目或部署不一致",
+    "en": "Conversion quote does not match the current project or deployment"
+  },
+  "报价已取得；请独立确认模拟兑换": {
+    "zh-Hant": "報價已取得；請獨立確認模擬兑換",
+    "en": "Quote received; separately confirm the simulated conversion"
+  },
+  "本次报价不可执行": {
+    "zh-Hant": "本次報價不可執行",
+    "en": "This quote cannot be executed"
+  },
+  "API 操作已登记，请查看确认状态": {
+    "zh-Hant": "API 操作已登記，請查看確認狀態",
+    "en": "API operation recorded; check its confirmation status"
+  },
+  "请选择本项目已对账且额度足够的兑换记录": {
+    "zh-Hant": "請選擇本項目已對賬且額度足夠的兑換記錄",
+    "en": "Select a reconciled conversion record for this project with sufficient allowance"
+  },
+  "等待实际 API 资金工作区…": {
+    "zh-Hant": "等待實際 API 資金工作區…",
+    "en": "Loading the connected API funds workspace…"
+  },
+  "全站持币总余额 · API 未提供": {
+    "zh-Hant": "全站持幣總餘額 · API 未提供",
+    "en": "Total token balance · Not provided by API"
+  },
+  "Foundation 累计拨款": {
+    "zh-Hant": "Foundation 累計撥款",
+    "en": "Cumulative Foundation releases"
+  },
+  "链上累计拨出 · 非钱包余额": {
+    "zh-Hant": "鏈上累計撥出 · 非錢包餘額",
+    "en": "Cumulative on-chain releases · Not a wallet balance"
+  },
+  "模拟 HKD 累计兑回": {
+    "zh-Hant": "模擬 HKD 累計兑回",
+    "en": "Cumulative simulated HKD redemption"
+  },
+  "已对账兑回汇总 · 非钱包余额": {
+    "zh-Hant": "已對賬兑回彙總 · 非錢包餘額",
+    "en": "Reconciled redemption total · Not a wallet balance"
+  },
+  "我的模拟币余额 · API 未提供": {
+    "zh-Hant": "我的模擬幣餘額 · API 未提供",
+    "en": "My mock token balance · Not provided by API"
+  },
+  "全站 Donor 冻结 HKD：API 未提供汇总": {
+    "zh-Hant": "全站 Donor 凍結 HKD：API 未提供彙總",
+    "en": "Total locked donor HKD: aggregate not provided by API"
+  },
+  "个人冻结金额见模拟账户；兑换由后台独立确认": {
+    "zh-Hant": "個人凍結金額見模擬賬户；兑換由後台獨立確認",
+    "en": "See your simulated account for locked amounts; conversion is confirmed separately by the backend"
+  },
+  "已记录累计流向": {
+    "zh-Hant": "已記錄累計流向",
+    "en": "Recorded cumulative flows"
+  },
+  "API 尚未提供全站钱包余额。你只能把本项目已对账的兑换额度独立捐入项目；模拟 HKD 冻结与后台铸币确认分别记录。": {
+    "zh-Hant": "API 尚未提供全站錢包餘額。你只能把本項目已對賬的兑換額度獨立捐入項目；模擬 HKD 凍結與後台鑄幣確認分別記錄。",
+    "en": "The API does not provide a global wallet balance. You can independently donate only this project's reconciled conversion allowance. Simulated HKD locking and backend mint confirmation are recorded separately."
+  },
+  "这是本项目链上累计拨给基金会的金额，并非基金会当前钱包余额。Recipient 负责独立验收；拨款不代表供应商已付款。": {
+    "zh-Hant": "這是本項目鏈上累計撥給基金會的金額，並非基金會當前錢包餘額。Recipient 負責獨立驗收；撥款不代表供應商已付款。",
+    "en": "This is the project's cumulative on-chain release to the Foundation, not its current wallet balance. The Recipient independently confirms delivery; a release does not mean the supplier is paid."
+  },
+  "这里只汇总本项目已对账的模拟 HKD 兑回记录，并非兑付钱包余额。供应商模拟付款及人工结算确认仍是后续独立动作。": {
+    "zh-Hant": "這裏只彙總本項目已對賬的模擬 HKD 兑回記錄，並非兑付錢包餘額。供應商模擬付款及人工結算確認仍是後續獨立動作。",
+    "en": "This totals the project's reconciled simulated HKD redemptions, not a redemption wallet balance. Simulated supplier payment and human settlement confirmation remain separate later actions."
+  },
+  "链上累计捐入": {
+    "zh-Hant": "鏈上累計捐入",
+    "en": "Cumulative on-chain donations"
+  },
+  "累计退回": {
+    "zh-Hant": "累計退回",
+    "en": "Cumulative returns"
+  },
+  "累计拨出": {
+    "zh-Hant": "累計撥出",
+    "en": "Cumulative releases"
+  },
+  "等待链上账本": {
+    "zh-Hant": "等待鏈上賬本",
+    "en": "Awaiting chain ledger"
+  },
+  "链上账本一致": {
+    "zh-Hant": "鏈上賬本一致",
+    "en": "Chain ledger reconciled"
+  },
+  "使用相同请求编号与内容重试": {
+    "zh-Hant": "使用相同請求編號與內容重試",
+    "en": "Retry the same request ID and content"
+  },
+  "先取得报价并独立确认兑换；后台对账完成后才能捐入项目。": {
+    "zh-Hant": "先取得報價並獨立確認兑換；後台對賬完成後才能捐入項目。",
+    "en": "Get a quote and separately confirm conversion first. Donate to the project only after backend reconciliation is complete."
+  },
+  "取得模拟兑换报价": {
+    "zh-Hant": "取得模擬兑換報價",
+    "en": "Get simulated conversion quote"
+  },
+  "手续费": {
+    "zh-Hant": "手續費",
+    "en": "Fee"
+  },
+  "确认模拟 HKD 兑换": {
+    "zh-Hant": "確認模擬 HKD 兑換",
+    "en": "Confirm simulated HKD conversion"
+  },
+  "本项目已对账兑换": {
+    "zh-Hant": "本項目已對賬兑換",
+    "en": "Reconciled conversions for this project"
+  },
+  "选择已对账兑换记录": {
+    "zh-Hant": "選擇已對賬兑換記錄",
+    "en": "Select a reconciled conversion record"
+  },
+  "退款与 Donor 换回 HKD 本轮尚未接入。": {
+    "zh-Hant": "退款與 Donor 換回 HKD 本輪尚未接入。",
+    "en": "Refunds and donor HKD redemption are not connected in this stage."
+  },
+  "换回模拟 HKD · 本轮尚未接入": {
+    "zh-Hant": "換回模擬 HKD · 本輪尚未接入",
+    "en": "Redeem simulated HKD · Not connected in this stage"
+  },
+  "基金会模拟兑付与供应商付款": {
+    "zh-Hant": "基金會模擬兑付與供應商付款",
+    "en": "Foundation simulated redemption and supplier payment"
+  },
+  "人工放款批准后独立执行；兑回、模拟供应商付款与人工结算确认分别记录。": {
+    "zh-Hant": "人工放款批准後獨立執行；兑回、模擬供應商付款與人工結算確認分別記錄。",
+    "en": "Execute separately after human release approval. Redemption, simulated supplier payment and human settlement confirmation are recorded separately."
+  },
+  "选择采购": {
+    "zh-Hant": "選擇採購",
+    "en": "Select procurement"
+  },
+  "当前绑定发票金额": {
+    "zh-Hant": "當前綁定發票金額",
+    "en": "Current bound invoice amount"
+  },
+  "执行已独立人工批准的放款": {
+    "zh-Hant": "執行已獨立人工批准的放款",
+    "en": "Execute independently approved release"
+  },
+  "取得模拟兑回报价": {
+    "zh-Hant": "取得模擬兑回報價",
+    "en": "Get simulated redemption quote"
+  },
+  "确认模拟 HKD 兑回": {
+    "zh-Hant": "確認模擬 HKD 兑回",
+    "en": "Confirm simulated HKD redemption"
+  },
+  "执行模拟供应商付款": {
+    "zh-Hant": "執行模擬供應商付款",
+    "en": "Execute simulated supplier payment"
+  },
+  "记录已对账结算证据": {
+    "zh-Hant": "記錄已對賬結算證據",
+    "en": "Record reconciled settlement evidence"
+  },
+  "执行已独立人工批准的结算": {
+    "zh-Hant": "執行已獨立人工批准的結算",
+    "en": "Execute independently approved settlement"
+  },
+  "等待 API 确认": {
+    "zh-Hant": "等待 API 確認",
+    "en": "Awaiting API confirmation"
+  },
+  "暂停、关闭与退款本轮尚未接入。": {
+    "zh-Hant": "暫停、關閉與退款本輪尚未接入。",
+    "en": "Pause, closure and refunds are not connected in this stage."
+  },
+  "建立采购 → 风险证据（AI 待接）→ 独立人工审批 → 预算预留 → 发票与收货证据 → 独立人工放款审批。": {
+    "zh-Hant": "建立採購 → 風險證據（AI 待接）→ 獨立人工審批 → 預算預留 → 發票與收貨證據 → 獨立人工放款審批。",
+    "en": "Create procurement → risk evidence (AI pending) → independent human approval → budget reservation → invoice and receipt evidence → independent human release approval."
+  },
+  "外部凭证核账本轮尚未接入；人工审批仍须分别准备、签名和提交。": {
+    "zh-Hant": "外部憑證核賬本輪尚未接入；人工審批仍須分別準備、簽名和提交。",
+    "en": "External evidence reconciliation is not connected in this stage. Human approvals still require separate preparation, signing and submission."
+  },
+  "核准关闭并计算退款 · 本轮尚未接入": {
+    "zh-Hant": "核准關閉並計算退款 · 本輪尚未接入",
+    "en": "Approve closure and calculate refunds · Not connected in this stage"
+  },
+  "取消采购与释放预留本轮尚未接入。": {
+    "zh-Hant": "取消採購與釋放預留本輪尚未接入。",
+    "en": "Procurement cancellation and reservation release are not connected in this stage."
+  },
+  "本项目兑换处理状态 · 后台独立对账": {
+    "zh-Hant": "本項目兑換處理狀態 · 後台獨立對賬",
+    "en": "Project conversion status · Independent backend reconciliation"
+  },
+  "读取实际确认状态": {
+    "zh-Hant": "讀取實際確認狀態",
+    "en": "Load actual confirmation status"
+  },
+  "取消与解冻尚未接入": {
+    "zh-Hant": "取消與解凍尚未接入",
+    "en": "Cancellation and unlocking are not connected"
+  },
+  "可追溯 API 兑换与付款记录": {
+    "zh-Hant": "可追溯 API 兑換與付款記錄",
+    "en": "Traceable API conversion and payment records"
+  },
+  "凭证 Hash": {
+    "zh-Hant": "憑證 Hash",
+    "en": "Evidence hash"
+  },
+  "见 API 关联凭证；未提供 Hash": {
+    "zh-Hant": "見 API 關聯憑證；未提供 Hash",
+    "en": "See linked API evidence; hash not provided"
+  },
+  "API 未提供时间": {
+    "zh-Hant": "API 未提供時間",
+    "en": "Time not provided by API"
+  },
+  "当前角色没有可见的兑换或付款记录；项目捐款以链上账本为准。": {
+    "zh-Hant": "當前角色沒有可見的兑換或付款記錄；項目捐款以鏈上賬本為準。",
+    "en": "No conversion or payment records are visible to this role. Project donations follow the chain ledger."
+  },
+  "资金记录来自当前 API、Anvil 项目账本与模拟 Payment；放款不等于供应商付款。": {
+    "zh-Hant": "資金記錄來自當前 API、Anvil 項目賬本與模擬 Payment；放款不等於供應商付款。",
+    "en": "Funds records come from the current API, Anvil project ledger and simulated Payment service. Release is not supplier payment."
+  },
+  "读取于": {
+    "zh-Hant": "讀取於",
+    "en": "Loaded at"
+  },
+  "金额超出原页面整数范围；请使用精确 API 金额": {
+    "zh-Hant": "金額超出原頁面整數範圍；請使用精確 API 金額",
+    "en": "Amount exceeds the original page's integer range; use an exact API amount"
+  },
+  "金额须为安全的 HKD 分整数": {
+    "zh-Hant": "金額須為安全的 HKD 分整數",
+    "en": "Amount must be a safe integer of HKD cents"
+  },
+  "链外草稿，尚未创建": {
+    "zh-Hant": "鏈外草稿，尚未創建",
+    "en": "Off-chain draft; not yet created"
+  },
+  "创建排队，尚未确认": {
+    "zh-Hant": "創建排隊，尚未確認",
+    "en": "Creation queued; not yet confirmed"
+  },
+  "采购已创建，待 PO 证据": {
+    "zh-Hant": "採購已創建，待 PO 證據",
+    "en": "Procurement created; awaiting PO evidence"
+  },
+  "PO 已登记，AI 入口待接入": {
+    "zh-Hant": "PO 已登記，AI 入口待接入",
+    "en": "PO recorded; AI integration pending"
+  },
+  "采购风险证据已登记，待独立人工审批": {
+    "zh-Hant": "採購風險證據已登記，待獨立人工審批",
+    "en": "Procurement risk evidence recorded; awaiting independent human approval"
+  },
+  "人工预留票已登记，待执行": {
+    "zh-Hant": "人工預留票已登記，待執行",
+    "en": "Human reservation authorization recorded; awaiting execution"
+  },
+  "预算已预留，资金仍在 Escrow": {
+    "zh-Hant": "預算已預留，資金仍在 Escrow",
+    "en": "Budget reserved; funds remain in Escrow"
+  },
+  "发票已登记，待受捐机构确认收货": {
+    "zh-Hant": "發票已登記，待受捐機構確認收貨",
+    "en": "Invoice recorded; awaiting Recipient receipt confirmation"
+  },
+  "收货已确认，资金仍在 Escrow": {
+    "zh-Hant": "收貨已確認，資金仍在 Escrow",
+    "en": "Receipt confirmed; funds remain in Escrow"
+  },
+  "最终风险证据已登记，待人工放款审批": {
+    "zh-Hant": "最終風險證據已登記，待人工放款審批",
+    "en": "Final risk evidence recorded; awaiting human release approval"
+  },
+  "人工放款票已登记，待执行": {
+    "zh-Hant": "人工放款票已登記，待執行",
+    "en": "Human release authorization recorded; awaiting execution"
+  },
+  "已放款到基金会，供应商尚未完成结算": {
+    "zh-Hant": "已放款到基金會，供應商尚未完成結算",
+    "en": "Released to Foundation; supplier settlement is not complete"
+  },
+  "模拟付款证据已登记，待人工结算审批": {
+    "zh-Hant": "模擬付款證據已登記，待人工結算審批",
+    "en": "Simulated payment evidence recorded; awaiting human settlement approval"
+  },
+  "人工结算票已登记，待执行确认": {
+    "zh-Hant": "人工結算票已登記，待執行確認",
+    "en": "Human settlement authorization recorded; awaiting execution confirmation"
+  },
+  "模拟供应商付款及结算已确认": {
+    "zh-Hant": "模擬供應商付款及結算已確認",
+    "en": "Simulated supplier payment and settlement confirmed"
+  },
+  "采购已取消": {
+    "zh-Hant": "採購已取消",
+    "en": "Procurement cancelled"
+  },
+  "此页面不属于当前 API 身份": {
+    "zh-Hant": "此頁面不屬於當前 API 身份",
+    "en": "This page does not belong to the current API identity"
+  },
+  "名称未提供": {
+    "zh-Hant": "名稱未提供",
+    "en": "Name not provided"
+  },
+  "项目付款总额超出原页面整数范围": {
+    "zh-Hant": "項目付款總額超出原頁面整數範圍",
+    "en": "Project payment total exceeds the original page's integer range"
+  },
+  "本地配置的固定模拟供应商": {
+    "zh-Hant": "本地配置的固定模擬供應商",
+    "en": "Locally configured fixed mock supplier"
+  },
+  "连接中断，结果未知。请保留同一请求编号与内容核对或重试。": {
+    "zh-Hant": "連接中斷，結果未知。請保留同一請求編號與內容核對或重試。",
+    "en": "Connection interrupted; outcome unknown. Keep the same request ID and content to verify or retry."
+  },
+  "A2 请求失败；未使用演示回退": {
+    "zh-Hant": "A2 請求失敗；未使用演示回退",
+    "en": "A2 request failed; no demo fallback was used"
+  },
+  "当前身份或部署已改变；请重新加载后核对本次操作": {
+    "zh-Hant": "當前身份或部署已改變；請重新加載後核對本次操作",
+    "en": "Current identity or deployment changed; reload and verify this operation"
+  },
+  "此原页面操作没有可用 API；未写入本地演示记录": {
+    "zh-Hant": "此原頁面操作沒有可用 API；未寫入本地演示記錄",
+    "en": "No API is available for this original page action; no local demo record was written"
+  },
+  "此操作需要专用身份或证据接口": {
+    "zh-Hant": "此操作需要專用身份或證據接口",
+    "en": "This action requires a dedicated identity or evidence endpoint"
+  },
+  "请明确确认本次独立操作": {
+    "zh-Hant": "請明確確認本次獨立操作",
+    "en": "Explicitly confirm this independent action"
+  },
+  "真实 AI 入口尚未接入；不自动提交 synthetic 风险报告": {
+    "zh-Hant": "真實 AI 入口尚未接入；不自動提交 synthetic 風險報告",
+    "en": "Real AI entry point is not connected; synthetic risk reports are not submitted automatically"
+  },
+  "金额传输须为精确整数字符串": {
+    "zh-Hant": "金額傳輸須為精確整數字符串",
+    "en": "Amounts must be transmitted as exact integer strings"
+  },
+  "请选择对应的独立证据类别": {
+    "zh-Hant": "請選擇對應的獨立證據類別",
+    "en": "Select the corresponding independent evidence category"
+  },
+  "证据须为 10 MB 内的 PDF、PNG 或 JPEG": {
+    "zh-Hant": "證據須為 10 MB 內的 PDF、PNG 或 JPEG",
+    "en": "Evidence must be PDF, PNG or JPEG, no larger than 10 MB"
+  },
+  "身份或部署已改变，请重新加载当前工作区": {
+    "zh-Hant": "身份或部署已改變，請重新加載當前工作區",
+    "en": "Identity or deployment changed; reload the current workspace"
+  },
+  "请求已登记": {
+    "zh-Hant": "請求已登記",
+    "en": "Request recorded"
+  },
+  "以实际对账及链上确认状态为准": {
+    "zh-Hant": "以實際對賬及鏈上確認狀態為準",
+    "en": "Subject to actual reconciliation and chain confirmation"
+  },
+  "处理中": {
+    "zh-Hant": "處理中",
+    "en": "Processing"
+  },
+  "已广播": {
+    "zh-Hant": "已廣播",
+    "en": "Broadcast"
+  },
+  "等待链上确认": {
+    "zh-Hant": "等待鏈上確認",
+    "en": "Awaiting chain confirmation"
+  },
+  "已对账": {
+    "zh-Hant": "已對賬",
+    "en": "Reconciled"
+  },
+  "需要核对": {
+    "zh-Hant": "需要核對",
+    "en": "Needs verification"
+  },
+  "操作失败": {
+    "zh-Hant": "操作失敗",
+    "en": "Operation failed"
+  },
+  "部署实例已失效": {
+    "zh-Hant": "部署實例已失效",
+    "en": "Deployment instance expired"
+  },
+  "模拟 HKD 已冻结": {
+    "zh-Hant": "模擬 HKD 已凍結",
+    "en": "Simulated HKD locked"
+  },
+  "已提交链上交易": {
+    "zh-Hant": "已提交鏈上交易",
+    "en": "Chain transaction submitted"
+  },
+  "资金操作已完成": {
+    "zh-Hant": "資金操作已完成",
+    "en": "Funds operation completed"
+  },
+  "独立人工预留批准；不自动执行资金": {
+    "zh-Hant": "獨立人工預留批准；不自動執行資金",
+    "en": "Independent human reservation approval; no automatic funds execution"
+  },
+  "独立人工放款批准；不自动执行资金": {
+    "zh-Hant": "獨立人工放款批准；不自動執行資金",
+    "en": "Independent human release approval; no automatic funds execution"
+  },
+  "独立人工结算批准；不自动执行资金": {
+    "zh-Hant": "獨立人工結算批准；不自動執行資金",
+    "en": "Independent human settlement approval; no automatic funds execution"
+  },
+  "off_chain_draft": {
+    "zh-Hant": "鏈外草稿",
+    "en": "Off-chain draft"
+  },
+  "creation_queued": {
+    "zh-Hant": "建立排隊中",
+    "en": "Creation queued"
+  },
+  "created": {
+    "zh-Hant": "已建立",
+    "en": "Created"
+  },
+  "po_recorded": {
+    "zh-Hant": "採購單已登記",
+    "en": "PO recorded"
+  },
+  "pre_assessed": {
+    "zh-Hant": "採購前風險已評估",
+    "en": "Pre-purchase risk assessed"
+  },
+  "reserve_approval_pending": {
+    "zh-Hant": "預留授權已登記，待執行",
+    "en": "Reservation approval recorded; execution pending"
+  },
+  "reserved": {
+    "zh-Hant": "已預留",
+    "en": "Reserved"
+  },
+  "invoice_recorded": {
+    "zh-Hant": "發票已登記",
+    "en": "Invoice recorded"
+  },
+  "receipt_confirmed": {
+    "zh-Hant": "收貨已確認",
+    "en": "Receipt confirmed"
+  },
+  "final_assessed": {
+    "zh-Hant": "最終風險已評估",
+    "en": "Final risk assessed"
+  },
+  "release_approval_pending": {
+    "zh-Hant": "放款授權已登記，待執行",
+    "en": "Release approval recorded; execution pending"
+  },
+  "funds_released": {
+    "zh-Hant": "已釋放給基金會",
+    "en": "Released to Foundation"
+  },
+  "settlement_recorded": {
+    "zh-Hant": "結算證據已登記",
+    "en": "Settlement evidence recorded"
+  },
+  "settlement_approval_pending": {
+    "zh-Hant": "結算授權已登記，待執行",
+    "en": "Settlement approval recorded; execution pending"
+  },
+  "payment_confirmed": {
+    "zh-Hant": "供應商付款及結算已確認",
+    "en": "Supplier payment and settlement confirmed"
+  },
+  "active": {
+    "zh-Hant": "進行中",
+    "en": "Active"
+  },
+  "draft": {
+    "zh-Hant": "草稿",
+    "en": "Draft"
+  },
+  "cancelled": {
+    "zh-Hant": "已取消",
+    "en": "Cancelled"
+  },
+  "closed": {
+    "zh-Hant": "已關閉",
+    "en": "Closed"
+  },
+  "prepared": {
+    "zh-Hant": "已準備",
+    "en": "Prepared"
+  },
+  "signed": {
+    "zh-Hant": "已簽署",
+    "en": "Signed"
+  },
+  "submitted": {
+    "zh-Hant": "已提交",
+    "en": "Submitted"
+  },
+  "expired": {
+    "zh-Hant": "已過期",
+    "en": "Expired"
+  },
+  "failed": {
+    "zh-Hant": "失敗",
+    "en": "Failed"
+  },
+  "reserve": {
+    "zh-Hant": "預算預留",
+    "en": "Budget reservation"
+  },
+  "receipt": {
+    "zh-Hant": "收貨確認",
+    "en": "Receipt confirmation"
+  },
+  "release": {
+    "zh-Hant": "基金會放款",
+    "en": "Foundation release"
+  },
+  "settlement": {
+    "zh-Hant": "結算",
+    "en": "Settlement"
+  },
+  "purchase_order": {
+    "zh-Hant": "採購單",
+    "en": "Purchase order"
+  },
+  "request": {
+    "zh-Hant": "採購需求",
+    "en": "Purchase request"
+  },
+  "goods_request": {
+    "zh-Hant": "貨物需求",
+    "en": "Goods request"
+  },
+  "invoice": {
+    "zh-Hant": "發票",
+    "en": "Invoice"
+  },
+  "goods_evidence": {
+    "zh-Hant": "貨物證據",
+    "en": "Goods evidence"
+  },
+  "receipt_evidence": {
+    "zh-Hant": "收貨證據",
+    "en": "Receipt evidence"
+  },
+  "funding": {
+    "zh-Hant": "HKD 換模擬幣",
+    "en": "HKD-to-token conversion"
+  },
+  "redemption": {
+    "zh-Hant": "兌回 HKD",
+    "en": "HKD redemption"
+  },
+  "supplier_payment": {
+    "zh-Hant": "供應商付款",
+    "en": "Supplier payment"
+  },
+  "queued": {
+    "zh-Hant": "排隊中",
+    "en": "Queued"
+  },
+  "pending": {
+    "zh-Hant": "待處理",
+    "en": "Pending"
+  },
+  "reconciled": {
+    "zh-Hant": "已對賬",
+    "en": "Reconciled"
+  },
+  "未支持的链状态：": {
+    "zh-Hant": "未支持的鏈狀態：",
+    "en": "Unsupported chain state: "
+  },
+  "可人工审核": {
+    "zh-Hant": "可人工審核",
+    "en": "Ready for human review"
+  },
+  "等待 AI 接入": {
+    "zh-Hant": "等待 AI 接入",
+    "en": "Awaiting AI integration"
+  },
+  "未执行": {
+    "zh-Hant": "未執行",
+    "en": "Not executed"
+  },
+  "已确认": {
+    "zh-Hant": "已確認",
+    "en": "Confirmed"
+  },
+  "AI 诊断列表暂不可用": {
+    "zh-Hant": "AI 診斷列表暫不可用",
+    "en": "AI diagnostics list is temporarily unavailable"
+  },
+  "身份或部署已改变；旧诊断不能提交到新的实例。": {
+    "zh-Hant": "身分或部署已改變；舊診斷不能提交到新的實例。",
+    "en": "Identity or deployment changed; the previous diagnostic cannot be submitted to a new instance."
+  },
+  "AI 诊断请求失败": {
+    "zh-Hant": "AI 診斷請求失敗",
+    "en": "AI diagnostic request failed"
+  },
+  "AI 文档诊断": {
+    "zh-Hant": "AI 文件診斷",
+    "en": "AI document diagnostic"
+  },
+  "不自动审批": {
+    "zh-Hant": "不自動審批",
+    "en": "No automatic approval"
+  },
+  "真实 Qwen 诊断独立于链上 AI 评估；不签署、不改变采购风险或阶段、不执行预留或放款。FINAL 诊断本轮不支持。": {
+    "zh-Hant": "真實 Qwen 診斷獨立於鏈上 AI 評估；不簽署、不改變採購風險或階段、不執行預留或放款。FINAL 診斷本輪不支持。",
+    "en": "Real Qwen diagnostics are separate from on-chain AI assessments. They do not sign, change procurement risk or stage, reserve funds, or release funds. FINAL diagnostics are not supported in this version."
+  },
+  "后台执行终点（浏览器不直接连接）": {
+    "zh-Hant": "後台執行端點（瀏覽器不直接連接）",
+    "en": "Backend execution endpoint (not contacted directly by the browser)"
+  },
+  "将发送本采购链上绑定的 PO、request、goods_request 原件字节及明确声明的诊断上下文；后台再次核验原件版本与 Hash。不会上传到 GitHub。": {
+    "zh-Hant": "將發送本採購鏈上綁定的 PO、request、goods_request 原件位元組及明確聲明的診斷上下文；後台再次核驗原件版本與 Hash。不會上傳到 GitHub。",
+    "en": "The original bytes of this procurement's on-chain-bound PO, request and goods_request, together with explicitly declared diagnostic context, will be sent. The backend rechecks original versions and hashes. Nothing is uploaded to GitHub."
+  },
+  "选择确切采购单原件版本": {
+    "zh-Hant": "選擇確切採購單原件版本",
+    "en": "Select the exact original purchase order version"
+  },
+  "本轮三份链上绑定原件均须为 PNG / JPEG；PDF 诊断未接入。上传或选择文件不自动运行模型。": {
+    "zh-Hant": "本輪三份鏈上綁定原件均須為 PNG / JPEG；PDF 診斷未接入。上傳或選擇文件不自動運行模型。",
+    "en": "All three on-chain-bound originals must be PNG / JPEG in this version. PDF diagnostics are not integrated. Uploading or selecting files does not automatically run the model."
+  },
+  "诊断上下文（不是项目或链上政策）": {
+    "zh-Hant": "診斷上下文（不是項目或鏈上政策）",
+    "en": "Diagnostic context (not project or on-chain policy)"
+  },
+  "上下文来源": {
+    "zh-Hant": "上下文來源",
+    "en": "Context source"
+  },
+  "本人提供的诊断上下文": {
+    "zh-Hant": "本人提供的診斷上下文",
+    "en": "Diagnostic context provided by me"
+  },
+  "明确模拟的演示诊断上下文": {
+    "zh-Hant": "明確模擬的演示診斷上下文",
+    "en": "Explicitly simulated demo diagnostic context"
+  },
+  "真实 Qwen 模型 · 模拟诊断上下文 · 不自动审批": {
+    "zh-Hant": "真實 Qwen 模型 · 模擬診斷上下文 · 不自動審批",
+    "en": "Real Qwen model · Simulated diagnostic context · No automatic approval"
+  },
+  "以下字段由调用人填写，只用于本次独立诊断，不补写项目政策、采购单或签名材料。": {
+    "zh-Hant": "以下欄位由調用人填寫，只用於本次獨立診斷，不補寫項目政策、採購單或簽名材料。",
+    "en": "These fields are supplied by the caller for this independent diagnostic only. They do not fill in project policy, the purchase order, or signing material."
+  },
+  "无法生成演示诊断上下文": {
+    "zh-Hant": "無法生成演示診斷上下文",
+    "en": "Unable to generate demo diagnostic context"
+  },
+  "使用明确模拟的演示诊断值（不运行模型）": {
+    "zh-Hant": "使用明確模擬的演示診斷值（不運行模型）",
+    "en": "Use explicitly simulated demo diagnostic values (does not run the model)"
+  },
+  "后台预算来源：Registry 当前采购预算上限": {
+    "zh-Hant": "後台預算來源：Registry 當前採購預算上限",
+    "en": "Backend budget source: current procurement budget cap in Registry"
+  },
+  "诊断数量": {
+    "zh-Hant": "診斷數量",
+    "en": "Diagnostic quantity"
+  },
+  "报价总额 · HKD": {
+    "zh-Hant": "報價總額 · HKD",
+    "en": "Total quote · HKD"
+  },
+  "诊断单价限额 · HKD": {
+    "zh-Hant": "診斷單價限額 · HKD",
+    "en": "Diagnostic unit-price limit · HKD"
+  },
+  "诊断类别": {
+    "zh-Hant": "診斷類別",
+    "en": "Diagnostic category"
+  },
+  "诊断期间开始": {
+    "zh-Hant": "診斷期間開始",
+    "en": "Diagnostic period start"
+  },
+  "诊断期间结束": {
+    "zh-Hant": "診斷期間結束",
+    "en": "Diagnostic period end"
+  },
+  "诊断说明": {
+    "zh-Hant": "診斷說明",
+    "en": "Diagnostic description"
+  },
+  "我确认上述局域网终点、三份原件版本及上下文来源，明确请求一次独立模型诊断；这不会自动审批或生成链上 AI 签名。": {
+    "zh-Hant": "我確認上述局域網端點、三份原件版本及上下文來源，明確請求一次獨立模型診斷；這不會自動審批或生成鏈上 AI 簽名。",
+    "en": "I confirm the LAN endpoint, three original versions and context source above, and explicitly request one independent model diagnostic. This does not automatically approve anything or produce an on-chain AI signature."
+  },
+  "正在请求诊断…": {
+    "zh-Hant": "正在請求診斷…",
+    "en": "Requesting diagnostic…"
+  },
+  "运行 AI 文档诊断": {
+    "zh-Hant": "運行 AI 文件診斷",
+    "en": "Run AI document diagnostic"
+  },
+  "诊断接口暂不可用": {
+    "zh-Hant": "診斷接口暫不可用",
+    "en": "Diagnostic endpoint is temporarily unavailable"
+  },
+  "等待后台诊断能力": {
+    "zh-Hant": "等待後台診斷能力",
+    "en": "Awaiting backend diagnostic availability"
+  },
+  "请选择当前链上绑定的 PO，且三份原件的后台 MIME 均为 PNG / JPEG；未运行模型。": {
+    "zh-Hant": "請選擇當前鏈上綁定的 PO，且三份原件的後台 MIME 均為 PNG / JPEG；未運行模型。",
+    "en": "Select the current on-chain-bound PO. All three originals must have PNG / JPEG MIME types verified by the backend. The model has not run."
+  },
+  "此采购不在已确认的 PRE 诊断阶段；既有报告仍可供独立人工阅读。": {
+    "zh-Hant": "此採購不在已確認的 PRE 診斷階段；既有報告仍可供獨立人工閱讀。",
+    "en": "This procurement is not in a confirmed PRE diagnostic stage. Existing reports remain available for independent human review."
+  },
+  "结果未知：同一诊断请求重试，不创建新请求": {
+    "zh-Hant": "結果未知：同一診斷請求重試，不創建新請求",
+    "en": "Outcome unknown: retry the same diagnostic request without creating a new request"
+  },
+  "真实 AI 报告 · 供独立人工参考": {
+    "zh-Hant": "真實 AI 報告 · 供獨立人工參考",
+    "en": "Real AI report · For independent human reference"
+  },
+  "报告不会自动批准资金。此处只读单份 PO 诊断，不是 FINAL 发票、货物或收货评估；原审批门控仍生效。": {
+    "zh-Hant": "報告不會自動批准資金。此處只讀單份 PO 診斷，不是 FINAL 發票、貨物或收貨評估；原審批門控仍生效。",
+    "en": "This report does not automatically approve funds. This is a read-only single-PO diagnostic, not a FINAL invoice, goods or receipt assessment. Existing approval gates remain in effect."
+  },
+  "选择本采购的诊断报告": {
+    "zh-Hant": "選擇本採購的診斷報告",
+    "en": "Select a diagnostic report for this procurement"
+  },
+  "真实报告尚未取得，不能推断 AI 已完成。": {
+    "zh-Hant": "真實報告尚未取得，不能推斷 AI 已完成。",
+    "en": "No real report has been received; AI completion cannot be assumed."
+  },
+  "诊断结果（不是人工审批）": {
+    "zh-Hant": "診斷結果（不是人工審批）",
+    "en": "Diagnostic result (not human approval)"
+  },
+  "采购单原件版本": {
+    "zh-Hant": "採購單原件版本",
+    "en": "Original purchase order version"
+  },
+  "独立诊断 operation": {
+    "zh-Hant": "獨立診斷 operation",
+    "en": "Independent diagnostic operation"
+  },
+  "真实模型执行": {
+    "zh-Hant": "真實模型執行",
+    "en": "Real model execution"
+  },
+  "尚未验证模型完成": {
+    "zh-Hant": "尚未驗證模型完成",
+    "en": "Model completion has not been verified"
+  },
+  "模拟诊断上下文": {
+    "zh-Hant": "模擬診斷上下文",
+    "en": "Simulated diagnostic context"
+  },
+  "调用人声明上下文": {
+    "zh-Hant": "調用人聲明上下文",
+    "en": "Caller-declared context"
+  },
+  "诊断上下文原值及来源": {
+    "zh-Hant": "診斷上下文原值及來源",
+    "en": "Original diagnostic context values and source"
+  },
+  "结论：Review / incomplete，不表示通过": {
+    "zh-Hant": "結論：Review / incomplete，不表示通過",
+    "en": "Outcome: Review / incomplete, not a Pass"
+  },
+  "风险分数": {
+    "zh-Hant": "風險分數",
+    "en": "Risk score"
+  },
+  "抽取字段与发现": {
+    "zh-Hant": "抽取欄位與發現",
+    "en": "Extracted fields and findings"
+  },
+  "缺失资料": {
+    "zh-Hant": "缺失資料",
+    "en": "Missing inputs"
+  },
+  "原始报告 Keccak-256": {
+    "zh-Hant": "原始報告 Keccak-256",
+    "en": "Original report Keccak-256"
+  },
+  "下载原始诊断报告": {
+    "zh-Hant": "下載原始診斷報告",
+    "en": "Download the original diagnostic report"
+  },
+  "报告供独立人工参考；不自动审批，不替代链上 AI 签名、人工票或资金释放证明。": {
+    "zh-Hant": "報告供獨立人工參考；不自動審批，不替代鏈上 AI 簽名、人工票或資金釋放證明。",
+    "en": "This report is for independent human reference. It does not automatically approve anything or replace an on-chain AI signature, a human approval vote, or proof of funds release."
+  },
+  "真实 AI 诊断报告已取得，供独立人工参考；链上 AI 评估仍待接入。prepare、sign、submit 分开点击，不自动执行资金。": {
+    "zh-Hant": "真實 AI 診斷報告已取得，供獨立人工參考；鏈上 AI 評估仍待接入。prepare、sign、submit 分開點擊，不自動執行資金。",
+    "en": "A real AI diagnostic report is available for independent human reference. On-chain AI assessments are still pending integration. Click prepare, sign and submit separately; funds are not executed automatically."
+  },
+  "链上 AI 评估待接入，风险分数留空。独立人工必须核对原件与已取得的诊断报告；prepare、sign、submit 分开点击，不自动执行资金。": {
+    "zh-Hant": "鏈上 AI 評估待接入，風險分數留空。獨立人工必須核對原件與已取得的診斷報告；prepare、sign、submit 分開點擊，不自動執行資金。",
+    "en": "On-chain AI assessments are pending integration; the risk score stays blank. The independent human reviewer must check the originals and any received diagnostic report. Click prepare, sign and submit separately; funds are not executed automatically."
+  },
+  "链上 AI 评估待接；实时诊断可用": {
+    "zh-Hant": "鏈上 AI 評估待接；即時診斷可用",
+    "en": "On-chain AI assessment pending; live diagnostic available"
+  },
+  "链上 AI 评估待接；诊断报告在采购证明与人工审计页面独立查询": {
+    "zh-Hant": "鏈上 AI 評估待接；診斷報告在採購證明與人工審計頁面獨立查詢",
+    "en": "On-chain AI assessments are pending integration; diagnostic reports are retrieved separately on the procurement evidence and human audit pages"
+  },
+  "链上 AI 评估 · 待接入": {
+    "zh-Hant": "鏈上 AI 評估 · 待接入",
+    "en": "On-chain AI assessment · Integration pending"
+  },
+  "链上 AI 评估尚未交付；独立诊断报告不生成风险分数或自动批准。": {
+    "zh-Hant": "鏈上 AI 評估尚未交付；獨立診斷報告不生成風險分數或自動批准。",
+    "en": "On-chain AI assessments have not been delivered. Independent diagnostic reports do not generate a risk score or automatically approve anything."
+  },
+  "链上 AI 评估待接入；诊断报告不自动通过审批": {
+    "zh-Hant": "鏈上 AI 評估待接入；診斷報告不自動通過審批",
+    "en": "On-chain AI assessment pending; diagnostic reports do not automatically pass approval"
+  },
+  "本地链真实交易 · 法币模拟 · 链上 AI 评估待接入": {
+    "zh-Hant": "本地鏈真實交易 · 法幣模擬 · 鏈上 AI 評估待接入",
+    "en": "Real local-chain transactions · Simulated fiat · On-chain AI assessment pending"
+  },
+  "已连接本地 Anvil 链 · 链上 AI 评估待接入 · 无真实资金": {
+    "zh-Hant": "已連接本地 Anvil 鏈 · 鏈上 AI 評估待接入 · 無真實資金",
+    "en": "Connected to local Anvil · On-chain AI assessment pending · No real funds"
+  },
+  "completed": {
+    "zh-Hant": "已完成",
+    "en": "Completed"
+  },
+  "requires_attention": {
+    "zh-Hant": "需要處理",
+    "en": "Needs attention"
   }
 }

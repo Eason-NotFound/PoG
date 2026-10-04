@@ -34,6 +34,16 @@ const define = (
   icon,
 });
 export const pages: PageDef[] = [
+  ...(["donor", "foundation", "recipient", "admin"] as Portal[]).map((portal) =>
+    define(
+      portal,
+      "funds",
+      "透明资金链",
+      "看见每一笔善款的去向",
+      "同一份账本，展示兑换、锁款、拨付、兑付与退款。",
+      "Route",
+    ),
+  ),
   define(
     "foundation",
     "evidence",

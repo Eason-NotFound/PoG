@@ -101,12 +101,14 @@ def ensure_verified_namespace(session: Session, gateway) -> DeploymentInstance:
         select(DeploymentInstance).where(
             DeploymentInstance.active.is_(True), DeploymentInstance.id != current.id,
             DeploymentInstance.mode == "verified",
-        )
+        ).order_by(DeploymentInstance.id).with_for_update()
     ).all()
     for item in stale:
         item.active = False
         from .security import utcnow
         item.invalidated_at = utcnow()
+        from .payment_domain import freeze_namespace
+        freeze_namespace(session, item, "deployment_instance_changed", invalidated=True)
         session.execute(
             Operation.__table__.update().where(
                 Operation.namespace_id == item.id,

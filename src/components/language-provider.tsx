@@ -52,12 +52,12 @@ export function LanguageSwitcher() {
       <Languages size={16} aria-hidden="true" />
       <span className="sr-only">{t("语言")}</span>
       <select
-        aria-label="語言 / Language"
+        aria-label={t("语言")}
         value={locale}
         onChange={(e) => setLocale(parseLocale(e.target.value))}
       >
         <option value="zh-Hant" lang="zh-Hant">
-          繁體中文
+          {t("繁体中文")}
         </option>
         <option value="en" lang="en">
           English
