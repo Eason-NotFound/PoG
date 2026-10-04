@@ -157,8 +157,16 @@ def full_env(tmp_path, monkeypatch):
 
 def test_full_simulated_http_funding_to_settlement(full_env):
     e=full_env
-    escrow_before=int(e.gate.call("MockHKD","balanceOf",e.gate.contract_address("ProcurementEscrowV2")))
-    treasury_before=int(e.gate.call("MockHKD","balanceOf",e.gate.roles["mockRedemption"]))
+    escrow_wallet=e.gate.contract_address("ProcurementEscrowV2")
+    foundation_wallet=e.gate.roles["foundation"]
+    treasury_wallet=e.gate.roles["mockRedemption"]
+    token_wallet=e.gate.contract_address("MockHKD")
+    def token_balances():
+        return tuple(int(e.gate.call("MockHKD","balanceOf",wallet))
+                     for wallet in (escrow_wallet,foundation_wallet,treasury_wallet))
+    # The CI suite shares this deployment. Earlier projects may have released
+    # tokens to the same Foundation; this procurement must leave them untouched.
+    escrow_before,foundation_before,treasury_before=token_balances()
     context=e.get("/v2/integration-context","foundation")
     assert context["interfaceId"]=="pog-full-demo-api-v0.1"
     assert context["defaults"]["recipientUserId"]==e.ids["recipient"]
@@ -191,6 +199,7 @@ def test_full_simulated_http_funding_to_settlement(full_env):
             {"fundingOperationId":own["operationId"],"amountAtomic":"1","confirm":True},actor,"double-credit-"+actor,409)
     ledger=e.get(f"/v2/projects/{p['id']}/ledger","foundation")
     assert ledger["depositsAtomic"]=="100000000"
+    assert token_balances()==(escrow_before+100000000,foundation_before,treasury_before)
     q=e.post("/v2/procurements",{"projectId":p["id"],"title":"Full invoice 72",
         "vendorWallet":e.gate.roles["vendor"],"budgetCapAtomic":"80000000"},"foundation","proc")["procurement"]
     path=f"/v2/procurements/{q['id']}"
@@ -221,11 +230,47 @@ def test_full_simulated_http_funding_to_settlement(full_env):
     pending=e.get(path+"/workspace","admin")
     assert pending["approval"]["liveVoteCount"]=="1" and pending["allowedActions"]["release.execute"]["enabled"] is True
     released=e.confirmed(path+"/chain/release",{},"foundation","release")
+    assert token_balances()==(escrow_before+28000000,foundation_before+72000000,treasury_before)
     state=e.get(path+"/payment-status","recipient")
     assert state["release"]["confirmed"] is True and state["supplierPayment"] is None
     quote=e.post("/v2/mock-exchanges/quote",{"direction":"mock_to_hkd","procurementId":q["id"]},"foundation","redemption-quote",200)
     assert quote["executed"] is False and quote["quote"]["hkdCents"]=="7200"
     r=e.confirmed(path+"/mock-redemption",{"confirm":True},"foundation","redeem")
+    assert token_balances()==(escrow_before+28000000,foundation_before,treasury_before+72000000)
+    # confirmed() returns the original queued response: reload the reconciled
+    # resource before independently validating its exact canonical transfer.
+    redemption=e.get("/v2/mock-exchanges/"+r["exchange"]["id"],"foundation")["exchange"]
+    assert redemption["reconciled"] is True and redemption["kind"]=="redemption"
+    assert redemption["operationId"]==r["operation"]["operationId"]
+    assert redemption["sourceOperationId"]==released["operation"]["operationId"]
+    assert redemption["procurementId"]==q["id"] and redemption["amountAtomic"]=="72000000"
+    proof=redemption["chainProof"]
+    assert proof["operationId"]==redemption["operationId"]
+    receipt,events=e.gate.receipt_with_events(proof["txHash"],"Transfer")
+    assert receipt is not None and int(receipt["status"])==1
+    assert receipt["transactionHash"].lower()==proof["txHash"].lower()
+    assert receipt["blockHash"].lower()==proof["blockHash"].lower()
+    assert int(receipt["blockNumber"])==int(proof["blockNumber"])
+    assert receipt["from"].lower()==foundation_wallet.lower()
+    assert receipt["to"].lower()==token_wallet.lower()
+    assert e.gate.canonical(int(receipt["blockNumber"]),receipt["blockHash"])
+    transfers=[event for event in events if event["address"].lower()==token_wallet.lower()]
+    assert len(transfers)==1
+    transfer=transfers[0]
+    assert transfer["args"]["from"].lower()==foundation_wallet.lower()
+    assert transfer["args"]["to"].lower()==treasury_wallet.lower()
+    assert int(transfer["args"]["value"])==72000000
+    assert int(transfer["logIndex"])==int(proof["logIndex"])
+    assert transfer["blockHash"].lower()==receipt["blockHash"].lower()
+    transaction=e.gate.w3.eth.get_transaction(proof["txHash"])
+    expected=e.gate.prepare("payment.redeem",foundation_wallet,[treasury_wallet,"72000000"],"Transfer")
+    assert e.gate.w3.to_hex(transaction["input"]).lower()==expected.data.lower()
+    assert int(transaction["value"])==0
+    block=int(receipt["blockNumber"])
+    foundation_at=lambda height:int(e.gate.call("MockHKD","balanceOf",foundation_wallet,block_identifier=height))
+    treasury_at=lambda height:int(e.gate.call("MockHKD","balanceOf",treasury_wallet,block_identifier=height))
+    assert foundation_at(block-1)-foundation_at(block)==72000000
+    assert treasury_at(block)-treasury_at(block-1)==72000000
     e.post(path+"/mock-redemption",{"confirm":True},"foundation","redeem-again",409)
     assert e.get("/v2/mock-hkd/accounts/me","foundation")["account"]["availableHkdCents"]=="7200"
     e.post(path+"/mock-supplier-payment",{"confirm":True},"admin","admin-pay",403)
@@ -265,6 +310,4 @@ def test_full_simulated_http_funding_to_settlement(full_env):
     view=e.gate.call("PoGRegistryV2","getProcurement",q["businessId"])
     assert int(view[21])==12
     assert int(e.gate.call("PoGRegistryV2","getProject",p["businessId"])[8])==0
-    assert int(e.gate.call("MockHKD","balanceOf",e.gate.contract_address("ProcurementEscrowV2")))==escrow_before+28000000
-    assert int(e.gate.call("MockHKD","balanceOf",e.gate.roles["foundation"]))==0
-    assert int(e.gate.call("MockHKD","balanceOf",e.gate.roles["mockRedemption"]))==treasury_before+72000000
+    assert token_balances()==(escrow_before+28000000,foundation_before,treasury_before+72000000)

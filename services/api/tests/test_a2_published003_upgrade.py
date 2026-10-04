@@ -192,7 +192,7 @@ def test_populated_published003_authorizations_upgrade_to004_without_rewriting_h
                 assert historical.context_json["sourceDocumentVersionId"] == str(ids["version"])
         command.upgrade(config, "head")
         with engine.connect() as connection:
-            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31003a30005"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31004a30006"
         assert hashlib.sha256(published.read_bytes()).hexdigest() == expected_sha256
     finally:
         if engine is not None:
