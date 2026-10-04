@@ -1,8 +1,30 @@
 # Blockchain Milestones
 
-Each milestone begins only after the CEO reports review results and the user
-explicitly authorizes the next milestone. This file
-describes sequencing; it authorizes no work beyond the current accepted scope.
+Updated: 2026-10-04. Published source baseline:
+`d74a7a0ef53abe32640f019ce1551bf5c2432826`.
+
+This file distinguishes blockchain milestones from current cross-module work.
+The AI project's data/model milestones are a separate sequence; their M2/M3
+names are not the blockchain M2/M3 below. Start work only within the latest
+explicit user task and review gates; this document grants no new scope.
+
+## Current lifecycle summary
+
+| Area | Published state | Remaining work |
+| --- | --- | --- |
+| M1 / M2 V2 | Accepted and archived contracts | Preserve source, ABIs, accepted tags and historical evidence |
+| M3.1 | Accepted local deployment | Check the actual manifest/instance when starting elsewhere |
+| API A2 | Published at `api-v0.2.0-a2` / merge `4c9f1a4` | Existing HTTP flow stops at `ReceiptConfirmed` |
+| M3.2 tools | Published local API/chain verification code / merge `0014f37` | Broader frontend/model/payment integration is a separate scope |
+| AI interface | Frozen R2 format and A2 mapping / merge `d74a7a0` | Runtime source, trusted report storage, scoring policy and signing integration |
+| Portal / service loop | Portal demo published; scoped local model work is separate | Shared API adapter, final release/settlement and Allocation/Merkle integration |
+| Full prototype / booth | End-to-end acceptance not established | Actual UI/API/database/model/chain trace, failure/retry/role checks |
+
+Historical instructions below record what each milestone authorized at the
+time. Later A2/M3.2 publications supersede the old blanket onboarding-only stop
+within their approved scopes; neither they nor this update automatically approve
+all later work. See [current status](STATUS.md) and
+[project overview](PROJECT_OVERVIEW.md) for the cross-module boundary.
 
 ## M0/M0.1 — specification and Foundry skeleton (accepted)
 
@@ -95,21 +117,34 @@ recheck: 32/32 local unit/live cases (36.843 seconds), 81/81 Solidity regression
 M1 15/15, M2 18/18, five ABI checks and push guard 12/12 passed. Status records
 use a separate PR/CI. Report and STOP; this does not authorize M3.2.
 
-### M3.2 — API/relayer hand-off (planned, not authorized)
+### M3.2 — local API/chain tools (published; broader integration pending)
 
-ABI/typed-data/nonce/deadline integration, idempotent submission, confirmed-event
-read model and deployment-instance/cache invalidation with the API/database team.
+Later authorized work published the isolated M3.2 verifier and related tests in
+merge `0014f37`. The accepted API A2 baseline is `api-v0.2.0-a2` at `4c9f1a4`.
+It includes ABI/typed-data/nonce/deadline integration, idempotent submission,
+confirmed-event read models and deployment-instance/cache invalidation, limited
+to the local synthetic workflow ending at Recipient `ReceiptConfirmed`.
+The published tools do not establish real Qwen, final release/payment or portal
+integration. Use [A2 status](api/A2_STATUS.md) for the API capability boundary.
 
-### M3.3 — AI/human/payment service loop (planned, not authorized)
+### M3.3 — AI/human/payment service loop (scoped work; integration pending)
 
 Integrate actual off-chain risk reports, Recipient signature, final human
 decisions, Foundation release and separate simulated supplier-payment attestation
-with the AI/API/payment teams. Do not claim M3.1 runs these services.
+with the AI/API/payment teams. The frozen AI interface is published; a limited
+local stage-0 Qwen diagnostic path is separate and not yet published on main.
+Actual trusted reports, scoring/signing gates and the final API payment tail
+remain to be connected. Do not claim M3.1 or the offline AI tools run these
+services; further implementation follows the specific current user task.
 
-### M3.4 — three-computer booth acceptance (planned, not authorized)
+### M3.4 — full prototype / multi-client acceptance (not yet established)
 
 Foundation/Recipient/Donor interfaces share one API/chain; normal/failure/refund
 paths, cold start and supervised reset are rehearsed with the other teams.
+Published preparation documents are plans, not a record of that acceptance.
+Require an exact integrated version and actual frontend input, API operations,
+database changes, model execution, receipts/events and final Donor output.
+Any mock or unsupported step must remain explicit.
 
 ## M4 — Base Sepolia demo readiness
 
