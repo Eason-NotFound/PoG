@@ -142,7 +142,7 @@ def test_empty_migration_downgrade_reupgrade_and_ready_gate(tmp_path, monkeypatc
             with pytest.raises(RuntimeError, match="forward-only"):
                 command.downgrade(config, "c31003a20003")
             with target_engine.connect() as connection:
-                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31003a20004"
+                assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "c31003a30005"
         finally:
             target_engine.dispose()
     finally:

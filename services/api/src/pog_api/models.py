@@ -37,6 +37,14 @@ ROLE_NAMES = (
 )
 
 
+def signing_nonce_family(kind: str) -> str:
+    return {
+        "ai_pre": "registry_ai", "ai_final": "registry_ai",
+        "receipt": "registry_recipient", "reserve": "escrow_human",
+        "release": "escrow_human", "settlement": "escrow_human",
+    }[kind]
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -166,7 +174,8 @@ class Procurement(TimestampMixin, Base):
             "'reserve_queued','reserved','invoice_queued','invoice_recorded','receipt_queued',"
             "'receipt_confirmed','final_assessed','release_approval_pending','funds_released',"
             "'settlement_recorded','settlement_approval_pending','payment_confirmed',"
-            "'cancellation_approval_pending','cancelled')",
+            "'cancellation_approval_pending','cancelled','ai_final_queued','release_vote_queued',"
+            "'release_queued','settlement_queued','settlement_vote_queued','settlement_confirmation_queued')",
             name="ck_a2_proc_chain_status",
         ),
         CheckConstraint("business_id ~ '^0x[0-9a-f]{64}$'", name="ck_proc_business_id"),
@@ -176,6 +185,7 @@ class Procurement(TimestampMixin, Base):
         ),
         CheckConstraint(f"reserved_amount_atomic >= 0 AND reserved_amount_atomic <= {UINT256_MAX}", name="ck_proc_reserved_uint256"),
         CheckConstraint(f"invoice_amount_atomic >= 0 AND invoice_amount_atomic <= {UINT256_MAX}", name="ck_proc_invoice_uint256"),
+        CheckConstraint(f"returned_amount_atomic >= 0 AND returned_amount_atomic <= {UINT256_MAX}", name="ck_proc_returned_uint256"),
     )
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     namespace_id: Mapped[UUID] = mapped_column(
@@ -200,6 +210,13 @@ class Procurement(TimestampMixin, Base):
     invoice_amount_atomic: Mapped[Decimal | None] = mapped_column(Numeric(78, 0))
     goods_hash: Mapped[str | None] = mapped_column(String(66))
     receipt_digest: Mapped[str | None] = mapped_column(String(66))
+    final_evidence_hash: Mapped[str | None] = mapped_column(String(66))
+    final_assessment_id: Mapped[str | None] = mapped_column(String(66))
+    conversion_evidence_hash: Mapped[str | None] = mapped_column(String(66))
+    payment_evidence_hash: Mapped[str | None] = mapped_column(String(66))
+    settlement_hash: Mapped[str | None] = mapped_column(String(66))
+    returned_amount_atomic: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False, default=0, server_default="0")
+    source_versions_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     chain_tx_hash: Mapped[str | None] = mapped_column(String(66))
     chain_block_number: Mapped[int | None] = mapped_column(BigInteger)
 
@@ -207,6 +224,7 @@ class Procurement(TimestampMixin, Base):
 class Operation(TimestampMixin, Base):
     __tablename__ = "operations"
     __table_args__ = (
+        UniqueConstraint("id", "namespace_id", name="uq_operation_id_namespace"),
         UniqueConstraint(
             "namespace_id",
             "principal_id",
@@ -251,6 +269,8 @@ class OperationStep(TimestampMixin, Base):
     __tablename__ = "operation_steps"
     __table_args__ = (
         UniqueConstraint("operation_id", "step_index", name="uq_operation_step_index"),
+        CheckConstraint("executor IN ('chain','payment')", name="ck_step_executor"),
+        Index("ix_step_executor_queue", "executor", "status"),
     )
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     operation_id: Mapped[UUID] = mapped_column(
@@ -258,6 +278,7 @@ class OperationStep(TimestampMixin, Base):
     )
     step_index: Mapped[int] = mapped_column(Integer, nullable=False)
     kind: Mapped[str] = mapped_column(String(80), nullable=False)
+    executor: Mapped[str] = mapped_column(String(16), nullable=False, default="chain", server_default="chain")
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     detail: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
@@ -362,6 +383,7 @@ class ApprovalRecord(TimestampMixin, Base):
 class ChainTransaction(TimestampMixin, Base):
     __tablename__ = "chain_transactions"
     __table_args__ = (
+        UniqueConstraint("id", "namespace_id", name="uq_chain_tx_id_namespace"),
         UniqueConstraint("step_id", name="uq_chain_tx_step"),
         Index(
             "uq_chain_tx_caller_nonce",
@@ -404,10 +426,11 @@ class SigningRequest(TimestampMixin, Base):
         UniqueConstraint("operation_id", name="uq_signing_request_operation"),
         Index(
             "uq_signing_request_nonce_family",
-            "namespace_id", "contract_address", "signer_wallet", "nonce_text", "kind",
+            "namespace_id", func.lower(text("contract_address")), func.lower(text("signer_wallet")), "nonce_text", "nonce_family",
             unique=True, postgresql_where=text("status NOT IN ('expired','invalidated_stale','invalidated_instance','invalidated_not_broadcast')"),
         ),
-        CheckConstraint("kind IN ('ai_pre','reserve','receipt')", name="ck_signing_kind"),
+        CheckConstraint("kind IN ('ai_pre','ai_final','reserve','release','settlement','receipt')", name="ck_signing_kind"),
+        CheckConstraint("(kind IN ('ai_pre','ai_final') AND nonce_family='registry_ai') OR (kind='receipt' AND nonce_family='registry_recipient') OR (kind IN ('reserve','release','settlement') AND nonce_family='escrow_human')", name="ck_signing_family"),
         CheckConstraint(
             "status IN ('prepared','signed','queued','confirmed','failed','requires_attention','invalidated_instance','expired','invalidated_stale','invalidated_not_broadcast')",
             name="ck_signing_status",
@@ -431,6 +454,7 @@ class SigningRequest(TimestampMixin, Base):
     )
     signer_user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id"))
     kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    nonce_family: Mapped[str] = mapped_column(String(24), nullable=False, default=lambda ctx: signing_nonce_family(ctx.get_current_parameters()["kind"]))
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="prepared")
     contract_address: Mapped[str] = mapped_column(String(42), nullable=False)
     signer_wallet: Mapped[str] = mapped_column(String(42), nullable=False)

@@ -26,7 +26,9 @@ def test_published_003_migration_bytes_are_preserved():
 
 def test_review_head_is_single_linear_addition_after_published_003():
     scripts = _scripts()
-    assert scripts.get_heads() == ["c31003a20004"]
+    assert scripts.get_heads() == ["c31004a30006"]
+    assert scripts.get_revision("c31004a30006").down_revision == "c31003a30005"
+    assert scripts.get_revision("c31003a30005").down_revision == "c31003a20004"
     assert scripts.get_revision("c31003a20004").down_revision == "c31003a20003"
     assert scripts.get_revision("c31003a20003").down_revision == "c31003a20002"
     assert [item.revision for item in scripts.iterate_revisions("c31003a20004", "c31003a20002")] == [
@@ -83,3 +85,20 @@ def test_empty_published_003_downgrade_restores_original_unique_constraint(monke
         "uq_signing_request_nonce_family", "signing_requests",
         ["namespace_id", "contract_address", "signer_wallet", "nonce_text", "kind"],
     )
+
+
+def test_diagnostic_upgrade_adds_only_private_table_and_immutable_history(monkeypatch):
+    migration = _scripts().get_revision("c31004a30006").module
+    operations = Mock()
+    monkeypatch.setattr(migration, "op", operations)
+    migration.upgrade()
+    operations.create_table.assert_called_once()
+    assert operations.create_table.call_args.args[0] == "ai_diagnostics"
+    sql = operations.execute.call_args.args[0]
+    assert "terminal diagnostic report is immutable" in sql
+    assert "diagnostic input scope is immutable" in sql
+    operations.add_column.assert_not_called()
+    operations.drop_table.assert_not_called()
+    with pytest.raises(RuntimeError, match="forward-only"):
+        migration.downgrade()
+    operations.drop_table.assert_not_called()

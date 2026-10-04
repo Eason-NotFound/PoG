@@ -32,7 +32,13 @@ test("all static interface strings and backend messages have translations", () =
   for (const file of [
     "src/components/portal-app.tsx",
     "src/components/casework.tsx",
+    "src/components/ai-diagnostic-panel.tsx",
     "src/components/login-form.tsx",
+    "src/components/funds-flow.tsx",
+    "src/components/language-provider.tsx",
+    "src/components/access-message.tsx",
+    "src/lib/portal-a2.ts",
+    "src/lib/full-demo-ui.ts",
     "src/lib/service.ts",
     "src/app/api/[...path]/route.ts",
   ]) {
@@ -44,13 +50,20 @@ test("all static interface strings and backend messages have translations", () =
     );
     function visit(node: ts.Node) {
       if (
-        (ts.isStringLiteral(node) || ts.isJsxText(node)) &&
+        (ts.isStringLiteral(node) ||
+          ts.isNoSubstitutionTemplateLiteral(node) ||
+          ts.isJsxText(node)) &&
         /\p{Script=Han}/u.test(node.text)
       ) {
         const value = ts.isJsxText(node)
           ? node.text.replace(/\s+/g, " ").trim()
           : node.text;
         assert.ok(Object.hasOwn(messages, value), `${file}: ${value}`);
+        assert.doesNotMatch(
+          translate(value, "en"),
+          /\p{Script=Han}/u,
+          `${file}: ${value}`,
+        );
       }
       ts.forEachChild(node, visit);
     }
@@ -68,6 +81,8 @@ test("language is restricted to Traditional Chinese and English; records stay in
     "constructor",
     "用户自填的单据内容",
     "發票.pdf",
+    "未支持的链状态：用户自定义",
+    "中文采购项目 — invoice.pdf",
   ]) {
     assert.equal(translate(value, "en"), value);
     assert.equal(translate(value, "zh-Hant"), value);
@@ -89,4 +104,28 @@ test("dynamic validation messages and dates use the selected language", () => {
   assert.equal(translate("2 笔", "zh-Hant"), "2 筆");
   const instant = "2026-10-02T01:00:00Z";
   assert.notEqual(formatDate(instant, "en"), formatDate(instant, "zh-Hant"));
+});
+
+test("connected workflow labels, notices and controlled status templates are localized", () => {
+  assert.equal(translate("funds_released", "en"), "Released to Foundation");
+  assert.equal(translate("receipt_confirmed", "en"), "Receipt confirmed");
+  assert.equal(
+    translate("payment_confirmed", "zh-Hant"),
+    "供應商付款及結算已確認",
+  );
+  assert.equal(translate("purchase_order", "en"), "Purchase order");
+  assert.equal(
+    translate("独立人工放款批准；不自动执行资金", "en"),
+    "Independent human release approval; no automatic funds execution",
+  );
+  assert.equal(
+    translate("未支持的链状态：future_status", "en"),
+    "Unsupported chain state: future_status",
+  );
+  assert.equal(
+    translate("未支持的链状态：future_status", "zh-Hant"),
+    "未支持的鏈狀態：future_status",
+  );
+  assert.equal(translate("请求已登记", "en"), "Request recorded");
+  assert.equal(translate("繁體中文", "en"), "Traditional Chinese");
 });

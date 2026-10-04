@@ -34,6 +34,36 @@ class ChainNotBroadcast(ChainUnavailable):
     """The adapter proved failure before attempting eth_sendTransaction."""
 
 
+def _abi_addresses(inputs: list[dict], values: list[Any]) -> list[Any]:
+    """Normalize only ABI address leaves, without changing identity or source data."""
+    if len(inputs) != len(values):
+        raise ValueError("ABI argument count mismatch")
+
+    def normalize(spec, value):
+        kind = spec["type"]
+        if kind.endswith("]"):
+            if not isinstance(value, (tuple, list)):
+                raise ValueError("ABI array must be a sequence")
+            element = {**spec, "type": kind[:kind.rindex("[")]}
+            return [normalize(element, item) for item in value]
+        if kind == "tuple":
+            components = spec["components"]
+            if isinstance(value, dict):
+                if set(value) != {part["name"] for part in components}:
+                    raise ValueError("ABI tuple fields mismatch")
+                return {part["name"]: normalize(part, value[part["name"]]) for part in components}
+            if not isinstance(value, (tuple, list)):
+                raise ValueError("ABI tuple must be a sequence or named fields")
+            return _abi_addresses(components, list(value))
+        if kind == "address":
+            if not isinstance(value, str) or not Web3.is_address(value):
+                raise ValueError("ABI address must be a valid 20-byte hex address")
+            return Web3.to_checksum_address(value)
+        return value
+
+    return [normalize(spec, value) for spec, value in zip(inputs, values)]
+
+
 def _rpc_read(method):
     """Transport uncertainty is an unavailable dependency, never a missing fact."""
     @wraps(method)
@@ -468,7 +498,9 @@ class LocalChainGateway:
     def call(self, contract: str, function: str, *args: Any, block_identifier: Any = "latest") -> Any:
         self.verify()
         try:
-            return getattr(self.contracts[contract].functions, function)(*args).call(block_identifier=block_identifier)
+            factory = self.contracts[contract].get_function_by_name(function)
+            encoded_args = _abi_addresses(factory.abi["inputs"], list(args))
+            return factory(*encoded_args).call(block_identifier=block_identifier)
         except ChainUnavailable:
             raise
         except Exception as exc:
@@ -488,12 +520,39 @@ class LocalChainGateway:
             "reserve.execute": ("ProcurementEscrowV2", "executeReserve"),
             "procurement.invoice": ("PoGRegistryV2", "recordInvoiceAndGoods"),
             "receipt.submit": ("PoGRegistryV2", "submitRecipientReceipt"),
+            "assessment.ai_final": ("PoGRegistryV2", "submitAIAssessment"),
+            "approval.release": ("ProcurementEscrowV2", "submitReleaseApproval"),
+            "release.execute": ("ProcurementEscrowV2", "executeRelease"),
+            "procurement.settlement": ("PoGRegistryV2", "recordSettlement"),
+            "approval.settlement": ("ProcurementEscrowV2", "submitSettlementApproval"),
+            "settlement.execute": ("ProcurementEscrowV2", "executeSettlementConfirmation"),
+            "payment.mint": ("MockHKD", "mint"),
+            "payment.redeem": ("MockHKD", "transfer"),
         }
         if action not in mapping:
             raise ValueError("Unsupported A2 chain action")
+        if action in {"assessment.ai_final", "approval.release", "approval.settlement", "payment.mint"}:
+            if caller.lower() != self.roles["relayer"].lower():
+                raise ValueError("This action requires the fixed simulation relayer")
+        if action in {"procurement.settlement", "payment.redeem"} and caller.lower() != self.roles["foundation"].lower():
+            raise ValueError("This action requires the fixed owning Foundation")
+        if action in {"release.execute", "settlement.execute"} and caller.lower() not in {
+            self.roles["foundation"].lower(), self.roles["humanApprover"].lower()
+        }:
+            raise ValueError("Execution requires Foundation or independent human")
+        if action == "payment.mint" and (len(args) != 2 or str(args[0]).lower() not in {
+            self.roles["donorA"].lower(), self.roles["donorB"].lower()
+        } or int(args[1]) <= 0):
+            raise ValueError("Funding mint must target a fixed Donor with positive amount")
+        if action == "payment.redeem" and (len(args) != 2 or str(args[0]).lower() != self.roles["mockRedemption"].lower() or int(args[1]) <= 0):
+            raise ValueError("Redemption must target the fixed simulation treasury")
         contract_name, function_name = mapping[action]
         contract = self.contracts[contract_name]
-        function = getattr(contract.functions, function_name)(*args)
+        encoded_args = list(args)
+        if action in {"payment.mint", "payment.redeem", "donation.approve", "donation.deposit"}:
+            encoded_args[1] = int(encoded_args[1])
+        factory = contract.get_function_by_name(function_name)
+        function = factory(*_abi_addresses(factory.abi["inputs"], encoded_args))
         nonce = self.w3.eth.get_transaction_count(Web3.to_checksum_address(caller), "pending")
         return PreparedEnvelope(
             caller=Web3.to_checksum_address(caller), to=contract.address,

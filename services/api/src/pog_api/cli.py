@@ -6,6 +6,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from uuid import UUID
 
 from sqlalchemy import select
 
@@ -217,9 +218,15 @@ def _gateway(settings: Settings) -> LocalChainGateway:
 def run_chain_service(kind: str, once: bool, interval: float, rebuild: bool = False) -> int:
     settings = Settings.from_env()
     gateway = _gateway(settings)
-    service = ChainWorker(settings.database_url, gateway) if kind == "worker" else ChainIndexer(
-        settings.database_url, gateway
-    )
+    if kind == "payment":
+        if not settings.full_demo_enabled:
+            raise RuntimeError("Opt-in full simulation is disabled")
+        from .payment_worker import PaymentWorker
+        service = PaymentWorker(settings.database_url, gateway)
+    else:
+        service = ChainWorker(settings.database_url, gateway) if kind == "worker" else ChainIndexer(
+            settings.database_url, gateway
+        )
     try:
         if rebuild:
             if kind != "indexer":
@@ -244,6 +251,54 @@ def run_chain_service(kind: str, once: bool, interval: float, rebuild: bool = Fa
         service.close()
 
 
+def provision_full_simulation(confirm: bool, cents: str) -> int:
+    if not confirm:
+        print("Refusing without --confirm-simulation-fixtures", file=sys.stderr)
+        return 2
+    settings = Settings.from_env()
+    if not settings.full_demo_enabled:
+        raise RuntimeError("Opt-in full simulation is disabled")
+    from .payment_domain import provision_simulation
+    engine = build_engine(settings.database_url)
+    factory = build_session_factory(engine)
+    try:
+        with factory() as session, session.begin():
+            gateway = _gateway(settings)
+            ns = ensure_verified_namespace(session, gateway)
+            result = provision_simulation(session, ns, gateway, cents)
+        print(f"Simulation accounts provisioned: count={result['accountCount']}; no real deposits or payments.")
+        return 0
+    finally:
+        engine.dispose()
+
+
+def retry_funding_preflight_command(confirm: bool, operation_id: UUID) -> int:
+    """Explicit maintenance retry, never an unknown-broadcast recovery or top-up."""
+    if not confirm:
+        print("Refusing without --confirm-retry; no funding state was changed", file=sys.stderr)
+        return 2
+    settings = Settings.from_env()
+    if not settings.full_demo_enabled:
+        raise RuntimeError("Opt-in full simulation is disabled")
+    from .payment_recovery import retry_funding_preflight
+    from .errors import APIError
+    engine = build_engine(settings.database_url)
+    factory = build_session_factory(engine)
+    try:
+        with factory() as session, session.begin():
+            gateway = _gateway(settings)
+            ns = ensure_verified_namespace(session, gateway)
+            result = retry_funding_preflight(session, ns, operation_id, gateway)
+        import json
+        print(json.dumps(result, sort_keys=True))
+        return 0
+    except APIError as exc:
+        print("Funding preflight recovery refused: " + exc.code, file=sys.stderr)
+        return 2
+    finally:
+        engine.dispose()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="PoG API A2 administration")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -253,7 +308,13 @@ def main() -> None:
     chain_seed_parser.add_argument("--confirm-chain-demo-fixtures", action="store_true")
     rename_parser = subparsers.add_parser("migrate-standard-usernames")
     rename_parser.add_argument("--confirm-standard-usernames", action="store_true")
-    for command in ("chain-worker", "chain-indexer"):
+    full_parser = subparsers.add_parser("provision-full-simulation")
+    full_parser.add_argument("--confirm-simulation-fixtures", action="store_true")
+    full_parser.add_argument("--donor-opening-hkd-cents", default="100000")
+    retry_parser = subparsers.add_parser("retry-funding-preflight")
+    retry_parser.add_argument("--operation-id", type=UUID, required=True)
+    retry_parser.add_argument("--confirm-retry", action="store_true")
+    for command in ("chain-worker", "chain-indexer", "payment-worker"):
         service_parser = subparsers.add_parser(command)
         service_parser.add_argument("--once", action="store_true")
         service_parser.add_argument("--interval", type=float, default=1.0)
@@ -268,6 +329,12 @@ def main() -> None:
         raise SystemExit(migrate_standard_usernames(args.confirm_standard_usernames))
     if args.command == "chain-worker":
         raise SystemExit(run_chain_service("worker", args.once, args.interval))
+    if args.command == "payment-worker":
+        raise SystemExit(run_chain_service("payment", args.once, args.interval))
+    if args.command == "provision-full-simulation":
+        raise SystemExit(provision_full_simulation(args.confirm_simulation_fixtures, args.donor_opening_hkd_cents))
+    if args.command == "retry-funding-preflight":
+        raise SystemExit(retry_funding_preflight_command(args.confirm_retry, args.operation_id))
     if args.command == "chain-indexer":
         raise SystemExit(run_chain_service("indexer", args.once, args.interval, args.rebuild))
 
