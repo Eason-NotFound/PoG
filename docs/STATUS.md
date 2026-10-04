@@ -1,8 +1,51 @@
-# Blockchain Status
+# Project status and blockchain archive
 
-Last updated: 2026-10-03 (Asia/Hong_Kong)
+Last updated: 2026-10-04 (Asia/Shanghai)
 
-## Current milestone
+## Current published snapshot
+
+Source baseline: `d74a7a0ef53abe32640f019ce1551bf5c2432826`. This is a
+documentation update, not a new test run or end-to-end acceptance report.
+
+| Component | Current published scope | Integration boundary |
+| --- | --- | --- |
+| M2 V2 contracts | Accepted custody, approvals, Recipient receipt, Foundation release, mock settlement and refunds | Contract capabilities do not establish the full UI/API flow |
+| M3.1 deployment | Accepted local Anvil deployment and instance-bound verification | POSIX launcher; no native Windows or public RPC claim |
+| API A2 | Published `api-v0.2.0-a2`, merge `4c9f1a4`; database migration head `c31003a20004` | HTTP flow stops at `ReceiptConfirmed`; real AI/final release/payment tail/closing/refunds not integrated |
+| M3.2 tools | Isolated local API/chain verifier and related tests published in merge `0014f37` | No full portal, real-model or payment acceptance is implied |
+| Portal | Published Next.js four-workspace demo | Uses local JSON and fixed AI examples; not connected to A2/Anvil |
+| AI interface | Frozen R2 format, A2 integration profile, schemas and offline hash tools published in merge `d74a7a0` | Format approval is separate from scoring policy and runtime integration |
+| Qwen runtime | Separate local Qwen3-VL-2B-Instruct candidate, without a loaded LoRA adapter | Single-page PrePurchase PO extraction/diagnostics; runtime source not published here; incomplete/unscored Review with signing disabled; FinalRelease unsupported |
+| Payment / Allocation / Merkle | Contract and demonstration foundations | End-to-end evidence, allocation computation and Donor proofs remain to be integrated |
+
+The previous blanket statements that API implementation and M3.2 are
+unauthorized are historical M3.1 checkpoint instructions, superseded within the
+subsequently authorized/published A2 and M3.2 scopes. They do not prohibit work
+that a later user task explicitly authorizes. These publications do not grant
+blanket authority for later milestones, deployment, merge or real payment.
+
+Component implementation, review, format freeze, integration and runtime
+acceptance must be tracked separately. The current source is not a connected
+frontend-to-AI-to-chain prototype. See [project overview](PROJECT_OVERVIEW.md),
+[API A2 status](api/A2_STATUS.md) and
+[AI/A2 integration profile](ai/V2_A2_INTEGRATION_PROFILE_001.md).
+
+## Next integration work
+
+- Publish the reviewed AI runtime and nonsecret configuration examples; bind
+  trusted input bytes and immutable canonical reports to API operations.
+- Connect the portal to the shared API and show actual confirmation/error facts.
+- Integrate final AI/release, mock supplier-payment evidence and human settlement;
+  add Donor Allocation and Merkle verification through the agreed interfaces.
+- Verify an exact integrated commit using UI actions, real API/model traffic,
+  database changes and chain receipts. Preserve all mock and incomplete limits.
+
+The following sections preserve historical blockchain acceptance evidence and
+versions. Their stop/authorization wording applies to the checkpoint recorded,
+not to the entire project's current scope. Frozen technical artifacts remain
+unchanged; the current summary does not claim new execution of historical tests.
+
+## Historical M3.1 acceptance checkpoint
 
 M3.1 was authorized by the user's subsequent 2026-10-03 request if no blocking
 product choice was needed. None is needed for the local-only defaults frozen in
@@ -104,7 +147,7 @@ The original M2 was stopped by the user's architecture change. Revised M2 has
 completed technical review, user acceptance, merge and formal archival. The
 remaining action is the archival report and stop. M3 is unauthorized.
 
-## M2 V2 completed
+## Accepted M2 V2 capabilities
 
 - Donor-only credited deposits into a specific project; surplus excluded.
 - PO-first pre-AI/human reservation, Invoice/goods and independent Recipient
@@ -151,7 +194,7 @@ remaining action is the archival report and stop. M3 is unauthorized.
   cancellation, and Allocation Roots.
 - Generated versioned `MockHKD` and `PoGRegistry` ABI JSON from Forge output.
 
-## Current M2 verification
+## Historical M2 verification
 
 CEO independently ran on 2026-10-03:
 
@@ -248,7 +291,7 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
 - M1 and M2 merge/version archival completed with passing CI. No online Hank
   review is claimed; the user's explicit M2 acceptance authorized its merge.
 
-## Scope guard
+## Historical M3.1 scope guard
 
 - M2 V2 custody, approvals, Foundation release, mock settlement attestation and
   refund composition are technically verified and accepted. No real supplier payment proof
@@ -261,7 +304,7 @@ test, including three 256-run fuzz tests. Strict source lint, ABI consistency,
   production security, faucet mint is not exchange, and reset discards chain
   business state without making old same-domain signatures cryptographically invalid.
 
-## Next gate
+## Historical next gate at M3.1 archival
 
 M2 is accepted and archived. M3.1 is user accepted, merged and formally tagged;
 status-only records follow their own PR/CI, then report and stop. Do not begin M3.2 or resume the

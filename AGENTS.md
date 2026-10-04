@@ -1,6 +1,53 @@
 # PoG collaboration rules
 
-## Latest architecture change — takes precedence
+## Current scope and task authority
+
+- Published snapshot for this documentation: 2026-10-04, main
+  `d74a7a0ef53abe32640f019ce1551bf5c2432826`. Recheck the actual branch/commit
+  before work; do not use an old empty-repository snapshot as current state.
+- API A2 and M3.2 local integration tools have been separately authorized and
+  published. The AI R2 format/A2 profile is frozen. Old M3.1 "no API/M3.2"
+  stops below are historical and do not override later explicit user tasks.
+- Published main contains a local JSON portal demo, an API flow ending at
+  `ReceiptConfirmed`, contract/deployment tools and offline AI protocol tools.
+  Separate local Qwen work does not prove published runtime integration,
+  approved scoring/signing policy or full-chain acceptance.
+- Follow the latest user-authorized task. Identify the module, exact baseline,
+  permitted files, inputs/outputs and acceptance criteria before coding. This
+  file does not authorize automatic merge, deployment, model training or real
+  payment. See `docs/STATUS.md` and `docs/PROJECT_OVERVIEW.md` for current scope.
+
+## Module ownership and handoffs
+
+- Overall coordination maintains the business chain, module ownership,
+  interface dependencies, development order and milestones. AI ownership
+  covers AI task decomposition/review and its external adapter, not the whole
+  frontend, backend or payment system.
+- API ownership covers trusted file/database snapshots, authentication,
+  operation/report persistence, durable nonce coordination and relayer flow.
+  Contract ownership covers the frozen ABI/signing/state boundaries. Changes
+  across these boundaries must be agreed before separate implementations diverge.
+- Git integration owns isolated branches/directories, public scope and reviewed
+  integration. Independent acceptance verifies the delivered exact version.
+  Implementation, review, Git intake, format freeze, runtime integration and
+  independent acceptance are separate states; only feedback advances status.
+- Treat coding/coordinator chats as development roles, not product runtime
+  components. Do not assume chats share history or automatically receive tasks.
+- Before messaging another chat, confirm it is idle. Defer active or unknown
+  recipients until their current prompt ends; never interrupt or inject a task.
+  Check for duplicate handoffs. Give concise steps, file scope, verification and
+  required delivery evidence, not a list of unexplained technical terms.
+- Give parallel coding tasks isolated working directories/branches. Return
+  changes, exact commit, test commands/results, known issues and interface
+  changes. Revisions to the same task stay with its original execution owner.
+- Keep private coordination records, chat history, data, models and logs outside
+  the repository. Check tracked files, staged files and diff before publication;
+  `.gitignore` alone is not a publication review.
+
+## Approved architecture and historical checkpoints
+
+The dated items below preserve the approval sequence. Historical stop clauses
+apply to that checkpoint only; later scoped tasks/publications supersede them.
 
 - On 2026-10-03 M3.1 received user acceptance and GitHub upload authorization. Under the established version workflow this authorizes M3.1
   merge/formal archival and a report only. PR #4 merged as `977ea62`; new
@@ -65,8 +112,8 @@
 - The original direct-vendor M2 authorization and its reserveAmount / unchanged
   ApprovalIntent interface constraints are historical and superseded by the
   latest architecture change above. New signing, release and settlement
-  interfaces must be versioned and frozen before revised coding. M3 remains
-  unauthorized.
+  interfaces must be versioned and frozen before revised coding. Later
+  authorizations are scoped separately; M2 archival itself did not authorize M3.
 - Preserve accepted M1 contract history and tags. Any necessary new-version
   Registry/token change must be explained and approved; do not overwrite the
   accepted historical snapshot or silently change its interpretation.
