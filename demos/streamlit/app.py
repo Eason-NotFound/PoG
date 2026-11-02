@@ -86,10 +86,51 @@ def evidence_items(state):
 CSS = """
 <style>
 :root { --pog-green:#266a4e; --pog-ink:#203c31; --pog-muted:#6d7e75; }
-.stApp { background:#f5f7f6; color:var(--pog-ink); }
+.stApp { background:#f5f7f6; color:var(--pog-ink); color-scheme:light; }
 .block-container { max-width:1280px; padding:2rem 2.4rem 3rem; }
 [data-testid="stHeader"] { display:none; }
 [data-testid="stDecoration"] { display:none; }
+/* Native widgets must stay legible on this fixed light presentation surface,
+   including when a visitor has saved Streamlit's built-in dark theme. */
+.stApp [data-testid="stWidgetLabel"],
+.stApp [data-testid="stWidgetLabel"] p,
+.stApp [data-testid="stRadioOption"],
+.stApp [data-testid="stRadioOption"] p { color:#203c31 !important; }
+.stApp [data-testid="stRadioOption"] > div > div:first-child { background-color:#ffffff !important; border-color:#6d7e75 !important; }
+.stApp [data-testid="stRadioOption"]:not([data-selected="true"]) > div > div:first-child > div { background-color:transparent !important; }
+.stApp [data-testid="stRadioOption"][data-selected="true"] > div > div:first-child { background-color:#266a4e !important; border-color:#266a4e !important; }
+.stApp [data-testid="stRadioOption"][data-selected="true"] > div > div:first-child > div { background-color:#ffffff !important; }
+.stApp [data-testid="stSelectbox"] [role="combobox"] {
+ color:#203c31 !important; -webkit-text-fill-color:#203c31 !important;
+ background-color:#ffffff !important; color-scheme:light;
+}
+.stApp [data-testid="stSelectbox"] [role="group"],
+.stApp [data-testid="stSelectbox"] button {
+ background-color:#ffffff !important; color:#203c31 !important;
+}
+.stApp [data-testid="stSelectbox"] svg { color:#266a4e !important; }
+/* The scenario popup is rendered in a portal outside .stApp. Scope by its label. */
+[role="listbox"][aria-label="Load a fictional snapshot"],
+[role="listbox"][aria-label="Load a fictional snapshot"] [role="option"] {
+ background-color:#ffffff !important; color:#203c31 !important;
+}
+[role="listbox"][aria-label="Load a fictional snapshot"] [role="option"]:is(:hover,[data-focused],[aria-selected="true"]) {
+ background-color:#eaf3ed !important;
+}
+.stApp [data-testid="stExpander"],
+.stApp [data-testid="stExpander"] details,
+.stApp [data-testid="stExpander"] summary { background-color:#ffffff !important; color:#203c31 !important; }
+.stApp [data-testid="stExpander"] summary p,
+.stApp [data-testid="stText"],
+.stApp [data-testid="stText"] pre,
+.stApp [data-testid="stText"] span { color:#203c31 !important; }
+.stApp [data-testid="stCaptionContainer"] p { color:#52695d !important; }
+.stApp [data-testid="stCode"],
+.stApp [data-testid="stCode"] pre,
+.stApp [data-testid="stCode"] code { background-color:#edf3ef !important; color:#203c31 !important; }
+.stApp [data-testid="stDownloadButton"] button { background-color:#ffffff !important; color:#203c31 !important; border-color:#b8ccbe !important; }
+.stApp [data-testid="stDownloadButton"] button p { color:#203c31 !important; }
+.stApp [data-testid="stDownloadButton"] button:hover { background-color:#eaf3ed !important; }
 .pog { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 .pog * { box-sizing:border-box; }
 .pog h1,.pog h2,.pog h3,.pog p { margin:0; color:var(--pog-ink); }
