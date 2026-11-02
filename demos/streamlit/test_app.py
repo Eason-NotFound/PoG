@@ -87,6 +87,7 @@ class RenderingTests(unittest.TestCase):
                         self.assertIn("No money is released", html)
                     if view == "approval":
                         self.assertIn("Scripted AI finding", html)
+                        self.assertIn("Invoice amount requested" if scene == "review" else "Human-approved invoice amount", html)
                     if view == "how":
                         self.assertIn("Files off-chain", html)
 
