@@ -3,10 +3,13 @@
 import importlib.util
 from pathlib import Path
 import sys
+import tomllib
 import unittest
+from unittest.mock import patch
 from xml.etree import ElementTree
 
 from streamlit.testing.v1 import AppTest
+from streamlit import config
 
 APP = Path(__file__).with_name("app.py")
 spec = importlib.util.spec_from_file_location("pog_showcase", APP)
@@ -86,6 +89,32 @@ class SnapshotTests(unittest.TestCase):
 
 
 class RenderingTests(unittest.TestCase):
+    def test_native_theme_fallback_covers_labels_and_evidence_leaf_text(self):
+        for selector in (
+            '[data-testid="stWidgetLabel"] p',
+            '[data-testid="stRadioOption"] p',
+            '[data-testid="stSelectbox"] [role="combobox"]',
+            '[role="listbox"][aria-label="Load a fictional snapshot"]',
+            '[data-testid="stExpander"] summary p',
+            '[data-testid="stText"] span',
+            '[data-testid="stCaptionContainer"] p',
+            '[data-testid="stCode"] code',
+            '[data-testid="stDownloadButton"] button p',
+        ):
+            self.assertIn(selector, demo.CSS)
+
+    def test_theme_is_script_local_and_discovered_from_repository_root(self):
+        theme_file = APP.parent / ".streamlit" / "config.toml"
+        with theme_file.open("rb") as handle:
+            theme = tomllib.load(handle)["theme"]
+        self.assertEqual(theme["base"], "light")
+        self.assertEqual(theme["textColor"], "#203c31")
+        self.assertEqual(theme["backgroundColor"], "#f5f7f6")
+        self.assertEqual(theme["secondaryBackgroundColor"], "#ffffff")
+        self.assertEqual(theme["primaryColor"], "#266a4e")
+        with patch.object(config, "_main_script_path", str(APP)):
+            self.assertEqual(Path(config.get_config_files("config.toml")[-1]), theme_file)
+
     def test_all_views_and_scenarios_render(self):
         app = AppTest.from_file(str(APP)).run()
         self.assertEqual(len(app.exception), 0)

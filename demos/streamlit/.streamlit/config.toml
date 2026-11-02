@@ -1,0 +1,7 @@
+# Script-local presentation theme; does not configure the other PoG services.
+[theme]
+base = "light"
+primaryColor = "#266a4e"
+backgroundColor = "#f5f7f6"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#203c31"

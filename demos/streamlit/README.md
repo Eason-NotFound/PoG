@@ -44,6 +44,22 @@ An account with access to the repository and Community Cloud is still needed.
 Official instructions: [deployment fields](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy)
 and [dependency lookup](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies).
 
+### Presentation theme
+
+The app's theme is at `demos/streamlit/.streamlit/config.toml`, next to its
+entrypoint, not at the repository root. Streamlit 1.66 reads script-local
+configuration after shared configuration, including when launched from the
+repository root. Community Cloud explicitly supports this precedence for
+subdirectory entrypoints: [repository file structure](https://docs.streamlit.io/deploy/streamlit-community-cloud/status#repository-file-structure).
+No shared theme or settings for the Next.js site, API or contracts are changed.
+
+The showcase deliberately keeps a light green/white presentation palette.
+Scoped native-widget CSS also keeps labels, the scenario selector and popup,
+evidence expanders, fingerprints and download buttons readable when a visitor
+has a saved built-in dark theme. This does not add a separate dark design.
+An existing Cloud app following this branch picks up the source update; it
+does not need a new app or deployment URL.
+
 ## What the four snapshots illustrate
 
 Fixed demo funding is HK$5,000 equivalent. The fictional order and invoice are
