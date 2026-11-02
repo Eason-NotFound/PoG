@@ -60,11 +60,27 @@ def money(amount):
 
 
 def evidence_items(state):
-    return [
+    records = [
         ("Purchase order", "DEMO-PO-001", f"DEMO ONLY\n10 desk fans for older residents\nUnit price: HKD 250\nOrder total: HKD 2500\nSupplier: Example supplier\n"),
         ("Invoice", "DEMO-INV-001", "DEMO ONLY\nInvoice for 10 desk fans\nTotal: HKD 2500\nPayee: Example supplier\nNo real invoice or payment\n"),
         ("Delivery record", f"DEMO-DEL-{state.received:02d}", f"DEMO ONLY\nOrdered: 10 desk fans\nReported received: {state.received}\nSubmitted by: Example receiving team\nFinal receipt confirmation: {'recorded in this fictional snapshot' if state.receipt_confirmed else 'not recorded; human review required'}\n"),
     ]
+    if state.scene == "settled":
+        records.append((
+            "Supplier payment and settlement", "DEMO-SETTLEMENT-001",
+            "DEMO ONLY - FICTIONAL PAYMENT AND SETTLEMENT RECORD\n"
+            "Project: DEMO-FANS-001\nInvoice: DEMO-INV-001\n"
+            "Payer: Example foundation\nSupplier: Example supplier\n"
+            f"Amount: HKD {state.supplier_paid} equivalent demo units\n"
+            f"Prior Foundation release: HKD {state.released} equivalent demo units\n"
+            "Supplier payment status: Recorded - simulated\n"
+            "Human settlement confirmation: Recorded - simulated\n"
+            "Reconciliation: Fictional payment matches the supplier and full invoice amount.\n"
+            "This is a use of the Foundation release, not a second escrow outflow.\n"
+            "No actual transfer, signature, bank receipt or blockchain transaction exists.\n"
+            "This example is not proof of real payment.\n",
+        ))
+    return records
 
 
 CSS = """

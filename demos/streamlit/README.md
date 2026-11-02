@@ -66,6 +66,11 @@ Supplier payment is a use of released funds, not a second outflow from escrow.
 The active project's unused funds stay locked. These semantics follow
 [`M2_V2_SPEC.md`](../../docs/M2_V2_SPEC.md).
 
+Only the `settled` snapshot adds a downloadable `DEMO-SETTLEMENT-001` record
+for the fictional full-invoice supplier payment and human settlement check.
+It identifies the same example supplier, invoice and 2,500 demo-unit amount;
+all other snapshots omit this record. It is not a bank receipt or real payment.
+
 The AI report is scripted text, not inference or a detection-accuracy result.
 Downloads and SHA-256 fingerprints are generated from fictional text embedded
 in this file, not actual evidence, transaction hashes or signed chain records.

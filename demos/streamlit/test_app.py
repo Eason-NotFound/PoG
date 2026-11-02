@@ -66,6 +66,24 @@ class SnapshotTests(unittest.TestCase):
             self.assertIn("DEMO ONLY", text)
             self.assertEqual(len(demo.sha256(text.encode()).hexdigest()), 64)
 
+    def test_payment_evidence_exists_only_after_simulated_settlement(self):
+        for scene in demo.SCENES:
+            with self.subTest(scene=scene):
+                state = demo.snapshot(scene)
+                records = demo.evidence_items(state)
+                payments = [item for item in records if item[1] == "DEMO-SETTLEMENT-001"]
+                self.assertEqual(len(records), 4 if scene == "settled" else 3)
+                self.assertEqual(len(payments), 1 if scene == "settled" else 0)
+                if payments:
+                    body = payments[0][2]
+                    self.assertIn("DEMO ONLY", body)
+                    self.assertIn("Invoice: DEMO-INV-001", body)
+                    self.assertIn("Supplier: Example supplier", body)
+                    self.assertIn(f"Amount: HKD {state.supplier_paid} equivalent demo units", body)
+                    self.assertEqual(state.supplier_paid, demo.INVOICE)
+                    self.assertIn("Human settlement confirmation: Recorded - simulated", body)
+                    self.assertIn("not proof of real payment", body)
+
 
 class RenderingTests(unittest.TestCase):
     def test_all_views_and_scenarios_render(self):
@@ -90,6 +108,10 @@ class RenderingTests(unittest.TestCase):
                         self.assertIn("Invoice amount requested" if scene == "review" else "Human-approved invoice amount", html)
                     if view == "how":
                         self.assertIn("Files off-chain", html)
+                    else:
+                        evidence = [item.label for item in app.expander]
+                        self.assertEqual(len(evidence), 4 if scene == "settled" else 3)
+                        self.assertEqual(any("DEMO-SETTLEMENT-001" in label for label in evidence), scene == "settled")
 
     def test_unknown_query_values_fall_back(self):
         app = AppTest.from_file(str(APP))
