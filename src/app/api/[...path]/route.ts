@@ -46,6 +46,11 @@ async function handler(
   context: { params: Promise<{ path: string[] }> },
 ) {
   try {
+    if (process.env.POG_A2_INTEGRATION === "true")
+      throw new ApiError(
+        503,
+        "A2 integration mode disables the legacy demo ledger; use /api/a2.",
+      );
     if (process.env.POG_DEMO_MODE !== "true")
       throw new ApiError(
         503,

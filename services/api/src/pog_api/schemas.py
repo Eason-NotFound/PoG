@@ -201,7 +201,7 @@ class InvoiceAndGoodsCreate(StrictModel):
 
 
 class SigningRequestCreate(StrictModel):
-    kind: Literal["ai_pre", "reserve", "receipt"]
+    kind: Literal["ai_pre", "reserve", "receipt", "ai_final", "release", "settlement"]
     reserve_amount_atomic: UInt256String | None = Field(default=None, alias="reserveAmountAtomic")
     receipt_evidence_document_version_id: UUID | None = Field(
         default=None, alias="receiptEvidenceDocumentVersionId"
@@ -211,6 +211,17 @@ class SigningRequestCreate(StrictModel):
 
 class DemoSignRequest(StrictModel):
     confirm: Literal[True]
+
+
+class SubmitSignedRequest(StrictModel):
+    confirm: Literal[True]
+
+    @field_validator("confirm", mode="before")
+    @classmethod
+    def explicit_confirmation(cls, value):
+        if value is not True:
+            raise ValueError("confirm must be the JSON boolean true")
+        return value
 
 
 class SignatureSubmit(StrictModel):

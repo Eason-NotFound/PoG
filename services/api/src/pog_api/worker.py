@@ -19,6 +19,7 @@ from .models import (
     DeploymentInstance, IndexerCursor, Operation, OperationStep, Procurement, Project,
     SigningRequest, PolicyProjection,
 )
+from .tail_confirmation import TAIL_TARGETS, validate_tail
 
 
 def _utcnow() -> datetime:
@@ -110,11 +111,11 @@ class ChainWorker:
     def _receipt_source_allowed(session, step: OperationStep, operation: Operation,
                                 transaction: ChainTransaction | None = None) -> bool:
         """Check DB provenance only before a new send; never retire an authorization."""
-        if step.detail.get("action") != "receipt.submit":
+        if step.detail.get("action") not in {"receipt.submit", "assessment.ai_final", "approval.release", "approval.settlement"}:
             return True
         # Import the shared API check at runtime, without making worker/app
         # module initialization depend on one another.
-        from .a2 import _validate_receipt_source
+        from .a2 import _validate_receipt_source, validate_original_sources
         from .errors import APIError
 
         requests = session.scalars(select(SigningRequest).where(
@@ -129,11 +130,14 @@ class ChainWorker:
             except (ValueError, TypeError, AttributeError) as exc:
                 raise APIError(409, "signing_material_stale", "Queued receipt procurement is not bound") from exc
             if (
-                request.namespace_id != operation.namespace_id or request.kind != "receipt"
+                request.namespace_id != operation.namespace_id
+                or request.kind != {"receipt.submit":"receipt", "assessment.ai_final":"ai_final", "approval.release":"release", "approval.settlement":"settlement"}[step.detail["action"]]
                 or request.procurement_id != procurement_id
             ):
                 raise APIError(409, "signing_material_stale", "Queued receipt differs from its original request")
             _validate_receipt_source(session, request)
+            if request.kind != "receipt":
+                validate_original_sources(session, session.get(Procurement, procurement_id), request.context_json.get("sourceVersionIds"))
         except APIError as exc:
             if exc.code not in {"signing_material_stale", "receipt_evidence_uploader_mismatch"}:
                 raise
@@ -175,11 +179,67 @@ class ChainWorker:
                       "envelopeHash": transaction.envelope_hash if transaction else None},
         )
 
+    def _full_source_allowed(self, session, step, operation, transaction=None):
+        action = step.detail.get("action")
+        economic = action in {"payment.mint", "payment.redeem"} or bool(step.detail.get("fundedClaimUuid"))
+        tail = action in TAIL_TARGETS and not economic
+        if not economic and not tail:
+            return True
+        from .errors import APIError
+        from .payment_domain import validate_pending_chain
+        from .full_checks import validate_tail_step
+        try:
+            ns = session.get(DeploymentInstance, operation.namespace_id, with_for_update=True)
+            (validate_pending_chain if economic else validate_tail_step)(session, ns, step, operation, self.gateway)
+        except APIError as exc:
+            if exc.status_code >= 500:
+                raise
+            if exc.code in {"payment_chain_reorganization", "payment_source_changed", "payment_release_required"}:
+                from .payment_domain import freeze_namespace
+                freeze_namespace(session, ns, exc.code)
+            step.status = operation.status = "requires_attention"
+            operation.error_code, operation.error_status, operation.error_detail = exc.code, exc.status_code, exc.message
+            if transaction is not None:
+                transaction.status = "requires_attention"
+            self._signing_status(session, operation.id, "requires_attention")
+            audit(session, principal_id=operation.principal_id, operation_id=operation.id,
+                  action="chain.full_source_blocked", outcome="requires_attention",
+                  resource_type=operation.result_resource_type, resource_id=operation.result_resource_id,
+                  metadata={"reasonCode":exc.code,"broadcastSkipped":True})
+            return False
+        return True
+
+    @staticmethod
+    def _result_transaction(session, transaction_id: UUID):
+        original = session.get(ChainTransaction, transaction_id)
+        if original is None:
+            return None
+        # Match reset/rebuild and both executors: lock the namespace before
+        # transaction/operation rows, then refresh the initially unlocked read.
+        session.get(DeploymentInstance, original.namespace_id, with_for_update=True)
+        return session.get(ChainTransaction, transaction_id, with_for_update=True, populate_existing=True)
+
+    @staticmethod
+    def _result_is_invalidated(session, row, operation):
+        namespace = session.get(DeploymentInstance, row.namespace_id)
+        return (namespace is None or not namespace.active
+                or operation.status == "invalidated_instance"
+                or row.status == "invalidated_instance")
+
+    @staticmethod
+    def _result_is_terminal(session, row, operation):
+        return (ChainWorker._result_is_invalidated(session, row, operation)
+                or operation.status == "confirmed" or row.status == "confirmed")
+
     def _not_broadcast(self, transaction_id: UUID, exc: Exception) -> None:
         with self.factory() as session, session.begin():
-            row = session.get(ChainTransaction, transaction_id, with_for_update=True)
+            row = self._result_transaction(session, transaction_id)
+            if row is None:
+                return
             step = session.get(OperationStep, row.step_id)
             operation = session.get(Operation, row.operation_id)
+            if self._result_is_terminal(session, row, operation):
+                return
             # Only this status exits the EVM nonce reservation index. Receipt
             # failures and every ambiguous attempt continue protecting it.
             row.status = "not_broadcast"
@@ -188,9 +248,13 @@ class ChainWorker:
 
     def _unknown(self, transaction_id: UUID, exc: Exception) -> None:
         with self.factory() as session, session.begin():
-            row = session.get(ChainTransaction, transaction_id, with_for_update=True)
+            row = self._result_transaction(session, transaction_id)
+            if row is None:
+                return
             step = session.get(OperationStep, row.step_id)
             operation = session.get(Operation, row.operation_id)
+            if self._result_is_terminal(session, row, operation):
+                return
             previous_status = row.status
             row.status = step.status = operation.status = "requires_attention"
             row.submitted_at = _utcnow()
@@ -217,10 +281,22 @@ class ChainWorker:
 
     def _submitted(self, transaction_id: UUID, tx_hash: str) -> None:
         with self.factory() as session, session.begin():
-            row = session.get(ChainTransaction, transaction_id, with_for_update=True)
+            row = self._result_transaction(session, transaction_id)
+            if row is None:
+                return
             step = session.get(OperationStep, row.step_id)
             operation = session.get(Operation, row.operation_id)
-            row.tx_hash = tx_hash
+            if row.tx_hash is not None and row.tx_hash.lower() != tx_hash.lower():
+                audit(session, principal_id=operation.principal_id, operation_id=operation.id,
+                      action="chain_worker.late_result_conflict", outcome="requires_attention",
+                      metadata={"transactionId": str(row.id), "knownHashPreserved": True})
+                return
+            if row.tx_hash is None:
+                row.tx_hash = tx_hash
+            if self._result_is_terminal(session, row, operation):
+                if row.submitted_at is None:
+                    row.submitted_at = _utcnow()
+                return
             row.status = step.status = operation.status = "submitted"
             row.submitted_at = _utcnow()
             operation.error_code = operation.error_status = operation.error_detail = None
@@ -241,6 +317,7 @@ class ChainWorker:
         recovered_prepared_attempt = False
         with self.factory() as session, session.begin():
             namespace = ensure_verified_namespace(session, self.gateway)
+            session.get(DeploymentInstance, namespace.id, with_for_update=True)
             lease_cutoff = _utcnow() - timedelta(seconds=15)
             existing = session.scalar(
                 select(ChainTransaction).join(Operation, Operation.id == ChainTransaction.operation_id).where(
@@ -285,7 +362,7 @@ class ChainWorker:
                     .where(
                         Operation.namespace_id == namespace.id,
                         Operation.status.in_(("queued", "submitted")),
-                        OperationStep.status == "queued", known_attention, ~unresolved,
+                        OperationStep.status == "queued", OperationStep.executor == "chain", known_attention, ~unresolved,
                     ).order_by(Operation.created_at, OperationStep.step_index)
                     .with_for_update(skip_locked=True, of=OperationStep).limit(1)
                 )
@@ -347,6 +424,7 @@ class ChainWorker:
                         Operation.namespace_id == namespace.id,
                         Operation.status.in_(("queued", "submitted")),
                         OperationStep.status == "queued",
+                        OperationStep.executor == "chain",
                         ~blocked,
                     )
                     .order_by(Operation.created_at, OperationStep.step_index)
@@ -378,6 +456,8 @@ class ChainWorker:
                 if outstanding:
                     return False
                 if not self._receipt_source_allowed(session, step, operation):
+                    return True
+                if not self._full_source_allowed(session, step, operation):
                     return True
                 try:
                     envelope = self.gateway.prepare(
@@ -453,12 +533,15 @@ class ChainWorker:
                     "Caller nonce changed but the exact prepared envelope was not found"
                 ))
                 return True
-            if envelope.action == "receipt.submit":
+            if envelope.action == "receipt.submit" or envelope.action in TAIL_TARGETS or step.detail.get("fundedClaimUuid"):
                 with self.factory() as session, session.begin():
+                    session.get(DeploymentInstance, row.namespace_id, with_for_update=True)
                     attempt = session.get(ChainTransaction, transaction_id, with_for_update=True)
                     queued_step = session.get(OperationStep, attempt.step_id)
                     queued_operation = session.get(Operation, attempt.operation_id)
                     if not self._receipt_source_allowed(session, queued_step, queued_operation, attempt):
+                        return True
+                    if not self._full_source_allowed(session, queued_step, queued_operation, attempt):
                         return True
             try:
                 tx_hash = self.gateway.send(envelope)
@@ -512,12 +595,16 @@ class ChainIndexer:
             # record, then rebuild; a second moving-tip race is retried next tick.
             if exc.transaction_id is not None:
                 with self.factory() as session, session.begin():
-                    tx = session.get(ChainTransaction, exc.transaction_id, with_for_update=True)
+                    tx = ChainWorker._result_transaction(session, exc.transaction_id)
+                    if tx is None:
+                        return True
                     operation = session.get(Operation, tx.operation_id)
                     step = session.get(OperationStep, tx.step_id)
                     tx.receipt_json = exc.receipt
                     tx.block_hash = exc.receipt["blockHash"]
                     tx.canonical = False
+                    if ChainWorker._result_is_invalidated(session, tx, operation):
+                        return True
                     tx.status = operation.status = "requires_attention"
                     if step is not None:
                         step.status = "requires_attention"
@@ -647,6 +734,7 @@ class ChainIndexer:
         args = detail["args"]
         event_args = event["args"]
         target_contract = {
+            **TAIL_TARGETS,
             "donation.approve": "MockHKD",
             "donation.deposit": "ProcurementEscrowV2",
             "approval.reserve": "ProcurementEscrowV2",
@@ -669,6 +757,9 @@ class ChainIndexer:
                 contract, function, *values, block_identifier=int(receipt["blockNumber"])
             )
 
+        if action in TAIL_TARGETS:
+            validate_tail(self.gateway, detail, tx, receipt, event)
+            return
         if action == "project.create":
             view = call("PoGRegistryV2", "getProject", args[0])
             exact = (
@@ -890,6 +981,8 @@ class ChainIndexer:
             latest = self._tip()
             last_hash = self.gateway.block_identity(latest)[0]
             events = self.gateway.events_in_range(self.gateway.deployment_start_block(), latest)
+            from .payment_domain import freeze_namespace
+            freeze_namespace(session, namespace, "chain_reorganization")
             session.execute(update(ChainEvent).where(
                 ChainEvent.namespace_id == namespace.id
             ).values(canonical=False))
@@ -982,6 +1075,7 @@ class ChainIndexer:
             "po_hash", "request_hash", "goods_request_hash", "pre_evidence_hash",
             "pre_assessment_id", "reserved_amount_atomic", "invoice_hash", "invoice_amount_atomic",
             "goods_hash", "receipt_digest", "chain_tx_hash", "chain_block_number",
+            "final_evidence_hash", "final_assessment_id", "conversion_evidence_hash", "payment_evidence_hash", "settlement_hash",
         ):
             setattr(procurement, field, None)
 
@@ -1091,10 +1185,13 @@ class ChainIndexer:
                     ("po_hash", 4), ("request_hash", 5), ("goods_request_hash", 6),
                     ("pre_evidence_hash", 7), ("pre_assessment_id", 8),
                     ("invoice_hash", 10), ("goods_hash", 12), ("receipt_digest", 13),
+                    ("final_evidence_hash", 14), ("final_assessment_id", 15),
+                    ("conversion_evidence_hash", 16), ("payment_evidence_hash", 17), ("settlement_hash", 18),
                 ):
                     setattr(procurement, field, _normalized(proc_view[index]))
                 procurement.reserved_amount_atomic = Decimal(proc_view[9])
                 procurement.invoice_amount_atomic = Decimal(proc_view[11])
+                procurement.returned_amount_atomic = Decimal(proc_view[20])
                 procurement.chain_tx_hash = procurement_events[-1]["transactionHash"]
                 procurement.chain_block_number = procurement_events[-1]["blockNumber"]
 

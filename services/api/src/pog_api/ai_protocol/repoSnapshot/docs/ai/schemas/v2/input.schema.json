@@ -1,0 +1,422 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:input",
+  "title": "PrePurchaseInput / FinalReleaseInput 0.2 候选",
+  "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+  "$comment": "inputHash = Ethereum Keccak-256(PoG-CJSON-0.2(完整 input 对象))；input 不含 inputHash 自身。除纯格式外还要复算文件/外部 snapshot 摘要、承诺映射、Registry 证据、API scope 和 version、状态/收货门禁。模型无权改写可信事实。",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "pog.ai.input/0.2-candidate"
+        },
+        "stage": {
+          "type": "integer",
+          "const": 0
+        },
+        "claimAlias": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "projectPolicy": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/projectPolicy"
+        },
+        "vendorContext": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/vendorContext"
+        },
+        "comparisonContext": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/comparisonContext"
+        },
+        "registrySnapshot": {
+          "type": "object",
+          "properties": {
+            "verified": {
+              "type": "boolean"
+            },
+            "blockNumber": {
+              "anyOf": [
+                {
+                  "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "blockHash": {
+              "anyOf": [
+                {
+                  "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "projectId": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "procurementId": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "foundation": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "recipient": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "vendor": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "asset": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "currentEvidenceHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "state": {
+              "enum": [
+                "PORecorded",
+                "PreAssessed",
+                "ReserveApprovalPending"
+              ]
+            },
+            "budgetCap": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "poHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "requestHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "goodsRequestHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            }
+          },
+          "required": [
+            "verified",
+            "blockNumber",
+            "blockHash",
+            "projectId",
+            "procurementId",
+            "foundation",
+            "recipient",
+            "vendor",
+            "asset",
+            "currentEvidenceHash",
+            "state",
+            "budgetCap",
+            "poHash",
+            "requestHash",
+            "goodsRequestHash"
+          ],
+          "additionalProperties": false,
+          "description": "verified=true 时 blockNumber/blockHash 非 null，必须可由同一可信 deployment 的 canonical block 与 Registry 重算；客户端声明 true 本身无证明效力。",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "verified": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "blockNumber": {
+                    "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+                  },
+                  "blockHash": {
+                    "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceRef"
+          },
+          "maxItems": 1024,
+          "description": "按 (evidenceId,version 数值) 升序、evidenceId 唯一；精确对应可信 documentVersions。"
+        },
+        "evidenceSnapshot": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceSnapshot"
+        },
+        "procurementData": {
+          "type": "object",
+          "properties": {
+            "requestVersion": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+            },
+            "category": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/nonemptyText"
+            },
+            "description": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/text"
+            },
+            "quantity": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "quoteAmountAtomic": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "poVersion": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+            }
+          },
+          "required": [
+            "requestVersion",
+            "category",
+            "description",
+            "quantity",
+            "quoteAmountAtomic",
+            "poVersion"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "stage",
+        "claimAlias",
+        "projectPolicy",
+        "vendorContext",
+        "comparisonContext",
+        "registrySnapshot",
+        "documents",
+        "evidenceSnapshot",
+        "procurementData"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "pog.ai.input/0.2-candidate"
+        },
+        "stage": {
+          "type": "integer",
+          "const": 1
+        },
+        "claimAlias": {
+          "anyOf": [
+            {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "projectPolicy": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/projectPolicy"
+        },
+        "vendorContext": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/vendorContext"
+        },
+        "comparisonContext": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/comparisonContext"
+        },
+        "registrySnapshot": {
+          "type": "object",
+          "properties": {
+            "verified": {
+              "type": "boolean"
+            },
+            "blockNumber": {
+              "anyOf": [
+                {
+                  "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "blockHash": {
+              "anyOf": [
+                {
+                  "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "projectId": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "procurementId": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "foundation": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "recipient": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "vendor": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "asset": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/address"
+            },
+            "currentEvidenceHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "state": {
+              "enum": [
+                "ReceiptConfirmed",
+                "FinalAssessed",
+                "ReleaseApprovalPending"
+              ]
+            },
+            "reservedAmount": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "poHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "invoiceHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "invoiceAmount": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "goodsHash": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            },
+            "receiptDigest": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+            }
+          },
+          "required": [
+            "verified",
+            "blockNumber",
+            "blockHash",
+            "projectId",
+            "procurementId",
+            "foundation",
+            "recipient",
+            "vendor",
+            "asset",
+            "currentEvidenceHash",
+            "state",
+            "reservedAmount",
+            "poHash",
+            "invoiceHash",
+            "invoiceAmount",
+            "goodsHash",
+            "receiptDigest"
+          ],
+          "additionalProperties": false,
+          "description": "链上已接受收货是 FinalRelease 的生产前提。receiptDigest 是 RecipientReceipt typed commitment，非 Receipt 文件摘要。",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "verified": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "blockNumber": {
+                    "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+                  },
+                  "blockHash": {
+                    "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceRef"
+          },
+          "maxItems": 1024,
+          "description": "按 (evidenceId,version 数值) 升序、evidenceId 唯一；精确对应可信 documentVersions。"
+        },
+        "evidenceSnapshot": {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/evidenceSnapshot"
+        },
+        "deliveryData": {
+          "type": "object",
+          "properties": {
+            "poVersion": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+            },
+            "poQuantity": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "grnVersion": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+            },
+            "grnQuantity": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "invoiceVersion": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+            },
+            "invoiceQuantity": {
+              "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint256String"
+            },
+            "inspectionVersion": {
+              "anyOf": [
+                {
+                  "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/uint64String"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receiptAccepted": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "poVersion",
+            "poQuantity",
+            "grnVersion",
+            "grnQuantity",
+            "invoiceVersion",
+            "invoiceQuantity",
+            "inspectionVersion",
+            "receiptAccepted"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "stage",
+        "claimAlias",
+        "projectPolicy",
+        "vendorContext",
+        "comparisonContext",
+        "registrySnapshot",
+        "documents",
+        "evidenceSnapshot",
+        "deliveryData"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

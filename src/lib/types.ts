@@ -1,5 +1,8 @@
 import type { AccessUser } from "./access";
 export type Project = {
+  paymentTracked?: boolean;
+  released?: number;
+  refunded?: number;
   id: string;
   name: string;
   description: string;
@@ -36,6 +39,8 @@ export type Procurement = {
     | "reserved"
     | "payment_review"
     | "paid"
+    | "funds_released"
+    | "cancelled"
     | "needs_info"
     | "frozen";
   risk: number;

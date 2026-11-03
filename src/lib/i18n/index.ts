@@ -38,6 +38,10 @@ export function translate<T>(value: T, locale: Locale): T {
     ) as T;
   if (value.startsWith("累计注资 "))
     return (translate("累计注资 ", locale) + value.slice(5)) as T;
+  // This is a controlled API status template, not arbitrary document content.
+  const unsupportedState = value.match(/^未支持的链状态：([a-z][a-z0-9_]*)$/);
+  if (unsupportedState)
+    return (translate("未支持的链状态：", locale) + unsupportedState[1]) as T;
   // Unknown text is user-authored content and must retain its original wording.
   return value;
 }

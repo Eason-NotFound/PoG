@@ -1,0 +1,503 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pog:ai:0.2-candidate:error-envelope",
+  "title": "ErrorEnvelope 0.2 候选",
+  "description": "0.2 候选；API 规范未冻结，须经 API 负责人确认。Schema 通过不代表可信来源、规范字节或生产签名门禁通过。",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "pog.ai.error/0.2-candidate"
+    },
+    "status": {
+      "const": "error"
+    },
+    "stage": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "procurementId": {
+      "anyOf": [
+        {
+          "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/bytes32"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "code": {
+      "enum": [
+        "INPUT_FORMAT_INVALID",
+        "REQUEST_TOO_LARGE",
+        "AUTHENTICATION_REQUIRED",
+        "FORBIDDEN",
+        "RESOURCE_NOT_FOUND",
+        "OPERATION_NOT_FOUND",
+        "IDEMPOTENCY_CONFLICT",
+        "IDEMPOTENCY_KEY_EXPIRED",
+        "RATE_LIMITED",
+        "DOCUMENT_READ_UNAVAILABLE",
+        "DOCUMENT_HASH_MISMATCH",
+        "EVIDENCE_BINDING_MISMATCH",
+        "REGISTRY_SNAPSHOT_UNVERIFIED",
+        "REGISTRY_SNAPSHOT_STALE",
+        "EXTERNAL_DATA_UNAVAILABLE",
+        "DEPENDENCY_UNAVAILABLE",
+        "MODEL_TIMEOUT",
+        "MODEL_FAILURE",
+        "MODEL_OUTPUT_INVALID",
+        "CANONICALIZATION_FAILED",
+        "RULE_FAILURE",
+        "SCORING_POLICY_UNCONFIRMED",
+        "VERSION_UNSUPPORTED",
+        "REQUEST_DEADLINE_EXCEEDED",
+        "INTERNAL_ERROR"
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "message": {
+      "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/text"
+    },
+    "missingInputs": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:pog:ai:0.2-candidate:common#/$defs/missingInput"
+      },
+      "maxItems": 1024
+    },
+    "report": {
+      "type": "null"
+    },
+    "signingEnvelope": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "status",
+    "stage",
+    "procurementId",
+    "code",
+    "retryable",
+    "message",
+    "missingInputs",
+    "report",
+    "signingEnvelope"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "INPUT_FORMAT_INVALID"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "REQUEST_TOO_LARGE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "AUTHENTICATION_REQUIRED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "FORBIDDEN"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "RESOURCE_NOT_FOUND"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "OPERATION_NOT_FOUND"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "IDEMPOTENCY_CONFLICT"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "RATE_LIMITED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "DOCUMENT_READ_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "DOCUMENT_HASH_MISMATCH"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "EVIDENCE_BINDING_MISMATCH"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "REGISTRY_SNAPSHOT_UNVERIFIED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "REGISTRY_SNAPSHOT_STALE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "EXTERNAL_DATA_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "DEPENDENCY_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "MODEL_TIMEOUT"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "MODEL_FAILURE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "MODEL_OUTPUT_INVALID"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "CANONICALIZATION_FAILED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "RULE_FAILURE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "SCORING_POLICY_UNCONFIRMED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "VERSION_UNSUPPORTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "REQUEST_DEADLINE_EXCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "INTERNAL_ERROR"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "const": "IDEMPOTENCY_KEY_EXPIRED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "retryable": {
+            "const": false
+          }
+        }
+      }
+    }
+  ],
+  "$comment": "HTTP 与 retryable 的意义见 V2_REPORT_TRANSPORT_CANDIDATE.md；缺业务资料为 completed + incomplete Review/null，不用 REQUIRED_EVIDENCE_MISSING 技术错误。未知/不可信 stage、procurementId 必须 null。"
+}

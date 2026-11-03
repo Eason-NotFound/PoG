@@ -96,6 +96,12 @@ DOCUMENT_CATEGORIES = {
 bearer = HTTPBearer(auto_error=False)
 
 
+def _database_schema_ready(revision, required_tables, payment_tables, diagnostic_tables, *, ai_diagnostic_enabled):
+    accepted = {"c31004a30006"} if ai_diagnostic_enabled else {"c31003a30005", "c31004a30006"}
+    return (revision in accepted and required_tables == 12 and payment_tables == 6
+            and (not ai_diagnostic_enabled or diagnostic_tables == 1))
+
+
 def _wallet_for_role(session: Session, user_id: UUID, role: str) -> WalletAuthorization:
     authorization = session.scalar(
         select(WalletAuthorization).where(
@@ -357,6 +363,14 @@ def create_app(
                 )
             )
             storage_ready = file_store.root.is_dir() and os.access(file_store.root, os.W_OK)
+            payment_tables = session.scalar(text(
+                "SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() "
+                "AND table_name IN ('sim_hkd_accounts','sim_hkd_journals','payment_resources','funded_claims','payment_evidence','payment_token_outflows')"
+            )) if settings.full_demo_enabled else 6
+            diagnostic_tables = session.scalar(text(
+                "SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() "
+                "AND table_name = 'ai_diagnostics'"
+            )) if settings.ai_diagnostic_enabled else 0
         except Exception as exc:
             return JSONResponse(
                 status_code=503,
@@ -372,8 +386,8 @@ def create_app(
                     "adapters": adapters.statuses(),
                 },
             )
-        expected_revision = "c31003a20004"
-        database_ready = revision == expected_revision and required_tables == 12
+        database_ready = _database_schema_ready(revision, required_tables, payment_tables, diagnostic_tables,
+            ai_diagnostic_enabled=settings.ai_diagnostic_enabled)
         chain_ready = not settings.chain_enabled or gateway is not None
         chain_error = gateway_error
         if settings.chain_enabled and gateway is not None:
@@ -1089,10 +1103,28 @@ def create_app(
             })
         return _operation_response(operation, False, step_facts or None)
 
-    install_a2_routes(
+    from .full_demo import install_full_routes
+    install_full_routes(
+        app, get_session=get_session, current_principal=current_principal,
+        namespace=namespace, gateway=gateway, gateway_error=gateway_error,
+        settings=settings, file_store=file_store,
+    )
+    signing_actions = install_a2_routes(
         app, get_session=get_session, current_principal=current_principal,
         namespace=namespace, gateway=gateway, gateway_error=gateway_error,
         settings=settings,
+    )
+    from .offline_demo import install_offline_demo_routes
+    install_offline_demo_routes(
+        app, get_session=get_session, current_principal=current_principal,
+        namespace=namespace, gateway=gateway, gateway_error=gateway_error,
+        settings=settings, file_store=file_store, signing_actions=signing_actions,
+    )
+    from .ai_diagnostics import install_ai_diagnostic_routes
+    install_ai_diagnostic_routes(
+        app, get_session=get_session, current_principal=current_principal,
+        namespace=namespace, gateway=gateway, gateway_error=gateway_error,
+        settings=settings, file_store=file_store,
     )
     return app
 

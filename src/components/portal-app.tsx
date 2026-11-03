@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import Casework from "./casework";
+import FundsFlow from "./funds-flow";
 import { formatMoney, formatDate } from "@/lib/i18n";
 import {
   ArrowUpRight,
@@ -68,6 +69,24 @@ import type {
   Project,
   RecordSnapshot,
 } from "@/lib/types";
+import {
+  loadPortalA2Page,
+  portalA2Action,
+  portalA2Allowed,
+  portalA2Logout,
+  portalA2Upload,
+  type PortalA2AppData,
+  type PortalA2State,
+} from "@/lib/portal-a2";
+import {
+  capabilityState,
+  fullDemoAmount,
+  quoteForCurrentScope,
+  remainingFundingAtomic,
+  currentFunding,
+  type DemoQuote,
+} from "@/lib/full-demo-ui";
+import { isChainConfirmed } from "@/lib/a2-workbench";
 const icons: Record<string, LucideIcon> = {
   LayoutDashboard,
   Compass,
@@ -93,6 +112,8 @@ const labels: Record<Procurement["status"], string> = {
   reserved: "预算已预留",
   payment_review: "待付款审批",
   paid: "供应商已收款",
+  funds_released: "基金会已收到模拟币",
+  cancelled: "已取消",
   needs_info: "待补充资料",
   frozen: "已冻结",
 };
@@ -101,7 +122,10 @@ function minor(v: FormDataEntryValue | null) {
   if (!/^\d+(\.\d{1,2})?$/.test(s))
     throw new Error("金额需为正数，最多两位小数");
   const [whole, decimal = ""] = s.split(".");
-  return Number(whole) * 100 + Number(decimal.padEnd(2, "0"));
+  const cents = BigInt(whole) * 100n + BigInt(decimal.padEnd(2, "0"));
+  if (cents <= 0n || cents > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new Error("金额超出安全范围");
+  return Number(cents);
 }
 function requestKey() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)))
@@ -137,18 +161,20 @@ function Panel({
   extra,
   children,
   className = "",
+  translateTitle = true,
 }: {
   title: string;
   extra?: ReactNode;
   children: ReactNode;
   className?: string;
+  translateTitle?: boolean;
 }) {
   const { t } = useI18n();
 
   return (
     <section className={"panel " + className}>
       <div className="panel-title">
-        <h2>{t(title)}</h2>
+        <h2>{translateTitle ? t(title) : title}</h2>
         {t(extra)}
       </div>
       {t(children)}
@@ -193,17 +219,41 @@ function Status({ status }: { status: Procurement["status"] }) {
     </span>
   );
 }
-function Timeline({ claim }: { claim: Procurement }) {
+function Timeline({
+  claim,
+  chainStatus,
+}: {
+  claim: Procurement;
+  chainStatus?: string;
+}) {
   const { t } = useI18n();
 
-  const end = {
-    human_review: 1,
-    reserved: 3,
-    payment_review: 5,
-    paid: 7,
-    needs_info: 1,
-    frozen: 1,
-  }[claim.status];
+  const end = chainStatus
+    ? ({
+        created: 0,
+        po_recorded: 0,
+        pre_assessed: 0,
+        reserve_approval_pending: 2,
+        reserved: 3,
+        invoice_recorded: 3,
+        receipt_confirmed: 4,
+        final_assessed: 4,
+        release_approval_pending: 6,
+        funds_released: 6,
+        settlement_recorded: 6,
+        settlement_approval_pending: 6,
+        payment_confirmed: 7,
+      }[chainStatus] ?? -1)
+    : {
+        human_review: 1,
+        reserved: 3,
+        payment_review: 5,
+        paid: 7,
+        funds_released: 7,
+        cancelled: -1,
+        needs_info: 1,
+        frozen: 1,
+      }[claim.status];
   return (
     <div className="timeline">
       {t(
@@ -215,12 +265,27 @@ function Timeline({ claim }: { claim: Procurement }) {
           "交付验收",
           "AI 最终审核",
           "人工批准付款",
-          "供应商收款",
+          claim.status === "funds_released" ? "基金会收到模拟币" : "供应商收款",
         ].map((s, i) => (
-          <div key={s} className={i <= end ? "done" : ""}>
-            {t(i <= end ? <CheckCircle2 size={16} /> : <Circle size={16} />)}
+          <div
+            key={s}
+            className={
+              i <= end && (!chainStatus || (i !== 1 && i !== 5)) ? "done" : ""
+            }
+          >
+            {t(
+              i <= end && (!chainStatus || (i !== 1 && i !== 5)) ? (
+                <CheckCircle2 size={16} />
+              ) : (
+                <Circle size={16} />
+              ),
+            )}
             <span>{t(s)}</span>
-            {t(i === 1 || i === 5 ? <small>{t("演示结果")}</small> : null)}
+            {t(
+              i === 1 || i === 5 ? (
+                <small>{t(chainStatus ? "AI 待接入" : "演示结果")}</small>
+              ) : null,
+            )}
           </div>
         )),
       )}
@@ -271,10 +336,48 @@ function Modal({
     </dialog>
   );
 }
-export default function PortalApp({ initial }: { initial: AppData }) {
+export function PortalA2Entry({ pageId }: { pageId: string }) {
+  const { t } = useI18n();
+  const [initial, setInitial] = useState<PortalA2AppData | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    void loadPortalA2Page(pageId)
+      .then((value) => {
+        if (active) setInitial(value);
+      })
+      .catch((problem) => {
+        if (!active) return;
+        if (problem?.status === 401) window.location.assign("/login");
+        else
+          setError(
+            problem instanceof Error ? problem.message : "无法读取真实工作区",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [pageId]);
+  if (!initial)
+    return (
+      <main>
+        <p role={error ? "alert" : "status"}>
+          {t(error || "正在读取本人工作区…")}
+        </p>
+        <Link href="/login">{t("返回登录")}</Link>
+      </main>
+    );
+  return <PortalApp initial={initial} />;
+}
+export default function PortalApp({
+  initial,
+}: {
+  initial: AppData & { integration?: PortalA2State };
+}) {
   const { t, locale } = useI18n();
-  const cash = (value = 0) => formatMoney(value, locale);
-  const date = (value: string) => formatDate(value, locale);
+  const cash = (value = 0) =>
+    Number.isFinite(value) ? formatMoney(value, locale) : "—";
+  const date = (value: string) => (value ? formatDate(value, locale) : "—");
 
   const [app, setApp] = useState(initial),
     [modal, setModal] = useState<ModalState | null>(null),
@@ -298,14 +401,58 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     >([]),
     [copyState, setCopyState] = useState("");
   const page = pages.find((p) => p.id === app.pageId)!;
-  const accessible = allowedPages(app.user),
+  const accessible = allowedPages(app.user).filter(
+      (p) => !app.integration || p.portal === app.user.role,
+    ),
     portals = portalOrder.filter((p) => accessible.some((x) => x.portal === p)),
     nav = accessible.filter((p) => p.portal === page.portal);
-  const d = app.data,
-    projects = d.projects || [],
+  const [showLegacy, setShowLegacy] = useState(false);
+  const source = app.data;
+  const visibleProjects = source.projects?.filter((p) =>
+    showLegacy ? !p.paymentTracked : p.paymentTracked,
+  );
+  const visibleIds = new Set(visibleProjects?.map((p) => p.id));
+  const d = {
+      ...source,
+      projects: visibleProjects,
+      donations: source.donations?.filter((x) => visibleIds.has(x.projectId)),
+      procurements: source.procurements?.filter((x) =>
+        visibleIds.has(x.projectId),
+      ),
+      reviews: source.reviews?.filter((x) => visibleIds.has(x.projectId)),
+      appeals: source.appeals?.filter((x) => visibleIds.has(x.projectId)),
+      ledger: source.ledger?.filter((x) => visibleIds.has(x.projectId)),
+    },
+    projects = (d.projects || [])
+      .slice()
+      .sort((a, b) => Number(!!b.paymentTracked) - Number(!!a.paymentTracked)),
     claims = d.procurements || [],
     donations = d.donations || [];
   const [tab, setTab] = useState("all");
+  const liveProjects = projects.filter((p) => p.paymentTracked);
+  const liveDonations = donations.filter((x) =>
+    liveProjects.some((p) => p.id === x.projectId),
+  );
+  const integration = app.integration;
+  const [donationAmount, setDonationAmount] = useState("100");
+  const [donationQuote, setDonationQuote] = useState<DemoQuote | null>(null);
+  const [selectedFunding, setSelectedFunding] = useState("");
+  const [reserveDisplay, setReserveDisplay] = useState("");
+  const [pendingA2, setPendingA2] = useState<{
+    id: string;
+    body: Record<string, unknown>;
+    key: string;
+    scope: string;
+  } | null>(null);
+  const a2Scope = integration
+    ? `${integration.currentUser.id}:${integration.currentUser.role}:${integration.currentUser.walletAddress.toLowerCase()}:${integration.context.binding.namespaceId}:${integration.context.binding.runId}:${integration.context.binding.instanceId}`
+    : "";
+  useEffect(() => {
+    modalRevision.current += 1;
+    setDonationQuote(null);
+    setSelectedFunding("");
+  }, [a2Scope]);
+  const modalRevision = useRef(0);
   useEffect(() => {
     setApp(initial);
     setModal(null);
@@ -319,6 +466,11 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     return () => clearTimeout(t);
   }, [toast]);
   const refresh = useCallback(async () => {
+    if (initial.integration) {
+      const value = await loadPortalA2Page(initial.pageId);
+      setApp(value);
+      return;
+    }
     const r = await fetch(
       "/api/page?id=" + encodeURIComponent(initial.pageId),
       { cache: "no-store" },
@@ -334,14 +486,28 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     const v = await r.json();
     if (!r.ok) throw new Error(v.error);
     setApp(v);
-  }, [initial.pageId]);
+  }, [initial.pageId, initial.integration]);
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") refresh().catch(() => {});
-    }, 15000);
+    const timer = setInterval(
+      () => {
+        if (document.visibilityState === "visible") refresh().catch(() => {});
+      },
+      initial.integration ? 5000 : 15000,
+    );
     return () => clearInterval(timer);
   }, [refresh]);
   function open(m: ModalState) {
+    if (pendingA2) {
+      setError(
+        "上一次请求结果未知；先用同一请求重试或刷新核对，不发起新交易。",
+      );
+      return;
+    }
+    modalRevision.current += 1;
+    setDonationAmount("100");
+    setDonationQuote(null);
+    setSelectedFunding("");
+    setReserveDisplay("");
     setError("");
     setUploaded([]);
     setUploadKind(m.type === "supplement" ? "quotation" : "invoice");
@@ -352,6 +518,40 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     }
   }
   async function perform(action: Action, body: Record<string, unknown>) {
+    if (integration) {
+      if (action === "createProject") {
+        await runA2("project.draft.create", {
+          title: body.name,
+          publicSummary: body.description,
+          recipientUserId: integration.context?.defaults?.recipientUserId,
+          humanApproverUserId:
+            integration.context?.defaults?.humanApproverUserId,
+        });
+      } else if (action === "foundationProcurement") {
+        if (
+          !Number.isSafeInteger(body.quantity) ||
+          !Number.isSafeInteger(body.unitPrice)
+        ) {
+          setError("预算输入超出安全范围");
+          return;
+        }
+        const budget =
+          BigInt(body.quantity as number) *
+          BigInt(body.unitPrice as number) *
+          10000n;
+        await runA2("procurement.draft.create", {
+          projectId: body.projectId,
+          title: body.name,
+          vendorWallet: integration.context?.defaults?.supplierWallet,
+          budgetCapAtomic: budget.toString(),
+        });
+      } else if (action === "approvePurchase")
+        await runA2("procurement.reserve.execute", body);
+      else if (action === "approvePayment")
+        await runA2("release.execute", body);
+      else setError("此功能尚未接入真实接口，未执行任何旧演示账本写入。");
+      return;
+    }
     if (busy) return;
     setBusy(true);
     setError("");
@@ -375,6 +575,93 @@ export default function PortalApp({ initial }: { initial: AppData }) {
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "请求失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function runA2(
+    id: string,
+    body: Record<string, unknown>,
+    retry = false,
+  ) {
+    if (!integration || busy || (pendingA2 && !retry)) return;
+    const candidate =
+      retry && pendingA2
+        ? pendingA2
+        : { id, body, key: requestKey(), scope: a2Scope };
+    if (candidate.scope !== a2Scope) {
+      setError(
+        "身份或部署已改变；不能把旧请求转发到新实例，请重新读取原 operation。",
+      );
+      return;
+    }
+    const revision = modalRevision.current;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await portalA2Action(
+        candidate.id,
+        candidate.body,
+        candidate.key,
+        { expectedState: integration },
+      );
+      setPendingA2(null);
+      setToast("接口已受理；等待 operation 和链上确认，不代表资金已到账。");
+      const fresh = await loadPortalA2Page(initial.pageId);
+      setApp(fresh);
+      const createdProject = fresh.data.projects?.find(
+        (item) => item.id === result.project?.id,
+      );
+      const createdProcurement = fresh.data.procurements?.find(
+        (item) => item.id === result.procurement?.id,
+      );
+      if (revision === modalRevision.current && createdProject)
+        setModal({ type: "project", project: createdProject });
+      if (revision === modalRevision.current && createdProcurement)
+        setModal({ type: "claim", claim: createdProcurement });
+    } catch (problem) {
+      if (
+        (problem as { status?: number })?.status === 0 ||
+        (problem as { status?: number })?.status === 504
+      )
+        setPendingA2(candidate);
+      setError(problem instanceof Error ? problem.message : "接口请求失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const allowedA2 = (id: string, procurementId?: string, projectId?: string) =>
+    Boolean(
+      integration &&
+      portalA2Allowed(integration, id, { procurementId, projectId }).enabled &&
+      !busy &&
+      !pendingA2,
+    );
+  async function quoteDonation(projectId: string) {
+    if (!integration || !allowedA2("mock.exchange.quote", undefined, projectId))
+      return;
+    const revision = modalRevision.current;
+    setBusy(true);
+    setError("");
+    setDonationQuote(null);
+    try {
+      const amount = fullDemoAmount(donationAmount);
+      const result = await portalA2Action(
+        "mock.exchange.quote",
+        { direction: "hkd_to_mock", projectId, hkdCents: amount.hkdCents },
+        requestKey(),
+        { expectedState: integration },
+      );
+      if (
+        !quoteForCurrentScope(result, integration.context) ||
+        result.quote.direction !== "hkd_to_mock" ||
+        result.quote.hkdCents !== amount.hkdCents ||
+        result.quote.amountAtomic !== amount.amountAtomic
+      )
+        throw new Error("报价金额或部署绑定不一致");
+      if (revision === modalRevision.current) setDonationQuote(result);
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : "报价失败");
     } finally {
       setBusy(false);
     }
@@ -411,6 +698,10 @@ export default function PortalApp({ initial }: { initial: AppData }) {
   }
   async function queryHash(e: React.FormEvent) {
     e.preventDefault();
+    if (integration) {
+      setError("Hash 查询适配待接入；请在采购证明页面读取真实不可变文件。");
+      return;
+    }
     setBusy(true);
     setError("");
     setMatches(null);
@@ -439,6 +730,23 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     }
     setBusy(true);
     try {
+      if (integration) {
+        const result = await portalA2Upload(modal.claim.id, uploadKind, file, {
+          expectedState: integration,
+        });
+        setUploaded((items) => [
+          ...items,
+          {
+            id: result.versionId,
+            name: result.originalFilename,
+            hash: result.keccak256,
+            type: result.category,
+          },
+        ]);
+        setToast("不可变文件版本已保存；尚未登记到链上。");
+        await refresh();
+        return;
+      }
       const content = await new Promise<string>((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(String(r.result).split(",")[1]);
@@ -466,6 +774,15 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     }
   }
   async function signout() {
+    if (integration) {
+      try {
+        await portalA2Logout();
+        window.location.assign("/login");
+      } catch (problem) {
+        setError(problem instanceof Error ? problem.message : "登出失败");
+      }
+      return;
+    }
     await fetch("/api/auth/logout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -473,14 +790,63 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     });
     window.location.assign("/login");
   }
-  const write = (a: Action) => canAct(app.user, a);
-  const sum = (key: "deposited" | "available" | "reserved" | "paid") =>
-    projects.reduce((s, p) => s + p[key], 0);
+  const write = (a: Action) =>
+    integration
+      ? Boolean(
+          {
+            createProject:
+              app.user.role === "foundation" &&
+              allowedA2("project.draft.create"),
+            foundationProcurement:
+              app.user.role === "foundation" &&
+              capabilityState(integration.context, "procurement.draft.create")
+                .enabled &&
+              !busy &&
+              !pendingA2,
+            donate:
+              app.user.role === "donor" &&
+              capabilityState(integration.context, "donation.funded.deposit")
+                .enabled &&
+              !busy &&
+              !pendingA2,
+            approvePurchase: app.user.role === "foundation",
+            approvePayment: app.user.role === "foundation",
+          }[a as "createProject"],
+        )
+      : canAct(app.user, a);
+  const sum = (
+    key: "deposited" | "available" | "reserved" | "paid" | "released",
+  ) =>
+    liveProjects.reduce((s, p) => s + (p[key] ?? (integration ? NaN : 0)), 0);
   const filteredClaims = claims.filter(
     (c) =>
       (tab === "all" || c.status === tab) &&
       (c.id + " " + c.name).toLowerCase().includes(search.toLowerCase()),
   );
+  const readyHumanCount =
+    integration?.rawProcurements.filter(
+      (proc) =>
+        proc.chainState.verified &&
+        ["pre_assessed", "final_assessed", "settlement_recorded"].includes(
+          proc.chainState.status,
+        ) &&
+        portalA2Allowed(integration, "authorization.prepare", {
+          procurementId: proc.id,
+          projectId: proc.projectId,
+          kind:
+            proc.chainState.status === "pre_assessed"
+              ? "reserve"
+              : proc.chainState.status === "final_assessed"
+                ? "release"
+                : "settlement",
+        }).enabled,
+    ).length ?? 0;
+  const waitingAiCount =
+    integration?.rawProcurements.filter(
+      (proc) =>
+        proc.chainState.verified &&
+        ["po_recorded", "receipt_confirmed"].includes(proc.chainState.status),
+    ).length ?? 0;
   function claimRow(c: Procurement, button = "查看详情", type = "claim") {
     return (
       <div className="record-row" key={c.id}>
@@ -488,7 +854,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           <ShoppingBag size={19} />
         </div>
         <div className="record-main">
-          <strong>{t(c.name)}</strong>
+          <strong>{c.name}</strong>
           <small>
             {t(c.id)} · {t(date(c.createdAt))}
           </small>
@@ -518,8 +884,8 @@ export default function PortalApp({ initial }: { initial: AppData }) {
         </div>
         <div className="project-content">
           <div className="eyebrow">CHENGUANG FOUNDATION</div>
-          <h2>{t(p.name)}</h2>
-          <p>{t(p.description)}</p>
+          <h2>{p.name}</h2>
+          <p>{p.description}</p>
           <div className="project-meta">
             <span>{t("晨光基金会")}</span>
             <span className="verified">
@@ -528,7 +894,11 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             </span>
           </div>
           <div className="project-rule">
-            {t("按项目规则使用 · 验收后支付供应商")}
+            {t(
+              p.paymentTracked
+                ? "模拟币资金链 · 验收后拨给基金会"
+                : "历史演示示例 · 独立于当前资金链",
+            )}
           </div>
           <div className="button-row">
             {t(
@@ -536,8 +906,18 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 <>
                   <button
                     className="primary"
-                    disabled={!write("donate")}
-                    onClick={() => open({ type: "donate", project: p })}
+                    disabled={
+                      !write("donate") ||
+                      Boolean(
+                        integration &&
+                        !allowedA2("donation.funded.deposit", undefined, p.id),
+                      )
+                    }
+                    onClick={() =>
+                      window.location.assign(
+                        "/donor/funds?project=" + encodeURIComponent(p.id),
+                      )
+                    }
                   >
                     {t("支持这个项目")}
                     <ArrowUpRight size={15} />
@@ -555,7 +935,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     page.portal === "foundation" && (
                       <button
                         className="primary"
-                        disabled={!write("deposit")}
+                        disabled={!write("deposit") || !!p.paymentTracked}
                         onClick={() => open({ type: "deposit", project: p })}
                       >
                         {t("模拟注资")}
@@ -578,14 +958,20 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           <HeartHandshake size={18} />
         </div>
         <div className="record-main">
-          <strong>{t(project?.name || x.projectId)}</strong>
+          <strong>{project?.name || x.projectId}</strong>
           <small>
             {t(x.id)} · {t(date(x.createdAt))}
           </small>
         </div>
         <div className="record-amount">
           HK$ {t(cash(x.amount))}
-          <small>{t("模拟支付已确认")}</small>
+          <small>
+            {t(
+              app.integration
+                ? "本人链上累计捐款；非逐笔凭证"
+                : "模拟支付已确认",
+            )}
+          </small>
         </div>
         <button
           className="text-button"
@@ -666,6 +1052,10 @@ export default function PortalApp({ initial }: { initial: AppData }) {
     );
   }
   function content(): ReactNode {
+    if (page.slug === "funds")
+      return app.user.role === "maintainer" ? (
+        <p className="notice">{t("维护权限不包含个人资金账户与流水")}</p>
+      ) : null;
     if (page.id === "foundation.evidence" || page.id === "recipient.delivery")
       return (
         <Casework
@@ -675,11 +1065,18 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           data={d}
           user={app.user}
           refresh={refresh}
+          integration={integration}
         />
       );
     if (page.id === "admin.audit")
       return (
-        <Casework mode="audit" data={d} user={app.user} refresh={refresh} />
+        <Casework
+          mode="audit"
+          data={d}
+          user={app.user}
+          refresh={refresh}
+          integration={integration}
+        />
       );
     if (page.slug === "appeals")
       return (
@@ -689,6 +1086,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           data={d}
           user={app.user}
           refresh={refresh}
+          integration={integration}
         />
       );
     if (page.slug === "hash")
@@ -733,7 +1131,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                       <article className="hash-result" key={r.id}>
                         <div className="section-line">
                           <div>
-                            <h3>{t(r.title)}</h3>
+                            <h3>{r.title}</h3>
                             <p className="muted">
                               {t(r.kind)} · {t(r.id)} · v{t(r.version)}
                             </p>
@@ -793,18 +1191,19 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 key="a"
                 label={t("累计捐款 · 模拟 HKD")}
                 value={
-                  "HK$ " + cash(donations.reduce((s, x) => s + x.amount, 0))
+                  "HK$ " + cash(liveDonations.reduce((s, x) => s + x.amount, 0))
                 }
                 foot={t("已确认的个人捐款")}
                 icon={HeartHandshake}
               />,
               <Metric
                 key="b"
-                label={t("已分配至支出")}
+                label={t("历史分配（资金链项目）")}
                 value={
-                  "HK$ " + cash(donations.reduce((s, x) => s + x.allocated, 0))
+                  "HK$ " +
+                  cash(liveDonations.reduce((s, x) => s + x.allocated, 0))
                 }
-                foot={t("仅计算已完成付款的示例分配")}
+                foot={t("资金当前位置见上方透明资金链")}
                 icon={Route}
               />,
               <Metric
@@ -813,7 +1212,10 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 value={
                   "HK$ " +
                   cash(
-                    donations.reduce((s, x) => s + x.amount - x.allocated, 0),
+                    liveDonations.reduce(
+                      (s, x) => s + x.amount - x.allocated,
+                      0,
+                    ),
                   )
                 }
                 foot={t("不等同于可提现余额")}
@@ -959,9 +1361,13 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               icon={LockKeyhole}
             />
             <Metric
-              label={t("已付供应商 · mHKD")}
-              value={cash(sum("paid"))}
-              foot={t("本地演示账本")}
+              label={t("已拨付基金会 · mHKD")}
+              value={cash(sum("released"))}
+              foot={t(
+                integration
+                  ? "真实本地链释放；不代表供应商已收款"
+                  : "本地演示账本",
+              )}
               icon={BadgeCheck}
             />
           </div>
@@ -1001,13 +1407,17 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               </div>
               <Plus size={16} />
               <div>
-                <span>Paid</span>
-                <b>{t(cash(sum("paid")))}</b>
+                <span>Released</span>
+                <b>{t(cash(sum("released")))}</b>
               </div>
               <span>=</span>
               <div>
-                <span>Deposited</span>
-                <b>{t(cash(sum("deposited")))}</b>
+                <span>{t("当前净存入")}</span>
+                <b>
+                  {t(
+                    cash(sum("available") + sum("reserved") + sum("released")),
+                  )}
+                </b>
               </div>
             </div>
           </Panel>
@@ -1020,10 +1430,11 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             projects.map((p) => (
               <Panel
                 key={p.id}
-                title={t(p.name)}
+                title={p.name}
+                translateTitle={false}
                 extra={<span className="pill">{t("规则 v1")}</span>}
               >
-                <p>{t(p.description)}</p>
+                <p>{p.description}</p>
                 <div className="budget-mini">
                   <div>
                     <small>{t("可用")}</small>
@@ -1034,8 +1445,13 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     <b>{t(cash(p.reserved))} mHKD</b>
                   </div>
                   <div>
-                    <small>{t("已付")}</small>
-                    <b>{t(cash(p.paid))} mHKD</b>
+                    <small>
+                      {t(p.paymentTracked ? "已拨基金会" : "历史已付")}
+                    </small>
+                    <b>
+                      {t(cash(p.paymentTracked ? (p.released ?? NaN) : p.paid))}{" "}
+                      mHKD
+                    </b>
                   </div>
                 </div>
                 <div className="category-tags">
@@ -1049,10 +1465,14 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     page.portal === "foundation" ? (
                       <button
                         className="primary"
-                        disabled={!write("deposit")}
+                        disabled={!write("deposit") || !!p.paymentTracked}
                         onClick={() => open({ type: "deposit", project: p })}
                       >
-                        {t("模拟项目注资")}
+                        {t(
+                          p.paymentTracked
+                            ? "由 Donor 模拟币捐款注资"
+                            : "历史模拟注资",
+                        )}
                       </button>
                     ) : (
                       write("createProcurement") && (
@@ -1178,7 +1598,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             <ShieldCheck size={19} />
             <span>
               {t(
-                "受捐机构负责申请与验收。最终资金直接付给认证供应商，不提供自由提现。",
+                "受捐机构负责申请与验收；审计与最终审批后模拟币拨给基金会，受捐机构不持有这笔资金。",
               )}
             </span>
           </div>
@@ -1202,7 +1622,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                   <div className="record-row" key={r.id}>
                     <Receipt size={19} />
                     <div className="record-main">
-                      <b>{t(r.name)}</b>
+                      <b>{r.name}</b>
                       <small>{t(r.id)}</small>
                     </div>
                     <b>HK$ {t(cash(r.amount))}</b>
@@ -1294,7 +1714,9 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             <ShieldCheck size={19} />
             <span>
               {t(
-                "固定角色控制工作区范围。维护人员默认只读，按页面独立授权；权限变更在下次请求时生效。",
+                integration
+                  ? "本轮仅显示当前已登录的受控身份；用户与权限管理写入接口未接入，不能跨角色代操作。"
+                  : "固定角色控制工作区范围。维护人员默认只读，按页面独立授权；权限变更在下次请求时生效。",
               )}
             </span>
           </div>
@@ -1302,9 +1724,9 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             {t(
               d.users?.map((u) => (
                 <div className="user-row" key={u.id}>
-                  <div className="avatar">{t(u.name).slice(0, 1)}</div>
+                  <div className="avatar">{u.name.slice(0, 1)}</div>
                   <div className="record-main">
-                    <strong>{t(u.name)}</strong>
+                    <strong>{u.name}</strong>
                     <small>
                       {t(u.id)} · {t(roleNames[u.role])} ·{t(" ")}
                       {t(u.active ? "启用" : "已停用")}
@@ -1317,11 +1739,12 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                             {t("个已分配页面")}
                           </span>
                         ) : (
-                          portalOrder
-                            .filter((p) =>
-                              allowedPages(u).some((x) => x.portal === p),
-                            )
-                            .map((p) => <span key={p}>{t(roleNames[p])}</span>)
+                          (integration
+                            ? [u.role]
+                            : portalOrder.filter((p) =>
+                                allowedPages(u).some((x) => x.portal === p),
+                              )
+                          ).map((p) => <span key={p}>{t(roleNames[p])}</span>)
                         ),
                       )}
                     </div>
@@ -1357,17 +1780,35 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     "已实现",
                     "HttpOnly Cookie + 服务端权限校验",
                   ],
-                  ["演示持久化", "已实现", "本机 .data/pog-demo.json"],
+                  [
+                    "演示持久化",
+                    "已实现",
+                    integration
+                      ? "仅 API 持久化事实，不使用本机演示 JSON"
+                      : "本机 .data/pog-demo.json",
+                  ],
                   [
                     "PostgreSQL / FastAPI",
-                    "待接入",
-                    "生产数据层与正式业务接口",
+                    integration ? "已接入" : "待接入",
+                    integration
+                      ? "本地受控 FastAPI / 数据库模拟实例"
+                      : "生产数据层与正式业务接口",
                   ],
-                  ["Anvil / 三个合约", "待接入", "没有生成虚假 txHash"],
+                  [
+                    "Anvil / 三个合约",
+                    integration?.deployment.verified === true
+                      ? "已接入"
+                      : "待接入",
+                    integration
+                      ? "链上事实来自受控实例 canonical receipts"
+                      : "没有生成虚假 txHash",
+                  ],
                   [
                     "AI / Relayer / Indexer",
                     "待接入",
-                    "当前使用固定演示审核结果",
+                    integration
+                      ? "链上 AI 评估待接；诊断报告在采购证明与人工审计页面独立查询"
+                      : "当前使用固定演示审核结果",
                   ],
                 ].map(([title, status, note]) => (
                   <div className="connection" key={title}>
@@ -1416,8 +1857,12 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           <div className="metrics">
             <Metric
               label={t("角色与授权")}
-              value="5 类身份"
-              foot={t("四工作区 + 按页维护人员")}
+              value={integration ? "4 类受控身份" : "5 类身份"}
+              foot={t(
+                integration
+                  ? "各自工作区 · 独立人工 human_approver"
+                  : "四工作区 + 按页维护人员",
+              )}
               icon={ShieldCheck}
             />
             <Metric
@@ -1429,7 +1874,11 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             <Metric
               label={t("运行模式")}
               value="本地演示"
-              foot={t("没有真实资金或链上交易")}
+              foot={t(
+                integration
+                  ? "无真实资金 · 有本地 Anvil 链上交易"
+                  : "没有真实资金或链上交易",
+              )}
               icon={Cable}
             />
           </div>
@@ -1440,8 +1889,15 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 <div>
                   <b>{t("待审计项目")}</b>
                   <small>
-                    {d.reviews?.filter((r) => r.status === "pending").length ||
-                      0}
+                    {integration ? (
+                      <>
+                        {readyHumanCount} {t("可人工审核")} · {waitingAiCount}{" "}
+                        {t("等待 AI 接入")}
+                      </>
+                    ) : (
+                      d.reviews?.filter((r) => r.status === "pending").length ||
+                      0
+                    )}
                   </small>
                 </div>
                 <ArrowUpRight />
@@ -1449,7 +1905,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               <Link className="admin-link" href="/admin/appeals">
                 <ClipboardCheck />
                 <div>
-                  <b>{t("未处理申诉")}</b>
+                  <b>{t(integration ? "申诉入口 · 未接入" : "未处理申诉")}</b>
                   <small>
                     {d.appeals?.filter((a) => a.status === "pending").length ||
                       0}
@@ -1465,7 +1921,13 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     </div>
                     <div>
                       <b>{t("管理页面访问权限")}</b>
-                      <small>{t("为维护人员分配负责的页面")}</small>
+                      <small>
+                        {t(
+                          integration
+                            ? "写入未接入，仅查看当前受控身份"
+                            : "为维护人员分配负责的页面",
+                        )}
+                      </small>
                     </div>
                     <ArrowUpRight size={17} />
                   </Link>
@@ -1493,7 +1955,13 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     </div>
                     <div>
                       <b>{t("审计操作记录")}</b>
-                      <small>{t("权限调整与业务操作留痕")}</small>
+                      <small>
+                        {t(
+                          integration
+                            ? "独立本人授权材料与链上状态"
+                            : "权限调整与业务操作留痕",
+                        )}
+                      </small>
                     </div>
                     <ArrowUpRight size={17} />
                   </Link>
@@ -1508,19 +1976,37 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 </p>
                 <p>
                   <b>{t("基金会")}</b>
-                  <span>{t("捐款人 + 基金会")}</span>
+                  <span>
+                    {t(
+                      integration
+                        ? "仅基金会工作区，不代捐款人"
+                        : "捐款人 + 基金会",
+                    )}
+                  </span>
                 </p>
                 <p>
                   <b>{t("受捐机构")}</b>
                   <span>{t("受捐机构工作区")}</span>
                 </p>
                 <p>
-                  <b>{t("管理员")}</b>
-                  <span>{t("四个工作区")}</span>
+                  <b>{t(integration ? "独立人工审批" : "管理员")}</b>
+                  <span>
+                    {t(
+                      integration
+                        ? "仅 human_approver，不代基金会、收货人或 AI"
+                        : "四个工作区",
+                    )}
+                  </span>
                 </p>
                 <p>
                   <b>{t("维护人员")}</b>
-                  <span>{t("仅获授权页面 · 只读")}</span>
+                  <span>
+                    {t(
+                      integration
+                        ? "本轮未启用 · 页面权限管理未接入"
+                        : "仅获授权页面 · 只读",
+                    )}
+                  </span>
                 </p>
               </div>
             </Panel>
@@ -1535,20 +2021,65 @@ export default function PortalApp({ initial }: { initial: AppData }) {
       .at(-1);
     return review?.decision === "approved" && review.sourceHash === c.hash;
   }
+  function integrationPhaseNotice(c: Procurement, mode: "review" | "payment") {
+    const facts = integration?.procurementFacts[c.id];
+    if (!facts?.verified)
+      return "当前采购阶段尚未得到链上确认；请核对后台事实，不根据按钮状态推断审批完成。";
+    if (facts.releaseConfirmed)
+      return "资金已释放给 Foundation，不代表供应商 Paid；兑换、供应商付款与结算仍是独立事实。";
+    if (mode === "review") {
+      if (
+        [
+          "reserved",
+          "invoice_recorded",
+          "receipt_confirmed",
+          "final_assessed",
+          "release_approval_pending",
+        ].includes(facts.chainState)
+      )
+        return "预留阶段已完成，继续交付证据与收货确认；资金不会因此自动释放。";
+      if (facts.chainState === "reserve_approval_pending")
+        return "此处仅执行后台重新核验后的独立人审票；提交请求不等于预留已确认。";
+      return "尚未完成预留执行阶段；请核对采购证据与独立人工授权，不能代审批或自动预留。";
+    }
+    if (facts.chainState === "release_approval_pending")
+      return "此处仅执行后台重新核验后的独立最终人审票，按发票限额释放给 Foundation。";
+    return "资金仍在 Escrow；核对交付与收货证据，等待最终风险证据及独立人工放款授权。";
+  }
   function claimDetail(c: Procurement) {
     return (
       <>
         <div className="section-line">
           <div>
-            <h3>{t(c.name)}</h3>
+            <h3>{c.name}</h3>
             <p className="muted">
               {t(c.id)} · {t(cash(c.amount))} mHKD
             </p>
           </div>
           <Status status={c.status} />
         </div>
-        <Timeline claim={c} />
-        {t(c.note && <div className="notice compact">{t(c.note)}</div>)}
+        <Timeline
+          claim={c}
+          chainStatus={
+            integration?.rawProcurements.find((p) => p.id === c.id)?.chainState
+              .status
+          }
+        />
+        {integration && (
+          <p className="notice">
+            {t("后端链上状态")}:{" "}
+            {t(
+              integration.rawProcurements.find((p) => p.id === c.id)?.chainState
+                .status || "未提供",
+            )}{" "}
+            · {t("预留、释放给基金会和供应商结算是不同事实")}
+          </p>
+        )}
+        {c.note && (
+          <div className="notice compact">
+            {integration ? t(c.note) : c.note}
+          </div>
+        )}
         <div className="review-grid">
           <div className="review-facts">
             <h3>{t("采购与证据")}</h3>
@@ -1562,7 +2093,8 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               </dd>
               <dt>{t("数量 × 单价")}</dt>
               <dd>
-                {t(c.quantity)} × {t(cash(c.unitPrice))} mHKD
+                {t(Number.isFinite(c.quantity) ? c.quantity : "未提供")} ×{" "}
+                {t(cash(c.unitPrice))} mHKD
               </dd>
               <dt>{t("已上传附件")}</dt>
               <dd>
@@ -1577,7 +2109,14 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 <Copy size={13} />
                 {t("复制 Hash")}
               </button>
-              <a className="button" href={"/api/records/" + c.id + "/export"}>
+              <a
+                className="button"
+                href={
+                  integration
+                    ? "/foundation/evidence"
+                    : "/api/records/" + c.id + "/export"
+                }
+              >
                 {t("下载单据")}
               </a>
             </div>
@@ -1585,23 +2124,39 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           <div className="risk-panel">
             <span className="eyebrow">
               {t(modal?.type === "payment" ? "最终" : "采购前")}
-              {t("AI 报告 · 模拟")}
+              {locale === "en" ? " " : ""}
+              {t(integration ? "链上 AI 评估 · 待接入" : "AI 报告 · 模拟")}
             </span>
             <div className={"risk-score " + (c.risk >= 80 ? "red" : "")}>
-              {t(modal?.type === "payment" ? (c.finalRisk ?? "—") : c.risk)}
+              {t(
+                integration
+                  ? "—"
+                  : modal?.type === "payment"
+                    ? (c.finalRisk ?? "—")
+                    : c.risk,
+              )}
               <small>/100</small>
             </div>
             <p>
               {t(
-                c.risk >= 80
-                  ? "风险冻结，禁止预留与付款。"
-                  : modal?.type === "payment" && c.finalRisk === undefined
-                    ? "尚未提交交付证据。"
-                    : "演示结果：未发现阻止正常审批的问题。",
+                integration
+                  ? "链上 AI 评估尚未交付；独立诊断报告不生成风险分数或自动批准。"
+                  : c.risk >= 80
+                    ? "风险冻结，禁止预留与付款。"
+                    : modal?.type === "payment" && c.finalRisk === undefined
+                      ? "尚未提交交付证据。"
+                      : "演示结果：未发现阻止正常审批的问题。",
               )}
             </p>
             <small>
-              {t("这里使用固定示例结果，不能当作真实 AI 风控结论。")}
+              {t(
+                integration
+                  ? integration.workspaces[c.id]?.preAssessment ||
+                    integration.workspaces[c.id]?.finalAssessment
+                    ? "此采购含 synthetic 技术样例，仅证明机械链路，不是真实 AI。"
+                    : "等待 AI 项目组接入；此入口不自动签署。"
+                  : "这里使用固定示例结果，不能当作真实 AI 风控结论。",
+              )}
             </small>
           </div>
         </div>
@@ -1624,7 +2179,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
         >
           <p className="muted">
             {t("维护人员：")}
-            {t(modal.user.name)}
+            {modal.user.name}
             {t(
               "。仅授予所选页面的读取权限，不授予捐款、采购审批、付款或权限管理操作。",
             )}
@@ -1717,6 +2272,136 @@ export default function PortalApp({ initial }: { initial: AppData }) {
       );
     if (modal.type === "donate" || modal.type === "deposit") {
       const deposit = modal.type === "deposit";
+      if (integration) {
+        const projectId = modal.project!.id;
+        const funds = currentFunding(integration.exchanges, projectId);
+        const funding = funds.find((item) => item.id === selectedFunding);
+        return (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void quoteDonation(projectId);
+            }}
+          >
+            <div className="notice compact">{modal.project?.name}</div>
+            <label>
+              {t("捐款金额 · HK$")}
+              <input
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={donationAmount}
+                required
+                disabled={busy || Boolean(pendingA2)}
+                onChange={(event) => {
+                  modalRevision.current += 1;
+                  setDonationAmount(event.target.value);
+                  setDonationQuote(null);
+                }}
+              />
+            </label>
+            <p className="muted">
+              {t(
+                "模拟 HKD → MockHKD → 捐入当前项目 Escrow 冻结。兑换不等于捐款，不扣取真实资金。",
+              )}
+            </p>
+            <div className="modal-actions">
+              <button
+                className="primary"
+                disabled={
+                  deposit ||
+                  !allowedA2("mock.exchange.quote", undefined, projectId)
+                }
+              >
+                {t("查询报价（不执行）")}
+              </button>
+            </div>
+            {donationQuote && (
+              <>
+                <p>
+                  {donationQuote.quote.rate} ·{" "}
+                  {t(
+                    donationQuote.quote.eligible
+                      ? "eligible"
+                      : donationQuote.quote.reasonCode,
+                  )}{" "}
+                  · {t("未执行")}
+                </p>
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={
+                    !donationQuote.quote.eligible ||
+                    !allowedA2("donor.funding.convert", undefined, projectId)
+                  }
+                  onClick={() => {
+                    setDonationQuote(null);
+                    void runA2("donor.funding.convert", {
+                      projectId,
+                      hkdCents: fullDemoAmount(donationAmount).hkdCents,
+                      confirm: true,
+                    });
+                  }}
+                >
+                  {t("确认模拟兑换")}
+                </button>
+              </>
+            )}
+            <label>
+              {t("本人已兑换资金")}
+              <select
+                value={selectedFunding}
+                disabled={busy || Boolean(pendingA2)}
+                onChange={(event) => setSelectedFunding(event.target.value)}
+              >
+                <option value="">{t("选择已对账资金")}</option>
+                {funds.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {t(item.status)} · {item.id.slice(0, 8)} ·{" "}
+                    {remainingFundingAtomic(item)} atomic
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="primary"
+                disabled={
+                  !funding ||
+                  funding.status !== "reconciled" ||
+                  !funding.reconciled ||
+                  remainingFundingAtomic(funding) === "0" ||
+                  !allowedA2("donation.funded.deposit", undefined, projectId)
+                }
+                onClick={() =>
+                  funding &&
+                  void runA2("donation.funded.deposit", {
+                    projectId,
+                    fundingOperationId: funding.operationId,
+                    amountAtomic: remainingFundingAtomic(funding),
+                    confirm: true,
+                  })
+                }
+              >
+                {t("确认捐入项目并冻结")}
+              </button>
+            </div>
+            {integration.operations.slice(0, 3).map((operation) => (
+              <p className="tiny muted" key={operation.operationId}>
+                {t(operation.operationKind)} · {t(operation.status)} ·{" "}
+                {t(
+                  isChainConfirmed(operation)
+                    ? "canonical confirmed"
+                    : "待核对链上 / 未全部链上确认",
+                )}{" "}
+                · {operation.errorCode || operation.operationId}
+              </p>
+            ))}
+          </form>
+        );
+      }
       return (
         <form
           onSubmit={(e) =>
@@ -1725,7 +2410,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             })
           }
         >
-          <div className="notice compact">{t(modal.project?.name)}</div>
+          <div className="notice compact">{modal.project?.name}</div>
           <label>
             {t(deposit ? "注资金额 · mHKD" : "捐款金额 · HK$")}
             <input
@@ -1768,7 +2453,15 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           </label>
           <label>
             {t("受捐机构")}
-            <input readOnly value="同心社区学习中心" />
+            <input
+              readOnly
+              value={t(
+                integration
+                  ? integration.context?.defaults?.recipientUserId ||
+                      "受控默认身份未提供"
+                  : "同心社区学习中心",
+              )}
+            />
           </label>
           <label className="full">
             {t("项目说明")}
@@ -1776,12 +2469,14 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           </label>
           <p className="muted full">
             {t(
-              "演示类别：教育物资、设备。项目规则版本与 Hash 自动生成，未发布到真实合约。",
+              integration
+                ? "先建立后端草稿，再在项目详情独立提交 Anvil 链上创建。筹款目标仅是原表单字段，本轮接口不保存或据此释放资金。"
+                : "演示类别：教育物资、设备。项目规则版本与 Hash 自动生成，未发布到真实合约。",
             )}
           </p>
           <div className="modal-actions full">
             <button className="primary" disabled={busy}>
-              {t("创建演示项目")}
+              {t(integration ? "创建项目草稿" : "创建演示项目")}
             </button>
           </div>
         </form>
@@ -1805,17 +2500,25 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               {t(
                 projects.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {t(p.name)}
+                    {p.name}
                   </option>
                 )),
               )}
             </select>
           </label>
           <label>
-            {t("认证供应商")}
+            {t(integration ? "模拟固定供应商" : "认证供应商")}
             <select name="vendorId">
               {t(
-                (d.vendors || [{ id: "V-001", name: "知行文具" }]).map((v) => (
+                (integration
+                  ? [
+                      {
+                        id: integration.context.defaults?.supplierWallet || "",
+                        name: "模拟固定供应商",
+                      },
+                    ]
+                  : d.vendors || [{ id: "V-001", name: "知行文具" }]
+                ).map((v) => (
                   <option key={v.id} value={v.id}>
                     {t(v.name)}
                   </option>
@@ -1851,7 +2554,9 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           </label>
           <p className="full muted">
             {t(
-              "总额由服务端根据数量和单价计算。提交后使用固定演示 AI 结果，进入人工初审。",
+              integration
+                ? "数量 × 单价仅用于输入预算上限；后端存储精确 atomic 预算，不生成 AI 分数。先创建草稿，再独立提交上链。"
+                : "总额由服务端根据数量和单价计算。提交后使用固定演示 AI 结果，进入人工初审。",
             )}
           </p>
           <div className="modal-actions full">
@@ -1892,10 +2597,11 @@ export default function PortalApp({ initial }: { initial: AppData }) {
         </form>
       );
     if (modal.type === "project" && modal.project) {
-      const p = modal.project;
+      const p =
+        projects.find((item) => item.id === modal.project?.id) || modal.project;
       return (
         <>
-          <p>{t(p.description)}</p>
+          <p>{p.description}</p>
           <div className="budget-mini">
             <div>
               <small>{t("可用")}</small>
@@ -1906,8 +2612,10 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               <b>{t(cash(p.reserved))} mHKD</b>
             </div>
             <div>
-              <small>{t("已付")}</small>
-              <b>{t(cash(p.paid))} mHKD</b>
+              <small>{t(p.paymentTracked ? "已拨基金会" : "历史已付")}</small>
+              <b>
+                {t(cash(p.paymentTracked ? (p.released ?? NaN) : p.paid))} mHKD
+              </b>
             </div>
           </div>
           <h3>{t("项目规则 v1")}</h3>
@@ -1919,10 +2627,31 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                 .join(locale === "en" ? ", " : "、"),
             )}
             {t(
-              "。人工采购批准后预留预算，交付验收与最终审批后直接支付供应商。",
+              integration
+                ? "。资金先冻结；收货和最终人工审批后仅释放发票金额给基金会，再由平台模拟兑换与供应商付款。"
+                : "。人工采购批准后预留预算，交付验收与最终审批后直接支付供应商。",
             )}
           </p>
           <code className="hash-value">{t(p.rulesHash)}</code>
+          {integration && (
+            <div className="modal-actions">
+              <p>
+                {t(
+                  integration.rawProjects.find((item) => item.id === p.id)
+                    ?.chainState.status || "尚未读取",
+                )}
+              </p>
+              <button
+                className="primary"
+                disabled={!allowedA2("project.chain.create", undefined, p.id)}
+                onClick={() =>
+                  void runA2("project.chain.create", { projectId: p.id })
+                }
+              >
+                {t("提交项目链上创建")}
+              </button>
+            </div>
+          )}
           <button onClick={() => copy(p.rulesHash)}>
             <Copy size={14} />
             {t("复制规则 Hash")}
@@ -1975,20 +2704,46 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             user={app.user}
             refresh={refresh}
             claimId={c.id}
+            integration={integration}
           />
         );
       return (
         <>
           {t(claimDetail(c))}
+          {integration && app.user.role === "foundation" && (
+            <div className="modal-actions">
+              <button
+                className="primary"
+                disabled={
+                  !allowedA2("procurement.chain.create", c.id, c.projectId)
+                }
+                onClick={() =>
+                  void runA2("procurement.chain.create", {
+                    procurementId: c.id,
+                  })
+                }
+              >
+                {t("提交采购链上创建")}
+              </button>
+              <Link className="button" href="/foundation/evidence">
+                {t("核对与登记采购证据")}
+              </Link>
+              <Link className="button" href="/foundation/review">
+                {t("核对并执行预留")}
+              </Link>
+            </div>
+          )}
           {(modal.type === "review" || modal.type === "payment") && (
             <p className="notice">
               {t(
-                reviewPassed(
-                  c,
-                  modal.type === "review" ? "purchase" : "delivery",
-                )
-                  ? "管理员已通过当前版本审计，可以继续基金会业务操作。"
-                  : "请先完成当前版本的管理员人工审计",
+                integration
+                  ? integrationPhaseNotice(c, modal.type)
+                  : reviewPassed(
+                        c,
+                        modal.type === "review" ? "purchase" : "delivery",
+                      )
+                    ? "管理员已通过当前版本审计，可以继续基金会业务操作。"
+                    : "请先完成当前版本的管理员人工审计",
               )}
             </p>
           )}
@@ -2020,7 +2775,7 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                   {t(
                     uploaded.map((f) => (
                       <p key={f.id} className="tiny">
-                        ✓ {t(f.name)}
+                        ✓ {f.name}
                       </p>
                     )),
                   )}
@@ -2048,9 +2803,28 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               <>
                 <div className="notice compact">
                   {t(
-                    "采购批准后才能预留预算。这里的“模拟批准”不会调用钱包、AI Oracle 或 Relayer。",
+                    integration
+                      ? "此按钮只执行已登记的独立人工预留授权，不签署审批、不调用真实 AI。"
+                      : "采购批准后才能预留预算。这里的“模拟批准”不会调用钱包、AI Oracle 或 Relayer。",
                   )}
                 </div>
+                {integration && (
+                  <label>
+                    {t("核对已批准的预留金额 · mHKD")}
+                    <input
+                      name="reserveAmount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={reserveDisplay}
+                      disabled={busy || Boolean(pendingA2)}
+                      required
+                      onChange={(event) =>
+                        setReserveDisplay(event.target.value)
+                      }
+                    />
+                  </label>
+                )}
                 <div className="modal-actions">
                   <button
                     disabled={
@@ -2066,15 +2840,44 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     className="primary"
                     disabled={
                       !write("approvePurchase") ||
-                      !reviewPassed(c, "purchase") ||
-                      c.status !== "human_review" ||
+                      (Boolean(integration) && !reserveDisplay) ||
+                      (integration
+                        ? !allowedA2(
+                            "procurement.reserve.execute",
+                            c.id,
+                            c.projectId,
+                          )
+                        : !reviewPassed(c, "purchase") ||
+                          c.status !== "human_review") ||
                       busy
                     }
                     onClick={() =>
-                      perform("approvePurchase", { procurementId: c.id })
+                      (() => {
+                        try {
+                          void perform("approvePurchase", {
+                            procurementId: c.id,
+                            ...(integration
+                              ? {
+                                  reserveAmountAtomic:
+                                    fullDemoAmount(reserveDisplay).amountAtomic,
+                                }
+                              : {}),
+                          });
+                        } catch (problem) {
+                          setError(
+                            problem instanceof Error
+                              ? problem.message
+                              : "金额无效",
+                          );
+                        }
+                      })()
                     }
                   >
-                    {t("模拟批准采购与预留")}
+                    {t(
+                      integration
+                        ? "执行已获独立审批的预算预留"
+                        : "模拟批准采购与预留",
+                    )}
                   </button>
                 </div>
               </>
@@ -2117,26 +2920,40 @@ export default function PortalApp({ initial }: { initial: AppData }) {
                     {t(
                       c.finalRisk !== undefined ? <CheckCircle2 /> : <Circle />,
                     )}
-                    {t("AI 最终审核完成（演示）")}
+                    {t(
+                      integration
+                        ? "链上 AI 评估待接入；诊断报告不自动通过审批"
+                        : "AI 最终审核完成（演示）",
+                    )}
                   </p>
                   <p>
                     <ShieldCheck />
-                    {t("收款对象为采购单绑定的认证 Vendor")}
+                    {t(
+                      integration
+                        ? "拨款对象为项目基金会，不代表供应商收款"
+                        : "收款对象为采购单绑定的认证 Vendor",
+                    )}
                   </p>
                 </div>
                 <button
                   className="primary"
                   disabled={
                     !write("approvePayment") ||
-                    !reviewPassed(c, "delivery") ||
-                    c.status !== "payment_review" ||
+                    (integration
+                      ? !allowedA2("release.execute", c.id, c.projectId)
+                      : !reviewPassed(c, "delivery") ||
+                        c.status !== "payment_review") ||
                     busy
                   }
                   onClick={() =>
                     perform("approvePayment", { procurementId: c.id })
                   }
                 >
-                  {t("模拟批准供应商付款")}
+                  {t(
+                    integration
+                      ? "执行已获独立审批的发票限额释放"
+                      : "模拟批准供应商付款",
+                  )}
                 </button>
               </>
             ),
@@ -2225,13 +3042,17 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             <p>
               {t("MockHKD 无真实价值")}
               <br />
-              {t("支付 / AI / 链上操作为模拟")}
+              {t(
+                integration
+                  ? "本地链真实交易 · 法币模拟 · 链上 AI 评估待接入"
+                  : "支付 / AI / 链上操作为模拟",
+              )}
             </p>
           </div>
           <div className="account">
-            <div className="avatar">{t(app.user.name).slice(0, 1)}</div>
+            <div className="avatar">{app.user.name.slice(0, 1)}</div>
             <div>
-              <b>{t(app.user.name)}</b>
+              <b>{app.user.name}</b>
               <small>{t(roleNames[app.user.role])}</small>
             </div>
             <button
@@ -2268,6 +3089,24 @@ export default function PortalApp({ initial }: { initial: AppData }) {
             <b>{t(page.label)}</b>
           </div>
           <div className="topbar-right">
+            {!!source.projects?.length && page.slug !== "funds" && (
+              <label
+                className="history-switch"
+                title={
+                  integration
+                    ? t("本轮只读真实 API，不载入旧 JSON 历史示例")
+                    : undefined
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={showLegacy}
+                  disabled={Boolean(integration)}
+                  onChange={(event) => setShowLegacy(event.target.checked)}
+                />
+                {t("查看历史示例")}
+              </label>
+            )}
             <LanguageSwitcher />
             <span className="environment">{t("DEMO")}</span>
             <span className="tiny muted">
@@ -2311,6 +3150,21 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               </p>
             ),
           )}
+          {showLegacy && (
+            <p className="notice compact">
+              {t("以下为原有历史演示记录，与当前模拟币资金链分开保存。")}
+            </p>
+          )}
+          {!showLegacy &&
+            app.user.role !== "maintainer" &&
+            (page.slug === "funds" || page.slug === "overview") && (
+              <FundsFlow
+                user={app.user}
+                compact={page.slug !== "funds"}
+                integration={integration}
+                onRefresh={refresh}
+              />
+            )}
           {t(content())}
           <footer className="page-footer">
             <span>{t("PoG · 透明、可核验、按规则使用")}</span>
@@ -2342,7 +3196,10 @@ export default function PortalApp({ initial }: { initial: AppData }) {
           <Modal
             title={t(modalTitles[modal.type] || "详情")}
             close={() => {
-              if (!busy) setModal(null);
+              if (!busy && !pendingA2) {
+                modalRevision.current += 1;
+                setModal(null);
+              }
             }}
           >
             {t(
@@ -2353,6 +3210,14 @@ export default function PortalApp({ initial }: { initial: AppData }) {
               ),
             )}
             {t(modalBody())}
+            {integration && pendingA2 && (
+              <button
+                disabled={busy}
+                onClick={() => void runA2(pendingA2.id, pendingA2.body, true)}
+              >
+                {t("结果未知：保留同一请求重试")}
+              </button>
+            )}
             {t(
               busy && (
                 <p className="tiny muted" role="status">

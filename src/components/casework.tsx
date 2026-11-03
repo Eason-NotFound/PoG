@@ -1,10 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FileText, Upload, ShieldCheck, ClipboardCheck } from "lucide-react";
 import { canAct, type AccessUser, type Action } from "@/lib/access";
 import type { PageData, Procurement, ReviewCase } from "@/lib/types";
 import { formatDate, formatMoney } from "@/lib/i18n";
 import { useI18n } from "./language-provider";
+import AiDiagnosticPanel, {
+  AiDiagnosticReportPanel,
+} from "./ai-diagnostic-panel";
+import OfflineAiPanel from "./offline-ai-panel";
+import {
+  portalA2Action,
+  portalA2Allowed,
+  portalA2Upload,
+  type PortalA2State,
+} from "@/lib/portal-a2";
+import { fullDemoAmount } from "@/lib/full-demo-ui";
+import {
+  maySignRequest,
+  formatAtomic,
+  type A2SigningRequest,
+} from "@/lib/a2-workbench";
 
 const decisions = {
   approved: "审计通过",
@@ -18,10 +34,22 @@ const evidenceNames: Record<string, string> = {
   grn: "验收单",
   quotation: "报价文件",
 };
-export default function Casework({
+const authorizationDeclarations: Partial<
+  Record<A2SigningRequest["kind"], string>
+> = {
+  receipt: "本人已核对实际收货证据",
+  reserve: "独立人工预留批准；不自动执行资金",
+  release: "独立人工放款批准；不自动执行资金",
+  settlement: "独立人工结算批准；不自动执行资金",
+};
+/** The original casework panels and controls, backed by immutable A2 facts.
+ * Each authorization step remains a separate explicit click by its own role.
+ */
+function ConnectedCasework({
   mode,
   data,
   user,
+  integration,
   refresh,
   claimId,
   foundationView,
@@ -29,9 +57,770 @@ export default function Casework({
   mode: "proof" | "audit" | "appeals";
   data: PageData;
   user: AccessUser;
+  integration: PortalA2State;
+  refresh: () => Promise<void>;
+  claimId?: string;
+  foundationView: boolean;
+}) {
+  const { t, locale } = useI18n();
+  const [selected, setSelected] = useState(claimId || "");
+  const [filter, setFilter] = useState("pending");
+  const [query, setQuery] = useState("");
+  const [fileKind, setFileKind] = useState(
+    foundationView ? "purchase_order" : "receipt_evidence",
+  );
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [liveDiagnosticAvailable, setLiveDiagnosticAvailable] = useState(false);
+  const [offlineDemoAvailable, setOfflineDemoAvailable] = useState(false);
+  const [request, setRequest] = useState<A2SigningRequest | null>(null);
+  const [consent, setConsent] = useState(false);
+  const [retry, setRetry] = useState<{
+    id: string;
+    body: Record<string, unknown>;
+    key: string;
+    scope: string;
+  } | null>(null);
+  const scope = `${integration.currentUser.id}:${integration.currentUser.role}:${integration.currentUser.walletAddress.toLowerCase()}:${integration.context.binding.namespaceId}:${integration.context.binding.runId}:${integration.context.binding.instanceId}`;
+  const revision = useRef(0);
+  useEffect(() => {
+    revision.current += 1;
+    setRequest(null);
+    setConsent(false);
+    setSelected(claimId || "");
+    setLiveDiagnosticAvailable(false);
+    setOfflineDemoAvailable(false);
+  }, [scope, claimId]);
+  const claims = data.procurements || [];
+  const claim = claims.find((c) => c.id === selected);
+  const proc = integration.rawProcurements.find((c) => c.id === selected);
+  const workspace = integration.workspaces[selected];
+  const documents = workspace?.documentVersions || [];
+  const human = integration.currentUser.role === "human_approver";
+  const recipient = integration.currentUser.role === "recipient";
+  const kind: A2SigningRequest["kind"] = recipient
+    ? "receipt"
+    : [
+          "settlement_recorded",
+          "settlement_approval_pending",
+          "payment_confirmed",
+        ].includes(proc?.chainState.status || "")
+      ? "settlement"
+      : [
+            "receipt_confirmed",
+            "final_assessed",
+            "release_approval_pending",
+            "funds_released",
+          ].includes(proc?.chainState.status || "")
+        ? "release"
+        : "reserve";
+  const ownRequests = integration.signingRequests.filter(
+    (r) =>
+      r.procurementId === selected &&
+      r.kind === kind &&
+      r.signer.toLowerCase() ===
+        integration.currentUser.walletAddress.toLowerCase(),
+  );
+  const material =
+    request &&
+    request.procurementId === selected &&
+    request.kind === kind &&
+    request.signer.toLowerCase() ===
+      integration.currentUser.walletAddress.toLowerCase()
+      ? ownRequests.find((item) => item.id === request.id) || request
+      : ownRequests.find((r) => ["prepared", "signed"].includes(r.status)) ||
+        ownRequests.at(-1) ||
+        null;
+  useEffect(() => {
+    setConsent(false);
+  }, [scope, selected, kind, material?.id, material?.status]);
+  const prepareStages: Partial<Record<A2SigningRequest["kind"], string[]>> = {
+    reserve: ["pre_assessed", "reserve_approval_pending"],
+    receipt: ["invoice_recorded"],
+    release: ["final_assessed", "release_approval_pending"],
+    settlement: ["settlement_recorded", "settlement_approval_pending"],
+  };
+  const permitted = (id: string) =>
+    (id !== "authorization.prepare" ||
+      (proc?.chainState.verified === true &&
+        workspace?.procurementId === proc.id &&
+        workspace.chainState === proc.chainState.status &&
+        prepareStages[kind]?.includes(proc.chainState.status) === true)) &&
+    portalA2Allowed(
+      material &&
+        !integration.signingRequests.some((item) => item.id === material.id) &&
+        maySignRequest(integration.currentUser, material)
+        ? {
+            ...integration,
+            signingRequests: [material, ...integration.signingRequests],
+          }
+        : integration,
+      id,
+      {
+        procurementId: selected,
+        projectId: proc?.projectId,
+        kind,
+        requestId: material?.id,
+      },
+    ).enabled;
+  const blocked = busy || Boolean(retry);
+  function select(id: string) {
+    if (blocked) return;
+    revision.current++;
+    setSelected(id);
+    setLiveDiagnosticAvailable(false);
+    setOfflineDemoAvailable(false);
+    setRequest(null);
+    setConsent(false);
+    setReason("");
+    setError("");
+    setNotice("");
+  }
+  async function run(
+    id: string,
+    body: Record<string, unknown>,
+    sameKey = false,
+  ) {
+    if (busy || (retry && !sameKey)) return;
+    const pending =
+      sameKey && retry ? retry : { id, body, key: crypto.randomUUID(), scope };
+    if (pending.scope !== scope) {
+      setError("身份或部署已改变；旧请求不能提交到新的实例。");
+      return;
+    }
+    const current = revision.current;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await portalA2Action(
+        pending.id,
+        pending.body,
+        pending.key,
+        { expectedState: integration },
+      );
+      setRetry(null);
+      if (current === revision.current) {
+        if (result.signingRequest)
+          setRequest(result.signingRequest as A2SigningRequest);
+        setConsent(false);
+        setNotice(
+          "接口已受理；签署不广播，提交后须等待 canonical operation 确认。没有自动审批。",
+        );
+      }
+      await refresh();
+    } catch (problem) {
+      if (
+        (problem as { status?: number })?.status === 0 ||
+        (problem as { status?: number })?.status === 504
+      )
+        setRetry(pending);
+      setError(problem instanceof Error ? problem.message : "请求失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function upload(file?: File) {
+    if (!file || !selected || blocked) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (file.size > 2 * 1024 * 1024) throw new Error("原件最多 2 MB");
+      await portalA2Upload(selected, fileKind, file, {
+        expectedState: integration,
+      });
+      setNotice("原始不可变版本已保存；上传不等于链上登记或收货确认。");
+      await refresh();
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : "上传失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+  function version(category: string, name: string) {
+    return (
+      <label key={name}>
+        {t(category)}
+        <select name={name} required disabled={blocked} defaultValue="">
+          <option value="">{t("选择真实文件版本")}</option>
+          {documents
+            .filter((doc) => doc.category === category)
+            .map((doc) => (
+              <option value={doc.versionId} key={doc.versionId}>
+                {doc.originalFilename} · {doc.versionId.slice(0, 8)}
+              </option>
+            ))}
+        </select>
+      </label>
+    );
+  }
+  const messages = (
+    <>
+      {error && (
+        <p className="error" role="alert">
+          {t(error)}
+        </p>
+      )}
+      {notice && (
+        <p className="notice" role="status">
+          {t(notice)}
+        </p>
+      )}
+      {retry && (
+        <button
+          disabled={busy}
+          onClick={() => void run(retry.id, retry.body, true)}
+        >
+          {t("结果未知：同一请求重试，不创建新交易")}
+        </button>
+      )}
+    </>
+  );
+  const files = (
+    <div className="evidence-list">
+      {documents.map((doc) => (
+        <article key={doc.versionId} className="evidence-item">
+          <div className="section-line">
+            <strong>{doc.originalFilename}</strong>
+            <span className="pill">{t(doc.category)}</span>
+          </div>
+          <small>
+            {t("不可变版本")}: {doc.versionId}
+          </small>
+          <code className="hash-value">{doc.keccak256}</code>
+          <a
+            className="button"
+            href={`/api/a2/document-versions/${doc.versionId}/content`}
+          >
+            {t("查看或下载证明")}
+          </a>
+        </article>
+      ))}
+    </div>
+  );
+  const authorizations =
+    (human || recipient) && proc ? (
+      <>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const f = new FormData(event.currentTarget);
+            const body: Record<string, unknown> = {
+              procurementId: selected,
+              kind,
+              deadlineTtlSeconds: 900,
+            };
+            try {
+              if (kind === "reserve")
+                body.reserveAmountAtomic = fullDemoAmount(
+                  String(f.get("reserveAmount")),
+                ).amountAtomic;
+              if (kind === "receipt")
+                body.receiptEvidenceDocumentVersionId = String(
+                  f.get("receiptEvidence"),
+                );
+              void run("authorization.prepare", body);
+            } catch (problem) {
+              setError(problem instanceof Error ? problem.message : "输入无效");
+            }
+          }}
+        >
+          <label>
+            {t("人工审计结论 / 收货声明")}
+            <input
+              readOnly
+              value={t(authorizationDeclarations[kind] || kind)}
+            />
+          </label>
+          {kind === "reserve" && (
+            <label>
+              {t("批准预留金额 · mHKD")}
+              <input
+                name="reserveAmount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                defaultValue={formatAtomic(proc.budgetCapAtomic)}
+                disabled={blocked}
+              />
+            </label>
+          )}
+          {kind === "receipt" && version("receipt_evidence", "receiptEvidence")}
+          <label>
+            {t("审核 / 验收意见")}
+            <textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              required
+              maxLength={1000}
+              disabled={blocked}
+            />
+          </label>
+          <p className="tiny muted">
+            {t(
+              "意见仅供本次核对；授权材料使用后台冻结 V2 typed data，有效期 900 秒。AI 未接入；synthetic 样例仅验证机械链路。",
+            )}
+          </p>
+          <button
+            className="primary"
+            disabled={
+              blocked ||
+              !permitted("authorization.prepare") ||
+              Boolean(
+                material && ["prepared", "signed"].includes(material.status),
+              )
+            }
+          >
+            {t("1. 准备本身份授权材料")}
+          </button>
+        </form>
+        {ownRequests.length > 0 && (
+          <label>
+            {t("恢复本人授权")}
+            <select
+              value={material?.id || ""}
+              disabled={blocked}
+              onChange={(event) => {
+                setRequest(
+                  ownRequests.find((r) => r.id === event.target.value) || null,
+                );
+                setConsent(false);
+              }}
+            >
+              {ownRequests.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {t(r.kind)} · {t(r.status)} · {r.id.slice(0, 8)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {material && (
+          <>
+            <p>
+              {t(material.kind)} · {t(material.status)}
+            </p>
+            <code className="hash-value">{material.digest}</code>
+            <p className="tiny muted">
+              signer {material.signer} · nonce {material.nonce} · deadline{" "}
+              {material.deadline}
+            </p>
+            <details>
+              <summary>{t("核对完整 V2 授权材料")}</summary>
+              <pre>{JSON.stringify(material.typedData, null, 2)}</pre>
+            </details>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={consent}
+                disabled={
+                  blocked || !maySignRequest(integration.currentUser, material)
+                }
+                onChange={(event) => setConsent(event.target.checked)}
+              />
+              {t(
+                "我已核对本人 signer、项目、采购、金额、证据、nonce 和有效期，明确确认下一次签署或提交。",
+              )}
+            </label>
+            <div className="button-row">
+              <button
+                className="primary"
+                disabled={
+                  blocked ||
+                  !consent ||
+                  material.status !== "prepared" ||
+                  !maySignRequest(integration.currentUser, material) ||
+                  !permitted("authorization.demo.sign")
+                }
+                onClick={() =>
+                  void run("authorization.demo.sign", {
+                    requestId: material.id,
+                    confirm: true,
+                  })
+                }
+              >
+                {t("2. 确认本人测试钱包签署（不广播）")}
+              </button>
+              <button
+                className="primary"
+                disabled={
+                  blocked ||
+                  !consent ||
+                  material.status !== "signed" ||
+                  !maySignRequest(integration.currentUser, material) ||
+                  !permitted("authorization.saved.submit")
+                }
+                onClick={() =>
+                  void run("authorization.saved.submit", {
+                    requestId: material.id,
+                    confirm: true,
+                  })
+                }
+              >
+                {t("3. 提交已签授权")}
+              </button>
+            </div>
+          </>
+        )}
+      </>
+    ) : null;
+  if (mode === "appeals")
+    return (
+      <section className="panel casework">
+        <div className="panel-title">
+          <h2>{t("申诉记录")}</h2>
+        </div>
+        <p className="notice">
+          {t("本轮主流程不支持申诉写入；未使用旧演示账本。")}
+        </p>
+      </section>
+    );
+  if (mode === "audit") {
+    const reviewed = (c: Procurement) =>
+      integration.procurementFacts[c.id]?.settlementConfirmed;
+    const list = claims
+      .filter((c) => (filter === "pending" ? !reviewed(c) : reviewed(c)))
+      .filter((c) =>
+        (c.name + c.id).toLowerCase().includes(query.toLowerCase()),
+      );
+    return (
+      <div className="casework">
+        <div className="notice">
+          <ShieldCheck size={18} />
+          {t(
+            offlineDemoAvailable
+              ? "Offline demo uses existing fictional sample reports for reference and explicitly requested synthetic on-chain assessments. No live inference. Independent human prepare, sign and submit remain separate actions; no automatic funds execution."
+              : liveDiagnosticAvailable
+                ? "真实 AI 诊断报告已取得，供独立人工参考；链上 AI 评估仍待接入。prepare、sign、submit 分开点击，不自动执行资金。"
+                : "链上 AI 评估待接入，风险分数留空。独立人工必须核对原件与已取得的诊断报告；prepare、sign、submit 分开点击，不自动执行资金。",
+          )}
+        </div>
+        {messages}
+        <div className="case-tabs">
+          <button
+            className={filter === "pending" ? "primary" : ""}
+            onClick={() => {
+              if (!blocked) {
+                setFilter("pending");
+                select("");
+              }
+            }}
+          >
+            {t("待审计项目")} <b>{claims.filter((c) => !reviewed(c)).length}</b>
+          </button>
+          <button
+            className={filter === "done" ? "primary" : ""}
+            onClick={() => {
+              if (!blocked) {
+                setFilter("done");
+                select("");
+              }
+            }}
+          >
+            {t("已审计项目")} <b>{claims.filter(reviewed).length}</b>
+          </button>
+        </div>
+        <label>
+          {t("搜索项目或采购单")}
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        <section className="panel">
+          <div className="panel-title">
+            <h2>{t(filter === "pending" ? "待审计项目" : "已审计项目")}</h2>
+          </div>
+          {list.map((c) => (
+            <div className="record-row" key={c.id}>
+              <ClipboardCheck size={20} />
+              <div className="record-main">
+                <strong>
+                  {data.projects?.find((p) => p.id === c.projectId)?.name ||
+                    c.projectId}
+                </strong>
+                <small>
+                  {c.id} · {t(integration.procurementFacts[c.id]?.statusText)}
+                </small>
+              </div>
+              <button disabled={blocked} onClick={() => select(c.id)}>
+                {t("开始人工审计")}
+              </button>
+            </div>
+          ))}
+        </section>
+        {claim && (
+          <section className="panel review-detail">
+            <div className="panel-title">
+              <h2>{t("人工审计详情")}</h2>
+              <span>{claim.id}</span>
+            </div>
+            <h3>{claim.name}</h3>
+            <div className="proof-progress">
+              <span>{t(kind)}</span>
+              <span>
+                {offlineDemoAvailable ? (
+                  "Offline demo · No live inference"
+                ) : (
+                  <>
+                    AI ·{" "}
+                    {t(
+                      liveDiagnosticAvailable
+                        ? "链上 AI 评估待接；实时诊断可用"
+                        : "待接入",
+                    )}{" "}
+                    · —
+                  </>
+                )}
+              </span>
+            </div>
+            {files}
+            <OfflineAiPanel
+              key={`offline:${scope}:${selected}`}
+              integration={integration}
+              procurementId={selected}
+              readOnly
+              onAvailable={setOfflineDemoAvailable}
+            />
+            {offlineDemoAvailable ? (
+              <details>
+                <summary>Optional live Qwen diagnostic reports</summary>
+                <AiDiagnosticReportPanel
+                  key={`${scope}:${selected}`}
+                  integration={integration}
+                  procurementId={selected}
+                  onAvailable={setLiveDiagnosticAvailable}
+                />
+              </details>
+            ) : (
+              <AiDiagnosticReportPanel
+                key={`${scope}:${selected}`}
+                integration={integration}
+                procurementId={selected}
+                onAvailable={setLiveDiagnosticAvailable}
+              />
+            )}
+            {authorizations}
+          </section>
+        )}
+      </div>
+    );
+  }
+  return (
+    <section className="panel casework">
+      <div className="panel-title">
+        <h2>
+          {t(foundationView ? "基金会采购与发货证明" : "受捐机构收货证明")}
+        </h2>
+        <Upload size={20} />
+      </div>
+      <p className="notice">
+        {t(
+          "资金保持冻结。采购单、发票与收货确认完成，最终独立人工审批后才释放给基金会。",
+        )}
+      </p>
+      {messages}
+      {!claimId && (
+        <label>
+          {t("选择项目采购单")}
+          <select
+            value={selected}
+            disabled={blocked}
+            onChange={(event) => select(event.target.value)}
+          >
+            <option value="">{t("请选择采购单")}</option>
+            {claims.map((c) => (
+              <option value={c.id} key={c.id}>
+                {c.name} · {c.id.slice(0, 8)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {claim && proc && (
+        <>
+          <h3>
+            {claim.name}
+            <small>{claim.id}</small>
+          </h3>
+          <div className="proof-progress">
+            <span>{t(integration.procurementFacts[claim.id]?.statusText)}</span>
+            <span>
+              {offlineDemoAvailable ? (
+                "Offline demo · No live inference"
+              ) : (
+                <>
+                  AI ·{" "}
+                  {t(
+                    liveDiagnosticAvailable
+                      ? "链上 AI 评估待接；实时诊断可用"
+                      : "待接入",
+                  )}{" "}
+                  · —
+                </>
+              )}
+            </span>
+          </div>
+          {files}
+          {foundationView && (
+            <OfflineAiPanel
+              key={`offline:${scope}:${selected}`}
+              integration={integration}
+              procurementId={selected}
+              refresh={refresh}
+              onAvailable={setOfflineDemoAvailable}
+            />
+          )}
+          {foundationView &&
+            (offlineDemoAvailable ? (
+              <details>
+                <summary>Optional live Qwen diagnostic</summary>
+                <AiDiagnosticPanel
+                  key={`${scope}:${selected}`}
+                  integration={integration}
+                  procurementId={selected}
+                  onAvailable={setLiveDiagnosticAvailable}
+                />
+              </details>
+            ) : (
+              <AiDiagnosticPanel
+                key={`${scope}:${selected}`}
+                integration={integration}
+                procurementId={selected}
+                onAvailable={setLiveDiagnosticAvailable}
+              />
+            ))}
+          <div className="upload-box">
+            <label>
+              {t("证明文件类型")}
+              <select
+                value={fileKind}
+                disabled={blocked}
+                onChange={(event) => setFileKind(event.target.value)}
+              >
+                {(foundationView
+                  ? [
+                      "purchase_order",
+                      "request",
+                      "goods_request",
+                      "invoice",
+                      "goods_evidence",
+                    ]
+                  : ["receipt_evidence"]
+                ).map((category) => (
+                  <option value={category} key={category}>
+                    {t(category)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="upload-control">
+              <Upload size={18} />
+              {t("选择真实 PDF / JPG / PNG 原件，每个最多 2 MB")}
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg"
+                disabled={blocked || !permitted("document.upload")}
+                onChange={(event) => {
+                  void upload(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+          {foundationView ? (
+            <>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const f = new FormData(event.currentTarget);
+                  void run("procurement.po.record", {
+                    procurementId: selected,
+                    poDocumentVersionId: String(f.get("po")),
+                    requestDocumentVersionId: String(f.get("request")),
+                    goodsRequestDocumentVersionId: String(
+                      f.get("goodsRequest"),
+                    ),
+                  });
+                }}
+              >
+                {version("purchase_order", "po")}
+                {version("request", "request")}
+                {version("goods_request", "goodsRequest")}
+                <button
+                  className="primary"
+                  disabled={blocked || !permitted("procurement.po.record")}
+                >
+                  {t("登记采购 PO 与两份独立需求原件")}
+                </button>
+              </form>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const f = new FormData(event.currentTarget);
+                  try {
+                    void run("procurement.invoice.record", {
+                      procurementId: selected,
+                      invoiceDocumentVersionId: String(f.get("invoice")),
+                      goodsDocumentVersionId: String(f.get("goods")),
+                      invoiceAmountAtomic: fullDemoAmount(
+                        String(f.get("invoiceAmount")),
+                      ).amountAtomic,
+                    });
+                  } catch (problem) {
+                    setError(
+                      problem instanceof Error ? problem.message : "金额无效",
+                    );
+                  }
+                }}
+              >
+                {version("invoice", "invoice")}
+                {version("goods_evidence", "goods")}
+                <label>
+                  {t("发票实际金额 · mHKD（不超过预留）")}
+                  <input
+                    name="invoiceAmount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    disabled={blocked}
+                  />
+                </label>
+                <button
+                  className="primary"
+                  disabled={blocked || !permitted("procurement.invoice.record")}
+                >
+                  {t("登记发票与货物证据")}
+                </button>
+              </form>
+            </>
+          ) : (
+            authorizations
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+export default function Casework({
+  mode,
+  data,
+  user,
+  refresh,
+  claimId,
+  foundationView,
+  integration,
+}: {
+  mode: "proof" | "audit" | "appeals";
+  data: PageData;
+  user: AccessUser;
   refresh: () => Promise<void>;
   claimId?: string;
   foundationView?: boolean;
+  integration?: PortalA2State;
 }) {
   const { t, locale } = useI18n();
   const [selected, setSelected] = useState(claimId || ""),
@@ -57,6 +846,18 @@ export default function Casework({
     reviews = data.reviews || [],
     appeals = data.appeals || [];
   const foundation = foundationView ?? user.role === "foundation";
+  if (integration)
+    return (
+      <ConnectedCasework
+        mode={mode}
+        data={data}
+        user={user}
+        integration={integration}
+        refresh={refresh}
+        claimId={claimId}
+        foundationView={foundation}
+      />
+    );
   const date = (value?: string) => (value ? formatDate(value, locale) : "—");
   async function action(action: Action, body: Record<string, unknown>) {
     if (busy) return;
@@ -153,7 +954,7 @@ export default function Casework({
     );
   }
   function projectName(id: string) {
-    return t(data.projects?.find((p) => p.id === id)?.name || id);
+    return data.projects?.find((p) => p.id === id)?.name || id;
   }
   const messages = (
     <>
@@ -243,7 +1044,7 @@ export default function Casework({
               <option value="">{t("请选择采购单")}</option>
               {claims.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {projectName(c.projectId)} · {t(c.name)} · {c.id}
+                  {projectName(c.projectId)} · {c.name} · {c.id}
                 </option>
               ))}
             </select>
@@ -252,7 +1053,7 @@ export default function Casework({
         {c && (
           <>
             <h3>
-              {t(c.name)} <small>{c.id}</small>
+              {c.name} <small>{c.id}</small>
             </h3>
             <div className="proof-progress">
               <span className={c.foundationProof ? "complete" : ""}>
@@ -267,19 +1068,28 @@ export default function Casework({
             <code className="hash-value">{c.hash}</code>
             {c.foundationProof && (
               <p>
-                <b>{t("基金会说明")}：</b>
+                <b>
+                  {t("基金会说明")}
+                  {locale === "en" ? ": " : "："}
+                </b>
                 {c.foundationProof.note}
               </p>
             )}
             {c.recipientProof && (
               <p>
-                <b>{t("受捐机构说明")}：</b>
+                <b>
+                  {t("受捐机构说明")}
+                  {locale === "en" ? ": " : "："}
+                </b>
                 {c.recipientProof.note}
               </p>
             )}
             {latest?.reason && (
               <p className="notice">
-                <b>{t("审核意见")}：</b>
+                <b>
+                  {t("审核意见")}
+                  {locale === "en" ? ": " : "："}
+                </b>
                 {latest.reason}
               </p>
             )}
@@ -500,7 +1310,7 @@ export default function Casework({
               <span>{review.id}</span>
             </div>
             <h3>
-              {projectName(review.projectId)} · {t(c.name)}
+              {projectName(review.projectId)} · {c.name}
             </h3>
             <div className="proof-progress">
               <span>
@@ -518,11 +1328,17 @@ export default function Casework({
             {review.stage === "delivery" && review.sourceHash === c.hash && (
               <>
                 <p>
-                  <b>{t("基金会说明")}：</b>
+                  <b>
+                    {t("基金会说明")}
+                    {locale === "en" ? ": " : "："}
+                  </b>
                   {c.foundationProof?.note || "—"}
                 </p>
                 <p>
-                  <b>{t("受捐机构说明")}：</b>
+                  <b>
+                    {t("受捐机构说明")}
+                    {locale === "en" ? ": " : "："}
+                  </b>
                   {c.recipientProof?.note || "—"}
                 </p>
               </>
@@ -592,7 +1408,7 @@ export default function Casework({
                   )}
                 </dd>
                 <dt>{t("审核意见")}</dt>
-                <dd>{t(review.reason || "—")}</dd>
+                <dd>{review.reason || "—"}</dd>
                 <dt>{t("处理人及时间")}</dt>
                 <dd>
                   {review.reviewerId || "—"} · {date(review.reviewedAt)}
@@ -761,7 +1577,10 @@ export default function Casework({
           ) : (
             <>
               <p>
-                <b>{t("处理意见")}：</b>
+                <b>
+                  {t("处理意见")}
+                  {locale === "en" ? ": " : "："}
+                </b>
                 {appeal.response || t("等待处理")}
               </p>
               <p>

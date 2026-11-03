@@ -19,6 +19,12 @@ class Settings:
     chain_manifest: Path | None = None
     demo_signing_enabled: bool = False
     signing_ttl_seconds: int = 300
+    full_demo_enabled: bool = False
+    ai_diagnostic_enabled: bool = False
+    ai_diagnostic_url: str = ""
+    ai_diagnostic_token_file: Path | None = None
+    offline_demo_enabled: bool = False
+    offline_demo_reports_file: Path | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -56,4 +62,10 @@ class Settings:
             chain_manifest=Path(manifest_value).resolve() if manifest_value else None,
             demo_signing_enabled=demo_signing,
             signing_ttl_seconds=signing_ttl,
+            full_demo_enabled=os.getenv("POG_FULL_DEMO_ENABLED", os.getenv("POG_FULL_DEMO", "false")).lower() == "true",
+            ai_diagnostic_enabled=os.getenv("POG_AI_DIAGNOSTIC_ENABLED", "false").lower() == "true",
+            ai_diagnostic_url=os.getenv("POG_AI_DIAGNOSTIC_URL", ""),
+            ai_diagnostic_token_file=Path(os.environ["POG_AI_DIAGNOSTIC_TOKEN_FILE"]) if os.getenv("POG_AI_DIAGNOSTIC_TOKEN_FILE") else None,
+            offline_demo_enabled=os.getenv("POG_OFFLINE_DEMO_ENABLED", "false").lower() == "true",
+            offline_demo_reports_file=Path(os.environ["POG_OFFLINE_DEMO_REPORTS_FILE"]) if os.getenv("POG_OFFLINE_DEMO_REPORTS_FILE") else None,
         )

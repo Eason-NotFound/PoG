@@ -9,7 +9,8 @@ from uuid import UUID
 
 from eth_utils import keccak
 from fastapi import Depends, Header
-from sqlalchemy import select, text
+from pydantic import ValidationError
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from web3 import Web3
@@ -19,16 +20,17 @@ from .errors import APIError
 from .idempotency import audit, begin_operation, validate_idempotency_key, find_operation, lock_operation_key
 from .hashing import payload_sha256
 from .models import (
-    Document, DocumentVersion, DonorCreditProjection, LedgerProjection, Operation, ChainTransaction,
-    OperationStep, Procurement, Project, SigningRequest, WalletAuthorization,
+    Document, DocumentVersion, DonorCreditProjection, LedgerProjection, Operation, ChainTransaction, DeploymentInstance,
+    OperationStep, Procurement, Project, SigningRequest, WalletAuthorization, signing_nonce_family,
 )
 from .schemas import (
     DemoSignRequest, DonationCreate, EmptyMutation, InvoiceAndGoodsCreate,
-    PurchaseOrderCreate, ReserveCreate, SignatureSubmit, SigningRequestCreate,
+    PurchaseOrderCreate, ReserveCreate, SignatureSubmit, SigningRequestCreate, SubmitSignedRequest,
 )
 from .typed_data import (
     ai_assessment_typed, digest, human_intent_typed, recipient_receipt_typed, recover,
 )
+from .tail_signing import tail_material
 
 IdempotencyHeader = Annotated[str | None, Header(alias="Idempotency-Key")]
 
@@ -119,7 +121,7 @@ def _replay_resource(session, ns, principal, key, kind, body, resource):
         return None
     # Preserve both published candidates' hashes without rewriting stored facts.
     # Every format, including the newest, requires an independently saved target.
-    signing_kind = kind in {"signing_request.ai_pre", "signing_request.reserve", "signing_request.receipt"}
+    signing_kind = kind.startswith("signing_request.") and kind.split(".")[-1] in {"ai_pre", "reserve", "receipt", "ai_final", "release", "settlement"}
     resource_type = "project" if isinstance(resource, Project) else "procurement"
     saved_target = operation.result_resource_type == resource_type and operation.result_resource_id == resource.id
     accepted_hashes = {
@@ -145,9 +147,10 @@ def _replay_resource(session, ns, principal, key, kind, body, resource):
 
 
 def _signing_authority(principal, project, kind):
-    role = {"ai_pre": "service_ai", "reserve": "human_approver", "receipt": "recipient"}[kind]
-    owner = project.human_approver_user_id if kind == "reserve" else project.recipient_user_id
-    if principal.role != role or (kind != "ai_pre" and principal.user_id != owner):
+    family = signing_nonce_family(kind)
+    role = {"registry_ai": "service_ai", "escrow_human": "human_approver", "registry_recipient": "recipient"}[family]
+    owner = project.human_approver_user_id if family == "escrow_human" else project.recipient_user_id
+    if principal.role != role or (family != "registry_ai" and principal.user_id != owner):
         raise APIError(403, "role_forbidden", "Only this request's designated role may sign")
 
 
@@ -156,11 +159,13 @@ def _saved_signer(session, ns, principal, request):
     _signing_authority(principal, project, request.kind)
     if request.signer_user_id != principal.user_id or request.signer_wallet.lower() != principal.wallet_address.lower():
         raise APIError(403, "signer_mismatch", "Current identity/role-wallet is not the intended signer")
-    manifest_role = {"ai_pre": "aiSigner", "reserve": "humanApprover", "receipt": "recipient"}[request.kind]
+    manifest_role = {"registry_ai": "aiSigner", "escrow_human": "humanApprover", "registry_recipient": "recipient"}[signing_nonce_family(request.kind)]
     if ns.manifest_json:
         _must_match(principal.wallet_address, ns.manifest_json["roles"][manifest_role], manifest_role)
     if request.status in {"prepared", "signed"} and request.submitted_operation_id is None:
         _validate_receipt_source(session, request)
+        if request.kind in {"ai_final", "release", "settlement"}:
+            validate_original_sources(session, procurement, request.context_json.get("sourceVersionIds"))
     return procurement, project
 
 
@@ -173,20 +178,48 @@ def _replay_exact(session, ns, principal, key, kind, payload):
     return operation
 
 
+def _saved_signature_payload(request: SigningRequest, signature: str) -> dict:
+    # Only immutable signing material: never status, audit timestamps, queued
+    # operation state or worker metadata. The raw signature stays server-side.
+    context = request.context_json if isinstance(request.context_json, dict) else {}
+    frozen_context = (
+        {"reserveAmountAtomic": context.get("reserveAmountAtomic")}
+        if request.kind == "reserve" else
+        {"receiptEvidenceDocumentVersionId": context.get("receiptEvidenceDocumentVersionId")}
+        if request.kind == "receipt" else
+        {"sourceVersionIds": context.get("sourceVersionIds")}
+        if request.kind in {"ai_final", "release", "settlement"} else {}
+    )
+    return {
+        "requestId": str(request.id), "confirm": True,
+        "materialHash": payload_sha256({
+            "namespaceId": str(request.namespace_id),
+            "procurementId": str(request.procurement_id),
+            "signerUserId": str(request.signer_user_id),
+            "kind": request.kind, "contract": request.contract_address,
+            "signer": request.signer_wallet, "nonce": request.nonce_text,
+            "deadline": request.deadline_text, "policyEpoch": request.policy_epoch,
+            "digest": request.digest, "typedData": request.typed_data,
+            "context": frozen_context, "signature": signature.lower(),
+        }),
+    }
+
+
 def _guard_nonce_family(session, ns, principal, gate, contract, kind, nonce):
-    token = f"signing-family:{ns.id}:{contract.lower()}:{principal.wallet_address.lower()}:{kind}"
+    family = signing_nonce_family(kind)
+    token = f"signing-family:{ns.id}:{contract.lower()}:{principal.wallet_address.lower()}:{family}"
     lock = int.from_bytes(hashlib.sha256(token.encode()).digest()[:8], "big", signed=True)
     session.execute(text("SELECT pg_advisory_xact_lock(:lock)"), {"lock": lock})
     # Re-read under the family lock: an external consume must not produce a stale new request.
-    function = {"ai_pre": "aiNonces", "reserve": "humanNonces", "receipt": "recipientNonces"}[kind]
-    name = "ProcurementEscrowV2" if kind == "reserve" else "PoGRegistryV2"
+    function = {"registry_ai": "aiNonces", "escrow_human": "humanNonces", "registry_recipient": "recipientNonces"}[family]
+    name = "ProcurementEscrowV2" if family == "escrow_human" else "PoGRegistryV2"
     if int(gate.call(name, function, Web3.to_checksum_address(principal.wallet_address))) != nonce:
         raise APIError(409, "signing_nonce_changed", "Nonce changed while preparing request; retry with a new key")
     rows = session.scalars(select(SigningRequest).where(
         SigningRequest.namespace_id == ns.id,
-        SigningRequest.contract_address == contract,
-        SigningRequest.signer_wallet == Web3.to_checksum_address(principal.wallet_address),
-        SigningRequest.kind == kind,
+        func.lower(SigningRequest.contract_address) == contract.lower(),
+        func.lower(SigningRequest.signer_wallet) == principal.wallet_address.lower(),
+        SigningRequest.nonce_family == family,
         SigningRequest.status.not_in(("expired", "invalidated_stale", "invalidated_instance", "invalidated_not_broadcast")),
     ).with_for_update()).all()
     chain_now = gate.latest_timestamp()
@@ -213,6 +246,9 @@ def _guard_nonce_family(session, ns, principal, gate, contract, kind, nonce):
             reason = None
             try:
                 _validate_receipt_source(session, old)
+                if old.kind in {"ai_final", "release", "settlement"}:
+                    original = session.get(Procurement, old.procurement_id)
+                    validate_original_sources(session, original, old.context_json.get("sourceVersionIds"))
             except APIError as exc:
                 if exc.code not in {"signing_material_stale", "receipt_evidence_uploader_mismatch"}:
                     raise
@@ -315,6 +351,50 @@ def _validate_receipt_source(session: Session, request: SigningRequest) -> None:
         raise APIError(409, "signing_material_stale", "Frozen receipt evidence hash does not match its original version") from exc
 
 
+def _source_snapshot(names, versions):
+    return {**{name: str(item.id) for name, item in zip(names, versions)},
+            "bindings": {name: {"versionId": str(item.id), "hash": item.keccak256_hex,
+                                "uploaderId": str(item.uploaded_by_user_id)} for name, item in zip(names, versions)}}
+
+
+def validate_original_sources(session, procurement, snapshot=None):
+    """A later same-hash upload is never the source selected by the chain queue."""
+    source = procurement.source_versions_json or {}
+    if snapshot is not None and snapshot != source:
+        raise APIError(409, "signing_material_stale", "Original source bindings changed")
+    project = session.get(Project, procurement.project_id)
+    for name, category, field in (
+        ("poDocumentVersionId", "purchase_order", "po_hash"),
+        ("requestDocumentVersionId", "request", "request_hash"),
+        ("goodsRequestDocumentVersionId", "goods_request", "goods_request_hash"),
+        ("invoiceDocumentVersionId", "invoice", "invoice_hash"),
+        ("goodsDocumentVersionId", "goods_evidence", "goods_hash"),
+    ):
+        try:
+            version = _document_version(session, procurement, UUID(source[name]), category)
+            binding = source["bindings"][name]
+            document = session.get(Document, version.document_id)
+            valid = (document.namespace_id == procurement.namespace_id and version.referenced
+                     and version.uploaded_by_user_id == project.foundation_user_id
+                     and binding == {"versionId": str(version.id), "hash": version.keccak256_hex,
+                                     "uploaderId": str(version.uploaded_by_user_id)}
+                     and _equal_bytes(getattr(procurement, field), "0x" + version.keccak256_hex))
+        except (KeyError, TypeError, ValueError, AttributeError, APIError) as exc:
+            raise APIError(409, "signing_material_stale", "Original full-flow document source is unproven") from exc
+        if not valid:
+            raise APIError(409, "signing_material_stale", "Original full-flow document source is invalid")
+    try:
+        receipt = session.get(SigningRequest, UUID(source["receiptSigningRequestId"]))
+        if (receipt is None or receipt.namespace_id != procurement.namespace_id
+                or receipt.procurement_id != procurement.id or receipt.kind != "receipt"
+                or receipt.status != "confirmed" or receipt.submitted_operation_id is None
+                or receipt.digest.lower() != (procurement.receipt_digest or "").lower()):
+            raise ValueError("Receipt canonical source is unproven")
+        _validate_receipt_source(session, receipt)
+    except (KeyError, TypeError, ValueError, AttributeError, APIError) as exc:
+        raise APIError(409, "signing_material_stale", "Original Recipient receipt source is unproven") from exc
+
+
 def _expire_unsubmitted_nonce_requests(
     session: Session, *, namespace_id: UUID, contract: str, signer: str,
     nonce: int, kind: str, chain_now: int, principal_id: UUID,
@@ -347,13 +427,14 @@ def _validate_signing_fresh(gate, request: SigningRequest, procurement: Procurem
     message = request.typed_data.get("message", {})
     registry = gate.contract_address("PoGRegistryV2")
     escrow = gate.contract_address("ProcurementEscrowV2")
-    expected_contract = escrow if request.kind == "reserve" else registry
+    family = signing_nonce_family(request.kind)
+    expected_contract = escrow if family == "escrow_human" else registry
     try:
         expected_typed = (
             ai_assessment_typed(message, 31337, registry)
-            if request.kind == "ai_pre"
+            if family == "registry_ai"
             else human_intent_typed(message, 31337, escrow)
-            if request.kind == "reserve"
+            if family == "escrow_human"
             else recipient_receipt_typed(message, 31337, registry)
         )
         signer = message["signer"] if request.kind != "receipt" else message["expectedRecipient"]
@@ -369,15 +450,18 @@ def _validate_signing_fresh(gate, request: SigningRequest, procurement: Procurem
         chain_now = gate.latest_timestamp()
         if chain_now > int(request.deadline_text):
             raise ValueError("signing deadline expired")
-        nonce_contract = "ProcurementEscrowV2" if request.kind == "reserve" else "PoGRegistryV2"
+        nonce_contract = "ProcurementEscrowV2" if family == "escrow_human" else "PoGRegistryV2"
         nonce_function = (
-            "humanNonces" if request.kind == "reserve"
-            else "aiNonces" if request.kind == "ai_pre" else "recipientNonces"
+            "humanNonces" if family == "escrow_human"
+            else "aiNonces" if family == "registry_ai" else "recipientNonces"
         )
         if int(gate.call(nonce_contract, nonce_function, request.signer_wallet)) != int(request.nonce_text):
             raise ValueError("signing nonce changed")
         view = gate.call("PoGRegistryV2", "getProcurement", procurement.business_id)
-        if request.kind == "ai_pre":
+        if request.kind in {"ai_final", "release", "settlement"}:
+            data, _, epoch, _ = tail_material(gate, request.kind, procurement, project, request.signer_wallet, int(request.deadline_text))
+            fresh = data == request.typed_data and epoch == request.policy_epoch
+        elif request.kind == "ai_pre":
             computed = "0x" + bytes(gate.call(
                 "PoGRegistryV2", "computeAssessmentId",
                 [message[name] for name in (
@@ -440,6 +524,13 @@ def _validate_signing_fresh(gate, request: SigningRequest, procurement: Procurem
 
 
 def install_a2_routes(app, *, get_session, current_principal, namespace, gateway, gateway_error, settings):
+    original_namespace = namespace
+    def namespace(session, *, for_chain=False):
+        value = original_namespace(session, for_chain=for_chain)
+        if settings.full_demo_enabled and for_chain:
+            session.get(DeploymentInstance, value.id, with_for_update=True)
+        return value
+
     @app.post("/v2/projects/{project_id}/chain/create", status_code=202, tags=["chain"])
     def chain_create_project(
         project_id: UUID, body: EmptyMutation, principal=Depends(current_principal),
@@ -567,6 +658,10 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             _must_match(principal.wallet_address, gate.roles["foundation"], "foundation")
             if procurement.chain_status not in {"created", "po_queued"}:
                 raise APIError(409, "procurement_state_conflict", "Procurement is not Created")
+            if settings.full_demo_enabled:
+                session.refresh(procurement, with_for_update=True)
+                if procurement.source_versions_json:
+                    raise APIError(409, "original_source_already_selected", "The original PO queue is already selected")
             versions = [
                 _document_version(session, procurement, body.po_document_version_id, "purchase_order"),
                 _document_version(session, procurement, body.request_document_version_id, "request"),
@@ -585,6 +680,9 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             )
             if not replayed:
                 procurement.chain_status = "po_queued"
+                if settings.full_demo_enabled:
+                    procurement.source_versions_json = _source_snapshot(
+                        ("poDocumentVersionId", "requestDocumentVersionId", "goodsRequestDocumentVersionId"), versions)
                 for item in versions:
                     item.referenced = True
         return {"operation": _operation(operation, replayed)}
@@ -609,8 +707,14 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             _must_match(principal.wallet_address, gate.roles["foundation"], "foundation")
             if procurement.chain_status not in {"reserved", "invoice_queued"}:
                 raise APIError(409, "procurement_state_conflict", "Procurement is not Reserved")
+            if settings.full_demo_enabled:
+                session.refresh(procurement, with_for_update=True)
+                if procurement.source_versions_json.get("invoiceDocumentVersionId"):
+                    raise APIError(409, "original_source_already_selected", "The original invoice queue is already selected")
             if amount == 0 or amount > int(procurement.reserved_amount_atomic or 0):
                 raise APIError(422, "invalid_invoice_amount", "Invoice must be positive and no more than reserved")
+            if settings.full_demo_enabled and amount % 10000:
+                raise APIError(422, "invoice_sub_cent", "Full simulation requires an exact HKD-cent invoice")
             invoice = _document_version(session, procurement, body.invoice_document_version_id, "invoice")
             goods = _document_version(session, procurement, body.goods_document_version_id, "goods_evidence")
             detail = {
@@ -631,6 +735,10 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                 procurement.invoice_amount_atomic = Decimal(amount)
                 procurement.goods_hash = "0x" + goods.keccak256_hex
                 invoice.referenced = goods.referenced = True
+                if settings.full_demo_enabled:
+                    extra = _source_snapshot(("invoiceDocumentVersionId", "goodsDocumentVersionId"), (invoice, goods))
+                    procurement.source_versions_json = {**procurement.source_versions_json, **extra,
+                        "bindings": {**procurement.source_versions_json.get("bindings", {}), **extra["bindings"]}}
         return {"operation": _operation(operation, replayed)}
 
     @app.post("/v2/procurements/{procurement_id}/signing-requests", status_code=202, tags=["signing"])
@@ -644,6 +752,15 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             procurement, project = _procurement(session, ns, procurement_id)
             payload = body.model_dump(mode="json", by_alias=True)
             _signing_authority(principal, project, body.kind)
+            if body.kind in {"ai_final", "release", "settlement"}:
+                if not settings.full_demo_enabled:
+                    raise APIError(403, "full_demo_disabled", "Full simulation is disabled")
+                if body.reserve_amount_atomic is not None or body.receipt_evidence_document_version_id is not None:
+                    raise APIError(422, "signing_input_invalid", "Tail signing material is server-derived")
+                validate_original_sources(session, procurement)
+                if body.kind == "settlement":
+                    from .full_checks import validate_settlement_sources
+                    validate_settlement_sources(session, ns, procurement, project, _require_gateway(gateway, gateway_error), recorded=True)
             if body.kind == "ai_pre" and (
                 body.reserve_amount_atomic is not None
                 or body.receipt_evidence_document_version_id is not None
@@ -680,7 +797,13 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                 registry = gate.contract_address("PoGRegistryV2")
                 escrow = gate.contract_address("ProcurementEscrowV2")
                 signer = Web3.to_checksum_address(principal.wallet_address)
-                if body.kind == "ai_pre":
+                if body.kind in {"ai_final", "release", "settlement"}:
+                    _must_match(signer, gate.roles["aiSigner" if body.kind == "ai_final" else "humanApprover"], "tail signer")
+                    try:
+                        data, contract, epoch, nonce = tail_material(gate, body.kind, procurement, project, signer, deadline)
+                    except ValueError as exc:
+                        raise APIError(409, "signing_material_stale", "Current tail material is invalid") from exc
+                elif body.kind == "ai_pre":
                     if principal.role != "service_ai":
                         raise APIError(403, "role_forbidden", "Only service_ai_fixture may request AI PRE")
                     _must_match(principal.wallet_address, gate.roles["aiSigner"], "aiSigner")
@@ -776,7 +899,9 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                 context = (
                     {"reserveAmountAtomic": str(amount)} if body.kind == "reserve"
                     else {"receiptEvidenceDocumentVersionId": str(evidence_version.id)}
-                    if body.kind == "receipt" else {}
+                    if body.kind == "receipt" else
+                    {"sourceVersionIds": dict(procurement.source_versions_json)}
+                    if body.kind in {"ai_final", "release", "settlement"} else {}
                 )
                 _guard_nonce_family(session, ns, principal, gate, contract, body.kind, nonce)
                 request = SigningRequest(
@@ -800,7 +925,7 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                 audit(session, principal_id=principal.user_id, operation_id=operation.id,
                       action=f"signing_request.{body.kind}", outcome="prepared",
                       resource_type="signing_request", resource_id=request.id,
-                      metadata={"digest": request.digest, "synthetic": body.kind == "ai_pre"})
+                      metadata={"digest": request.digest, "synthetic": body.kind in {"ai_pre", "ai_final"}})
         return {"operation": _operation(operation, replayed), "signingRequest": _signing(request, True)}
 
     def _signing(request: SigningRequest, include_typed: bool) -> dict[str, Any]:
@@ -810,7 +935,7 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             "nonce": request.nonce_text, "deadline": request.deadline_text,
             "policyEpoch": request.policy_epoch, "digest": request.digest,
             "typedData": request.typed_data if include_typed else None,
-            "synthetic": request.kind == "ai_pre",
+            "synthetic": request.kind in {"ai_pre", "ai_final"},
         }
 
     @app.get("/v2/signing-requests/{request_id}", tags=["signing"])
@@ -851,9 +976,14 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                 validated_payload={"requestId": str(request_id), "confirm": True},
             )
             if not replayed:
+                if request.kind in {"ai_final", "release", "settlement"} and not settings.full_demo_enabled:
+                    raise APIError(403, "full_demo_disabled", "Opt-in full simulation is disabled")
                 if request.status != "prepared" or request.submitted_operation_id is not None:
                     raise APIError(409, "signing_request_state", "Signing request is not awaiting signature")
                 _validate_signing_fresh(gate, request, procurement, project)
+                if request.kind == "settlement":
+                    from .full_checks import validate_settlement_sources
+                    validate_settlement_sources(session, ns, procurement, project, gate, recorded=True)
                 signature = gate.sign_typed_data(request.signer_wallet, request.typed_data)
                 if recover(request.typed_data, signature).lower() != request.signer_wallet.lower():
                     raise APIError(409, "signature_invalid", "Demo wallet returned wrong signer")
@@ -869,10 +999,9 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                       metadata={"explicitConfirm": True})
         return {"operation": _operation(operation, replayed), "signingRequest": _signing(request, True)}
 
-    @app.post("/v2/signing-requests/{request_id}/submit", status_code=202, tags=["signing"])
-    def submit_signature(
-        request_id: UUID, body: SignatureSubmit, principal=Depends(current_principal),
-        session: Session = Depends(get_session), idempotency_key: IdempotencyHeader = None,
+    def _submit_signature(
+        request_id: UUID, signature: str | None, principal, session: Session,
+        idempotency_key: str | None, *, stored_signature: bool = False,
     ):
         key = validate_idempotency_key(idempotency_key)
         with session.begin():
@@ -881,34 +1010,61 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             if request is None or request.namespace_id != ns.id:
                 raise APIError(404, "signing_request_not_found", "Signing request not found")
             procurement, project = _saved_signer(session, ns, principal, request)
-            payload = {"requestId": str(request.id), "signature": body.signature}
-            operation = _replay_exact(session, ns, principal, key, f"signing_request.submit.{request.kind}", payload)
+            kind = f"signing_request.submit.{request.kind}"
+            if stored_signature:
+                kind = f"signing_request.submit_signed.{request.kind}"
+                signature = request.signature
+                if not signature:
+                    raise APIError(409, "signing_signature_missing", "Signing request has no saved signature")
+                try:
+                    signature = SignatureSubmit(signature=signature).signature
+                except ValidationError as exc:
+                    raise APIError(422, "signature_invalid", "Saved signature is not a valid EOA signature") from exc
+                payload = _saved_signature_payload(request, signature)
+            else:
+                payload = {"requestId": str(request.id), "signature": signature}
+            operation = _replay_exact(session, ns, principal, key, kind, payload)
             if operation is not None:
+                if stored_signature and not (
+                    operation.result_resource_type == "signing_request"
+                    and operation.result_resource_id == request.id
+                    and request.submitted_operation_id == operation.id
+                ):
+                    raise APIError(409, "idempotency_payload_conflict", "Idempotency-Key has no matching saved submission", operation_id=str(operation.id))
                 return {"operation": _operation(operation, True), "signingRequest": _signing(request, True)}
             gate = _require_gateway(gateway, gateway_error)
             operation, replayed = begin_operation(
                 session, namespace_id=ns.id, principal_id=principal.user_id,
-                operation_kind=f"signing_request.submit.{request.kind}", idempotency_key=key,
-                validated_payload={"requestId": str(request.id), "signature": body.signature},
+                operation_kind=kind, idempotency_key=key,
+                validated_payload=payload,
             )
             if not replayed:
-                if request.status not in {"prepared", "signed"} or request.submitted_operation_id is not None:
+                if (
+                    request.status not in {"prepared", "signed"}
+                    or request.submitted_operation_id is not None
+                    or (stored_signature and request.status != "signed")
+                ):
                     raise APIError(409, "signing_request_state", "Signing request was already submitted")
+                if request.kind in {"ai_final", "release", "settlement"} and not settings.full_demo_enabled:
+                    raise APIError(403, "full_demo_disabled", "Opt-in full simulation is disabled")
                 try:
-                    recovered = recover(request.typed_data, body.signature)
+                    recovered = recover(request.typed_data, signature)
                 except Exception as exc:
                     raise APIError(422, "signature_invalid", "Malformed or unrecoverable EOA signature") from exc
                 if recovered.lower() != request.signer_wallet.lower():
                     raise APIError(422, "signature_invalid", "Signature does not recover intended EOA")
                 _validate_signing_fresh(gate, request, procurement, project)
                 message = request.typed_data["message"]
-                if request.kind == "ai_pre":
-                    action, caller, event = "assessment.ai_pre", gate.roles["relayer"], "AIAssessmentRecorded"
+                if request.kind == "settlement":
+                    from .full_checks import validate_settlement_sources
+                    validate_settlement_sources(session, ns, procurement, project, gate, recorded=True)
+                if request.kind in {"ai_pre", "ai_final"}:
+                    action, caller, event = "assessment." + request.kind, gate.roles["relayer"], "AIAssessmentRecorded"
                     args = [[message[name] for name in (
                         "stage", "procurementId", "assessmentId", "outcome", "riskScoreBps",
                         "evidenceHash", "reportHash", "signer", "nonce", "deadline",
-                    )], body.signature]
-                    procurement.chain_status = "ai_pre_queued"
+                    )], signature]
+                    procurement.chain_status = request.kind + "_queued"
                 elif request.kind == "reserve":
                     action, caller, event = "approval.reserve", gate.roles["relayer"], "HumanApprovalSubmitted"
                     amount = int(request.context_json.get("reserveAmountAtomic", 0))
@@ -917,16 +1073,32 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                     args = [procurement.business_id, amount, [message[name] for name in (
                         "targetId", "action", "termsHash", "assessmentId", "signer", "nonce",
                         "deadline", "policyEpoch",
-                    )], body.signature]
+                    )], signature]
                     procurement.chain_status = "reserve_vote_queued"
-                else:
+                elif request.kind in {"release", "settlement"}:
+                    action, caller, event = "approval." + request.kind, gate.roles["relayer"], "HumanApprovalSubmitted"
+                    args = [procurement.business_id, [message[name] for name in (
+                        "targetId", "action", "termsHash", "assessmentId", "signer", "nonce", "deadline", "policyEpoch",
+                    )], signature]
+                    procurement.chain_status = request.kind + "_vote_queued"
+                elif request.kind == "receipt":
                     action, caller, event = "receipt.submit", gate.roles["relayer"], "RecipientReceiptAccepted"
                     args = [[message[name] for name in (
                         "projectId", "procurementId", "expectedRecipient", "vendor", "poHash",
                         "invoiceHash", "invoiceAmount", "goodsHash", "receiptEvidenceHash", "nonce",
                         "deadline",
-                    )], body.signature]
+                    )], signature]
                     procurement.chain_status = "receipt_queued"
+                    if settings.full_demo_enabled:
+                        session.refresh(procurement, with_for_update=True)
+                        if procurement.source_versions_json.get("receiptSigningRequestId"):
+                            raise APIError(409, "original_source_already_selected", "Original Receipt request is already selected")
+                        procurement.source_versions_json = {**procurement.source_versions_json,
+                            "receiptSigningRequestId": str(request.id),
+                            "receiptDocumentVersionId": request.context_json["receiptEvidenceDocumentVersionId"]}
+                        procurement.chain_status = "receipt_queued"
+                else:
+                    raise APIError(422, "signing_kind_invalid", "Unsupported signing kind")
                 detail = {
                     "action": action, "caller": caller, "args": args, "expectedEvent": event,
                     "projectUuid": str(project.id), "procurementUuid": str(procurement.id),
@@ -936,13 +1108,29 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
                 operation.result_resource_id = request.id
                 session.add(OperationStep(operation_id=operation.id, step_index=0, kind=action,
                                           status="queued", detail=detail))
-                request.signature = body.signature
+                request.signature = signature
                 request.status = "queued"
                 request.submitted_operation_id = operation.id
                 audit(session, principal_id=principal.user_id, operation_id=operation.id,
-                      action=f"signing_request.submit.{request.kind}", outcome="queued",
+                      action=kind, outcome="queued",
                       resource_type="signing_request", resource_id=request.id)
         return {"operation": _operation(operation, replayed), "signingRequest": _signing(request, True)}
+
+    @app.post("/v2/signing-requests/{request_id}/submit", status_code=202, tags=["signing"])
+    def submit_signature(
+        request_id: UUID, body: SignatureSubmit, principal=Depends(current_principal),
+        session: Session = Depends(get_session), idempotency_key: IdempotencyHeader = None,
+    ):
+        return _submit_signature(request_id, body.signature, principal, session, idempotency_key)
+
+    @app.post("/v2/signing-requests/{request_id}/submit-signed", status_code=202, tags=["signing"])
+    def submit_signed(
+        request_id: UUID, body: SubmitSignedRequest, principal=Depends(current_principal),
+        session: Session = Depends(get_session), idempotency_key: IdempotencyHeader = None,
+    ):
+        if not settings.demo_signing_enabled:
+            raise APIError(403, "demo_signing_disabled", "Local unlocked demo signing is disabled")
+        return _submit_signature(request_id, None, principal, session, idempotency_key, stored_signature=True)
 
     @app.post("/v2/procurements/{procurement_id}/chain/reserve", status_code=202, tags=["chain"])
     def execute_reserve(
@@ -1011,3 +1199,8 @@ def install_a2_routes(app, *, get_session, current_principal, namespace, gateway
             "threshold": value[10], "refundSnapshotted": value[11],
             "currentCallerDonorCreditAtomic": own_credit, "chainVerified": True,
         }
+
+    # Internal callable bridge reuses the same authority, source, freshness,
+    # nonce-family locking and saved-signature checks as the HTTP routes.
+    # It is not an HTTP authority override and exposes no signing credential.
+    return {"prepare": create_signing_request, "sign": sign_demo, "submit": submit_signed}

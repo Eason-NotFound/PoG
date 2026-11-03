@@ -18,9 +18,16 @@ htmlcov/
 
 # PoG portal local artifacts
 node_modules/
+node_modules
 .pnpm-store/
 .next/
+.next-original-ui/
+.next-*/
+.venv/
 .data/
 .env.local
 *.tsbuildinfo
 test-results/
+*.private.json
+*.private.env
+*.token

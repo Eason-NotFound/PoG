@@ -1,6 +1,7 @@
 "use client";
 import { useI18n, LanguageSwitcher } from "@/components/language-provider";
 import { useState } from "react";
+import { portalA2Login } from "@/lib/portal-a2";
 import {
   ArrowRight,
   Fingerprint,
@@ -15,7 +16,11 @@ const examples = [
   ["maintainer", "维护人员", "仅管理员分配的页面"],
   ["donor2", "捐款人 B", "验证个人数据隔离"],
 ];
-export default function LoginForm() {
+export default function LoginForm({
+  integration = false,
+}: {
+  integration?: boolean;
+}) {
   const { t } = useI18n();
 
   const [username, setUsername] = useState("donor"),
@@ -27,6 +32,11 @@ export default function LoginForm() {
     setBusy(true);
     setError("");
     try {
+      if (integration) {
+        const result = await portalA2Login(username, password);
+        window.location.assign(result.redirect);
+        return;
+      }
       const r = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,7 +90,11 @@ export default function LoginForm() {
         <div className="demo-disclaimer">
           {t("本地演示环境 · 使用模拟支付和资金状态")}
           <br />
-          {t("未连接真实银行、AI 服务或区块链")}
+          {t(
+            integration
+              ? "已连接本地 Anvil 链 · 链上 AI 评估待接入 · 无真实资金"
+              : "未连接真实银行、AI 服务或区块链",
+          )}
         </div>
       </section>
       <section className="login-panel">
@@ -127,7 +141,9 @@ export default function LoginForm() {
           <summary>{t("本地演示账号")}</summary>
           <p>
             {t("默认测试密码：")}
-            <code>PoG-demo-2026</code>
+            <code>
+              {integration ? t("使用本轮受控测试账号密码") : "PoG-demo-2026"}
+            </code>
             <br />
             <small>
               {t(
@@ -137,20 +153,34 @@ export default function LoginForm() {
           </p>
           <div className="account-grid">
             {t(
-              examples.map(([id, label, desc]) => (
-                <button
-                  key={id}
-                  onClick={() => {
-                    setUsername(id);
-                    setPassword("");
-                  }}
-                  className={username === id ? "selected" : ""}
-                >
-                  <strong>{t(label)}</strong>
-                  <small>{t(desc)}</small>
-                  <code>{t(id)}</code>
-                </button>
-              )),
+              examples
+                .filter(
+                  ([id]) =>
+                    !integration ||
+                    ["donor", "foundation", "recipient", "admin"].includes(id),
+                )
+                .map(([id, label, desc]) => (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      setUsername(id);
+                      setPassword("");
+                    }}
+                    className={username === id ? "selected" : ""}
+                  >
+                    <strong>{t(label)}</strong>
+                    <small>
+                      {t(
+                        integration
+                          ? id === "admin"
+                            ? "仅独立 human_approver，不代其他角色"
+                            : "仅本人角色工作区"
+                          : desc,
+                      )}
+                    </small>
+                    <code>{id}</code>
+                  </button>
+                )),
             )}
           </div>
         </details>
